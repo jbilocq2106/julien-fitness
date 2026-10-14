@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>Mon Training</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">PROGRAMME PERSONNEL</div>
+      <h1>Mon Training</h1>
+    </div>
+    <button id="wakeBtn" class="ghost">Écran allumé</button>
+  </header>
+
+  <main id="app">
+    <section id="homeView" class="view active">
+      <div class="hero card">
+        <div>
+          <div class="muted">Prochaine séance</div>
+          <h2 id="nextSessionName">Chargement…</h2>
+          <div id="nextSessionFocus" class="muted"></div>
+        </div>
+        <button id="startNextBtn" class="primary big">Démarrer</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="card stat"><span id="statSessions">0</span><small>séances</small></div>
+        <div class="card stat"><span id="statSets">0</span><small>séries</small></div>
+        <div class="card stat"><span id="statVolume">0</span><small>kg volume</small></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <h3>Historique Hevy</h3>
+          <button id="importBtn" class="secondary">Importer CSV</button>
+          <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
+        </div>
+        <p id="importStatus" class="muted">Importe ton export Hevy une seule fois. Les données restent sur ce téléphone.</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><h3>Dernières séances</h3></div>
+        <div id="recentList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="programView" class="view">
+      <div class="section-title"><h2>Programme</h2><button id="refreshProgramBtn" class="ghost">Actualiser</button></div>
+      <div id="programCards"></div>
+    </section>
+
+    <section id="workoutView" class="view">
+      <div class="workout-head">
+        <div>
+          <div class="eyebrow">SÉANCE EN COURS</div>
+          <h2 id="workoutTitle"></h2>
+          <div id="workoutElapsed" class="muted">00:00</div>
+        </div>
+        <button id="finishWorkoutBtn" class="danger">Terminer</button>
+      </div>
+      <div id="exerciseList"></div>
+    </section>
+
+    <section id="historyView" class="view">
+      <div class="section-title"><h2>Historique</h2><button id="exportBtn" class="ghost">Sauvegarder</button></div>
+      <div id="historyList" class="list"></div>
+    </section>
+
+    <section id="statsView" class="view">
+      <h2>Progression</h2>
+      <div class="card">
+        <label for="exerciseSelect">Exercice</label>
+        <select id="exerciseSelect"></select>
+        <div id="exerciseStats" class="stats-panel"></div>
+        <svg id="progressChart" viewBox="0 0 340 140" role="img" aria-label="Courbe de progression"></svg>
+      </div>
+    </section>
+  </main>
+
+  <div id="timerDock" class="timer-dock">
+    <div class="timer-main">
+      <button id="timerToggle" class="timer-time">01:30</button>
+      <div class="timer-actions">
+        <button data-timer="45">45s</button>
+        <button data-timer="60">60s</button>
+        <button data-timer="90">90s</button>
+        <button data-timer="120">2m</button>
+        <button id="minus15">−15</button>
+        <button id="plus15">+15</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button data-view="homeView" class="active">Accueil</button>
+    <button data-view="programView">Programme</button>
+    <button data-view="historyView">Historique</button>
+    <button data-view="statsView">Stats</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

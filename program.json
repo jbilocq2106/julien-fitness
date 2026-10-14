@@ -1,0 +1,694 @@
+{
+  "version": 1,
+  "updated": "2026-10-15",
+  "sessions": [
+    {
+      "id": "S1",
+      "name": "Séance 1 — Pecs / Bras / Abdos",
+      "focus": "Pectoraux • bras • abdos profonds",
+      "exercises": [
+        {
+          "name": "Chest Press machine",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 39
+            },
+            {
+              "reps": "12",
+              "weight": 45
+            },
+            {
+              "reps": "10–12",
+              "weight": 45
+            },
+            {
+              "reps": "8–10",
+              "weight": 50
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Développé incliné haltères",
+          "sets": [
+            {
+              "reps": "8–12",
+              "weight": 16
+            },
+            {
+              "reps": "8–12",
+              "weight": 16
+            },
+            {
+              "reps": "8–12",
+              "weight": 16
+            }
+          ],
+          "rest": 90,
+          "note": "Monter à 18 kg si RIR ≥ 2 et exécution propre."
+        },
+        {
+          "name": "Écartés poulie vis-à-vis",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 18
+            },
+            {
+              "reps": "12–15",
+              "weight": 18
+            },
+            {
+              "reps": "12–15",
+              "weight": 18
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Rowing poitrine appuyée",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 90,
+          "note": "Charge à calibrer sur la machine."
+        },
+        {
+          "name": "Extension triceps corde",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 32
+            },
+            {
+              "reps": "12",
+              "weight": 36
+            },
+            {
+              "reps": "12",
+              "weight": 36
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Extension triceps unilatérale poulie",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Curl incliné haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Crunch poulie",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Dead bug lent",
+          "sets": [
+            {
+              "reps": "8–10/côté",
+              "weight": 0
+            },
+            {
+              "reps": "8–10/côté",
+              "weight": 0
+            },
+            {
+              "reps": "8–10/côté",
+              "weight": 0
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Pallof press",
+          "sets": [
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            },
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            },
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Vacuum / transverse",
+          "sets": [
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 30
+        },
+        {
+          "name": "Tapis incliné",
+          "sets": [
+            {
+              "reps": "30–40 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "5,5 km/h • 12 %"
+        }
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "Séance 2 — Dos / Épaules / Bras / Abdos",
+      "focus": "Dos • épaules • bras • gainage",
+      "exercises": [
+        {
+          "name": "Tirage vertical",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 45
+            },
+            {
+              "reps": "12",
+              "weight": 59
+            },
+            {
+              "reps": "12",
+              "weight": 59
+            },
+            {
+              "reps": "10–12",
+              "weight": 59
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Rowing haltère unilatéral",
+          "sets": [
+            {
+              "reps": "12/côté",
+              "weight": 20
+            },
+            {
+              "reps": "12/côté",
+              "weight": 20
+            },
+            {
+              "reps": "12/côté",
+              "weight": 20
+            }
+          ],
+          "rest": 90,
+          "note": "Tester 22 kg seulement quand 20 kg est très propre."
+        },
+        {
+          "name": "Rowing poulie assis",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 52
+            },
+            {
+              "reps": "12",
+              "weight": 59
+            },
+            {
+              "reps": "12",
+              "weight": 59
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Élévations latérales",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": 7
+            },
+            {
+              "reps": "12–15",
+              "weight": 6
+            },
+            {
+              "reps": "12–15",
+              "weight": 6
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Face pull corde",
+          "sets": [
+            {
+              "reps": "15",
+              "weight": null
+            },
+            {
+              "reps": "15",
+              "weight": null
+            },
+            {
+              "reps": "15",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Extension triceps au-dessus de la tête corde",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Curl poulie basse corde",
+          "sets": [
+            {
+              "reps": "12–13",
+              "weight": 32
+            },
+            {
+              "reps": "12–13",
+              "weight": 32
+            },
+            {
+              "reps": "12–13",
+              "weight": 32
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Relevés de genoux chaise romaine",
+          "sets": [
+            {
+              "reps": "10–15",
+              "weight": 0
+            },
+            {
+              "reps": "10–15",
+              "weight": 0
+            },
+            {
+              "reps": "10–15",
+              "weight": 0
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Planche RKC",
+          "sets": [
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Wood Chop / Pallof press",
+          "sets": [
+            {
+              "reps": "10/côté",
+              "weight": null
+            },
+            {
+              "reps": "10/côté",
+              "weight": null
+            },
+            {
+              "reps": "10/côté",
+              "weight": null
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Vacuum / transverse",
+          "sets": [
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 30
+        },
+        {
+          "name": "Tapis incliné",
+          "sets": [
+            {
+              "reps": "35–45 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "5,5 km/h • 12 %"
+        }
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "Séance 3 — Jambes / Pecs / Bras / Abdos",
+      "focus": "Jambes 1×/semaine • pecs • bras • abdos",
+      "exercises": [
+        {
+          "name": "Presse à cuisses",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 60
+            },
+            {
+              "reps": "12",
+              "weight": 70
+            },
+            {
+              "reps": "12",
+              "weight": 80
+            },
+            {
+              "reps": "10–12",
+              "weight": 80
+            }
+          ],
+          "rest": 90,
+          "note": "Pas de soulevé de terre."
+        },
+        {
+          "name": "Leg Curl",
+          "sets": [
+            {
+              "reps": "10–15",
+              "weight": null
+            },
+            {
+              "reps": "10–15",
+              "weight": null
+            },
+            {
+              "reps": "10–15",
+              "weight": null
+            }
+          ],
+          "rest": 75
+        },
+        {
+          "name": "Leg Extension",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 75
+        },
+        {
+          "name": "Mollets presse / machine",
+          "sets": [
+            {
+              "reps": "15–20",
+              "weight": null
+            },
+            {
+              "reps": "15–20",
+              "weight": null
+            },
+            {
+              "reps": "15–20",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Développé convergent / machine inclinée",
+          "sets": [
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Pec Fly machine",
+          "sets": [
+            {
+              "reps": "15",
+              "weight": 32
+            },
+            {
+              "reps": "12",
+              "weight": 45
+            },
+            {
+              "reps": "10–12",
+              "weight": 45
+            }
+          ],
+          "rest": 75
+        },
+        {
+          "name": "Extension triceps barre V / droite",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Dips assistés — triceps",
+          "sets": [
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            }
+          ],
+          "rest": 75
+        },
+        {
+          "name": "Curl pupitre machine",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Crunch inversé",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
+              "weight": 0
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Dead bug + expiration complète",
+          "sets": [
+            {
+              "reps": "8/côté",
+              "weight": 0
+            },
+            {
+              "reps": "8/côté",
+              "weight": 0
+            },
+            {
+              "reps": "8/côté",
+              "weight": 0
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Planche latérale",
+          "sets": [
+            {
+              "reps": "30–45 s/côté",
+              "weight": 0
+            },
+            {
+              "reps": "30–45 s/côté",
+              "weight": 0
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Vacuum / transverse",
+          "sets": [
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 30
+        },
+        {
+          "name": "Tapis incliné",
+          "sets": [
+            {
+              "reps": "20–30 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "5,5 km/h • 10–12 %"
+        }
+      ]
+    }
+  ]
+}
