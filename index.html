@@ -76,8 +76,21 @@
       <div class="card">
         <label for="exerciseSelect">Exercice</label>
         <select id="exerciseSelect"></select>
+
+        <div class="metric-tabs" aria-label="Mesure affichée">
+          <button class="metric-btn active" data-metric="weight">Charge</button>
+          <button class="metric-btn" data-metric="e1rm">1RM estimé</button>
+          <button class="metric-btn" data-metric="volume">Volume</button>
+        </div>
+
         <div id="exerciseStats" class="stats-panel"></div>
-        <svg id="progressChart" viewBox="0 0 340 140" role="img" aria-label="Courbe de progression"></svg>
+        <div id="exerciseSummary" class="progress-summary"></div>
+
+        <div class="chart-title-row">
+          <strong id="chartMetricTitle">Meilleure charge par séance</strong>
+          <span id="chartUnit" class="muted">kg</span>
+        </div>
+        <svg id="progressChart" viewBox="0 0 340 170" role="img" aria-label="Courbe de progression"></svg>
       </div>
     </section>
   </main>

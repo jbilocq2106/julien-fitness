@@ -84,22 +84,141 @@ function renderHistory(){const ws=uniqueWorkouts(state.history);document.getElem
 document.getElementById('exportBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify({history:state.history,sessions:state.sessions,nextSessionId:state.nextSessionId},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mon-training-backup.json';a.click();URL.revokeObjectURL(a.href);
 };
+let statsMetric='weight';
+
 function renderStatsSelect(){
   const names=[...new Set(state.history.map(r=>r.exercise_title).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  const sel=document.getElementById('exerciseSelect');const prev=sel.value;sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('');if(names.includes(prev))sel.value=prev;sel.onchange=renderExerciseStats;renderExerciseStats();
+  const sel=document.getElementById('exerciseSelect');
+  const prev=sel.value;
+  sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('');
+  if(names.includes(prev))sel.value=prev;
+  sel.onchange=renderExerciseStats;
+  document.querySelectorAll('.metric-btn').forEach(btn=>{
+    btn.classList.toggle('active',btn.dataset.metric===statsMetric);
+    btn.onclick=()=>{
+      statsMetric=btn.dataset.metric;
+      document.querySelectorAll('.metric-btn').forEach(b=>b.classList.toggle('active',b===btn));
+      renderExerciseStats();
+    };
+  });
+  renderExerciseStats();
 }
+
+function exerciseSessions(name){
+  const rows=state.history.filter(r=>r.exercise_title===name&&num(r.reps)>0);
+  const byWorkout=new Map();
+  rows.forEach(r=>{
+    const key=r.start_time||'';
+    if(!byWorkout.has(key))byWorkout.set(key,{date:key,rows:[]});
+    byWorkout.get(key).rows.push(r);
+  });
+  return [...byWorkout.values()].sort((a,b)=>dateVal(a.date)-dateVal(b.date)).map(w=>{
+    const sets=w.rows.map(r=>({
+      weight:num(r.weight_kg),
+      reps:num(r.reps),
+      e1rm:e1rm(num(r.weight_kg),num(r.reps)),
+      volume:num(r.weight_kg)*num(r.reps)
+    }));
+    const bestSet=sets.slice().sort((a,b)=>(b.e1rm-a.e1rm)||(b.weight-a.weight)||(b.reps-a.reps))[0]||{weight:0,reps:0,e1rm:0,volume:0};
+    return {
+      date:w.date,
+      bestWeight:Math.max(0,...sets.map(s=>s.weight)),
+      best1rm:Math.max(0,...sets.map(s=>s.e1rm)),
+      volume:sets.reduce((a,s)=>a+s.volume,0),
+      bestSet
+    };
+  });
+}
+
+function metricValue(s){
+  if(statsMetric==='e1rm')return s.best1rm;
+  if(statsMetric==='volume')return s.volume;
+  return s.bestWeight;
+}
+function metricUnit(){return statsMetric==='volume'?'kg':statsMetric==='e1rm'?'kg':'kg'}
+function metricLabel(){return statsMetric==='volume'?'Volume par séance':statsMetric==='e1rm'?'Meilleur 1RM estimé par séance':'Meilleure charge par séance'}
+function fmtMetric(v){return statsMetric==='volume'?fmt(v):Number(v||0).toFixed(statsMetric==='e1rm'?1:0)}
+function shortDate(s){
+  const d=new Date(s);if(Number.isNaN(d.getTime()))return '';
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+}
+function pctChange(a,b){
+  if(!a)return null;
+  return ((b-a)/a)*100;
+}
+
 function renderExerciseStats(){
-  const name=document.getElementById('exerciseSelect').value,rows=state.history.filter(r=>r.exercise_title===name&&num(r.reps)>0);
-  if(!rows.length){document.getElementById('exerciseStats').innerHTML='<div class="muted">Pas de données</div>';drawChart([]);return;}
-  const bestWeight=Math.max(...rows.map(r=>num(r.weight_kg))),best1rm=Math.max(...rows.map(r=>e1rm(num(r.weight_kg),num(r.reps)))),vol=rows.reduce((a,r)=>a+num(r.weight_kg)*num(r.reps),0);
-  document.getElementById('exerciseStats').innerHTML=`<div><strong>${bestWeight} kg</strong><small>meilleure charge</small></div><div><strong>${best1rm.toFixed(1)}</strong><small>1RM estimé</small></div><div><strong>${fmt(vol)}</strong><small>volume</small></div>`;
-  const byDate=new Map();rows.forEach(r=>{const k=r.start_time||'';const v=e1rm(num(r.weight_kg),num(r.reps));byDate.set(k,Math.max(byDate.get(k)||0,v));});
-  drawChart([...byDate.entries()].sort((a,b)=>dateVal(a[0])-dateVal(b[0])).slice(-20).map(([,v])=>v));
+  const name=document.getElementById('exerciseSelect').value;
+  const rows=state.history.filter(r=>r.exercise_title===name&&num(r.reps)>0);
+  const sessions=exerciseSessions(name);
+  if(!rows.length||!sessions.length){
+    document.getElementById('exerciseStats').innerHTML='<div class="muted">Pas de données</div>';
+    document.getElementById('exerciseSummary').innerHTML='';
+    drawChart([]);
+    return;
+  }
+
+  const bestWeight=Math.max(...rows.map(r=>num(r.weight_kg)));
+  const best1rm=Math.max(...rows.map(r=>e1rm(num(r.weight_kg),num(r.reps))));
+  const totalVolume=rows.reduce((a,r)=>a+num(r.weight_kg)*num(r.reps),0);
+  document.getElementById('exerciseStats').innerHTML=
+    `<div><strong>${bestWeight} kg</strong><small>meilleure charge</small></div>`+
+    `<div><strong>${best1rm.toFixed(1)} kg</strong><small>1RM estimé max</small></div>`+
+    `<div><strong>${fmt(totalVolume)}</strong><small>volume total</small></div>`;
+
+  const latest=sessions[sessions.length-1];
+  const previous=sessions.length>1?sessions[sessions.length-2]:null;
+  const first=sessions[0];
+  const latestVal=metricValue(latest);
+  const prevVal=previous?metricValue(previous):null;
+  const firstVal=metricValue(first);
+  const vsPrev=previous?pctChange(prevVal,latestVal):null;
+  const sinceFirst=sessions.length>1?pctChange(firstVal,latestVal):null;
+  const previousBest=sessions.length>1?Math.max(...sessions.slice(0,-1).map(metricValue)):0;
+  const isPR=sessions.length>1&&latestVal>previousBest+1e-9;
+
+  const diffClass=vsPrev==null?'':vsPrev>=0?'progress-positive':'progress-negative';
+  const diffText=vsPrev==null?'—':`${vsPrev>=0?'+':''}${vsPrev.toFixed(1)} %`;
+  const overallClass=sinceFirst==null?'':sinceFirst>=0?'progress-positive':'progress-negative';
+  const overallText=sinceFirst==null?'—':`${sinceFirst>=0?'+':''}${sinceFirst.toFixed(1)} %`;
+
+  document.getElementById('exerciseSummary').innerHTML=
+    `<div class="progress-box"><small>Dernière performance</small><strong>${latest.bestSet.weight} kg × ${latest.bestSet.reps}${isPR?'<span class="pr-badge">PR</span>':''}</strong><small>${shortDate(latest.date)}</small></div>`+
+    `<div class="progress-box"><small>Séances sur cet exercice</small><strong>${sessions.length}</strong><small>${rows.length} séries</small></div>`+
+    `<div class="progress-box"><small>Vs séance précédente</small><strong class="${diffClass}">${diffText}</strong><small>${metricLabel().toLowerCase()}</small></div>`+
+    `<div class="progress-box"><small>Depuis la 1re séance</small><strong class="${overallClass}">${overallText}</strong><small>${shortDate(first.date)} → ${shortDate(latest.date)}</small></div>`;
+
+  document.getElementById('chartMetricTitle').textContent=metricLabel();
+  document.getElementById('chartUnit').textContent=metricUnit();
+  drawChart(sessions.slice(-20).map(s=>({value:metricValue(s),date:s.date})));
 }
-function drawChart(vals){
-  const svg=document.getElementById('progressChart');if(vals.length<2){svg.innerHTML='<text x="14" y="70">Pas assez de données pour la courbe.</text>';return;}
-  const min=Math.min(...vals),max=Math.max(...vals),span=max-min||1;const pts=vals.map((v,i)=>[12+i*(316/(vals.length-1)),120-(v-min)/span*95]);const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  svg.innerHTML=`<line x1="12" y1="120" x2="328" y2="120" stroke="#334155"/><path d="${d}" fill="none" stroke="#22c55e" stroke-width="3"/><text x="12" y="15">${max.toFixed(1)}</text><text x="12" y="136">${min.toFixed(1)}</text>`;
+
+function drawChart(points){
+  const svg=document.getElementById('progressChart');
+  if(points.length<2){
+    svg.innerHTML='<text x="14" y="82">Pas assez de données pour la courbe.</text>';
+    return;
+  }
+  const vals=points.map(p=>p.value);
+  const min=Math.min(...vals),max=Math.max(...vals),span=max-min||1;
+  const left=20,right=324,top=22,bottom=128;
+  const pts=points.map((p,i)=>[
+    left+i*((right-left)/(points.length-1)),
+    bottom-(p.value-min)/span*(bottom-top)
+  ]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const mid=Math.floor((points.length-1)/2);
+  const maxLabel=statsMetric==='volume'?fmt(max):max.toFixed(statsMetric==='e1rm'?1:0);
+  const minLabel=statsMetric==='volume'?fmt(min):min.toFixed(statsMetric==='e1rm'?1:0);
+  const circles=pts.map((p,i)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i===pts.length-1?4:2.6}" fill="#22c55e"/>`).join('');
+  svg.innerHTML=
+    `<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="#334155"/>`+
+    `<path d="${d}" fill="none" stroke="#22c55e" stroke-width="3"/>${circles}`+
+    `<text x="${left}" y="14">${maxLabel}</text>`+
+    `<text x="${left}" y="${bottom+14}">${minLabel}</text>`+
+    `<text x="${left}" y="162">${shortDate(points[0].date)}</text>`+
+    `<text x="${pts[mid][0]}" y="162" text-anchor="middle">${shortDate(points[mid].date)}</text>`+
+    `<text x="${right}" y="162" text-anchor="end">${shortDate(points[points.length-1].date)}</text>`;
 }
 function e1rm(w,r){return w>0&&r>0?w*(1+r/30):0}function num(v){const n=parseFloat(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0}function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function timeFmt(s){s=Math.max(0,s|0);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
