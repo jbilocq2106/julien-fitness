@@ -1,5 +1,5 @@
-const CACHE='my-training-v57';
-const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','program.json','manifest.json','favicon.png?v=56','icon-192.png?v=56','icon-512.png?v=56'];
+const CACHE='my-training-v58';
+const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
