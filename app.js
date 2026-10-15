@@ -140,6 +140,223 @@ function exerciseIllustration(type){
     default: return base(person('<path d="M60 31 L42 43 M60 31 L78 43"/>'),'<path class="motion-arrow" d="M95 20 L95 50"/>');
   }
 }
+
+function isCardioName(name){return normText(name).includes('tapis')}
+function videoUrlForExercise(name){
+  const q=`${name} technique musculation exécution correcte`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+}
+function exerciseFamily(name){
+  const n=normText(name);
+  const families=[
+    ['tirage-vertical',['tirage vertical','tirage verticale poulie haute']],
+    ['rowing-halteres',['rowing haltère','rowing haltere']],
+    ['rowing-poulie',['rowing poulie','rowing poitrine']],
+    ['elevations-laterales',['élévations latérales','élévation latérale','elevation laterale']],
+    ['triceps-corde',['extension triceps corde','extension triceps barre v','extension triceps barre']],
+    ['triceps-overhead',['au-dessus de la tête corde','extension triceps au-dessus']],
+    ['curl-poulie',['curl poulie basse corde','curl poulie']],
+    ['curl-pupitre',['curl pupitre']],
+    ['chest-press',['chest press']],
+    ['pec-fly',['pec fly','butterfly','écartés poulie','ecartes poulie']],
+    ['incline-db-press',['développé incliné haltères','developpe incline halteres']],
+    ['leg-press',['presse à cuisses','presse cuisses']],
+    ['leg-curl',['leg curl']],
+    ['leg-extension',['leg extension']]
+  ];
+  const hit=families.find(([,keys])=>keys.some(k=>n.includes(normText(k))));
+  return hit?hit[0]:n.replace(/[^a-z0-9]+/g,'-');
+}
+function repUpper(target){
+  const m=String(target||'').match(/(\d+)\s*[–-]\s*(\d+)/);
+  if(m)return Number(m[2]);
+  const n=String(target||'').match(/(\d+)/);
+  return n?Number(n[1]):null;
+}
+function roundToHalf(v){return Math.round(v*2)/2}
+function historicalNextWeight(name,current){
+  const aliases=historyAliases(name);
+  const vals=[...new Set(state.history.filter(r=>{
+    const ex=normText(r.exercise_title);
+    return aliases.some(a=>ex.includes(a));
+  }).map(r=>num(r.weight_kg)).filter(v=>v>current+0.001))].sort((a,b)=>a-b);
+  if(vals.length && vals[0] <= current*1.20)return vals[0];
+
+  const n=normText(name);
+  let step;
+  if(n.includes('haltère')||n.includes('haltere')) step=current<12?1:2;
+  else if(current<10) step=1;
+  else if(current<30) step=2;
+  else step=roundToHalf(current*0.05);
+
+  return roundToHalf(current+Math.max(step,0.5));
+}
+function applyProgressionOverrides(){
+  if(!state.program)return;
+  state.program.sessions.forEach(session=>session.exercises.forEach(e=>{
+    if(isCardioName(e.name))return;
+    const family=exerciseFamily(e.name);
+    const override=num(state.progressionOverrides?.[family]);
+    if(!override)return;
+
+    const weights=e.sets.map(s=>num(s.weight)).filter(v=>v>0);
+    if(!weights.length)return;
+    const max=Math.max(...weights);
+
+    e.sets.forEach(s=>{
+      const w=num(s.weight);
+      if(w>0 && Math.abs(w-max)<0.001)s.weight=override;
+    });
+    e.autoTarget=override;
+  }));
+}
+function deriveNextSessionFromHistory(){
+  const latest=uniqueWorkouts(state.history)[0];
+  if(!latest)return 'S1';
+  const t=normText(latest.title);
+  if(/^1\b/.test(t)||t.includes('seance 1'))return 'S2';
+  if(/^2\b/.test(t)||t.includes('seance 2'))return 'S3';
+  if(/^3\b/.test(t)||t.includes('seance 3'))return 'S4';
+  if(/^4\b/.test(t)||t.includes('seance 4')||t.includes('full body'))return 'S1';
+  return state.nextSessionId||'S1';
+}
+function migrateV4SequenceOnce(){
+  if(state.v4Migrated)return;
+  state.nextSessionId=deriveNextSessionFromHistory();
+  state.v4Migrated=true;
+  save();
+}
+
+function parseCardioDefaults(e){
+  const note=String(e.note||'');
+  const speed=(note.match(/([\d,.]+)\s*km\/h/i)||[])[1];
+  const incline=(note.match(/([\d,.]+)\s*%/)||[])[1];
+  return {
+    speed:speed?String(speed).replace(',','.'):'',
+    incline:incline?String(incline).replace(',','.'):'',
+    duration:'',
+    distance:'',
+    done:false
+  };
+}
+function cardioSummary(row){
+  const duration=num(row.duration_seconds);
+  const km=num(row.distance_km);
+  const speed=num(row.speed_kmh) || (duration>0&&km>0 ? km/(duration/3600) : 0);
+  let incline=num(row.incline_percent);
+
+  if(!incline){
+    const m=String(row.exercise_notes||'').match(/([\d,.]+)\s*%/);
+    if(m)incline=num(m[1]);
+  }
+
+  const parts=[];
+  if(incline)parts.push(`${incline}% inclinaison`);
+  if(speed)parts.push(`${speed.toFixed(1).replace('.',',')} km/h`);
+  if(duration)parts.push(`${Math.round(duration/60)} min`);
+  if(km)parts.push(`${km.toFixed(2).replace('.',',')} km`);
+  return parts.join(' • ')||'Cardio enregistré';
+}
+function recalculateProgressionFromWorkout(w){
+  const changes=[];
+
+  w.exercises.forEach(e=>{
+    if(isCardioName(e.name))return;
+    const done=e.sets.filter(s=>s.done && num(s.weight)>0 && num(s.reps)>0);
+    if(!done.length)return;
+
+    const maxWeight=Math.max(...done.map(s=>num(s.weight)));
+    const topSets=done.filter(s=>Math.abs(num(s.weight)-maxWeight)<0.001);
+
+    const valid=topSets.every(s=>{
+      const upper=repUpper(s.targetReps);
+      const rir=String(s.rir??'').trim()===''?null:num(s.rir);
+      return (!upper || num(s.reps)>=upper) && (rir===null || rir>=1);
+    });
+
+    if(!valid)return;
+
+    const next=historicalNextWeight(e.name,maxWeight);
+    if(!(next>maxWeight))return;
+
+    const fam=exerciseFamily(e.name);
+    const before=num(state.progressionOverrides[fam]);
+
+    if(next>before){
+      state.progressionOverrides[fam]=next;
+      changes.push(`${e.name}: ${maxWeight} → ${next} kg`);
+    }
+  });
+
+  return changes;
+}
+function formatWorkoutDate(s){
+  const d=new Date(s);
+  if(Number.isNaN(d.getTime()))return String(s||'');
+  return d.toLocaleString('fr-FR',{
+    day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'
+  });
+}
+function formatDurationSeconds(sec){
+  sec=num(sec);
+  if(!sec)return '';
+  const m=Math.round(sec/60);
+  return m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;
+}
+function bindWorkoutLinks(root){
+  if(!root)return;
+  root.querySelectorAll('[data-workout]').forEach(btn=>{
+    btn.onclick=()=>openWorkoutDetail(decodeURIComponent(btn.dataset.workout));
+  });
+}
+function openWorkoutDetail(key){
+  const rows=state.history.filter(r=>`${r.title||''}|${r.start_time||''}`===key);
+  if(!rows.length)return;
+
+  const first=rows[0];
+  const start=dateVal(first.start_time);
+  const end=Math.max(...rows.map(r=>dateVal(r.end_time)||0));
+
+  document.getElementById('sessionDetailTitle').textContent=first.title||'Séance';
+
+  const meta=[formatWorkoutDate(first.start_time)];
+  if(end>start)meta.push(formatDurationSeconds((end-start)/1000));
+  document.getElementById('sessionDetailMeta').textContent=meta.join(' • ');
+
+  const byEx=new Map();
+  rows.forEach(r=>{
+    const n=r.exercise_title||'Exercice';
+    if(!byEx.has(n))byEx.set(n,[]);
+    byEx.get(n).push(r);
+  });
+
+  document.getElementById('sessionDetailBody').innerHTML=[...byEx.entries()].map(([name,sets])=>{
+    const cardio=sets.some(r=>
+      r.set_type==='cardio' ||
+      num(r.distance_km)>0 ||
+      num(r.duration_seconds)>0 ||
+      isCardioName(name)
+    );
+
+    if(cardio){
+      return `<div class="history-exercise"><h3>${esc(name)}</h3><div class="cardio-history">${esc(cardioSummary(sets[0]))}</div></div>`;
+    }
+
+    return `<div class="history-exercise">
+      <h3>${esc(name)}</h3>
+      <div class="history-set-head"><span>#</span><span>Charge</span><span>Reps</span><span>RIR/RPE</span></div>
+      ${sets.map((r,i)=>`<div class="history-set-row">
+        <span>${i+1}</span>
+        <strong>${num(r.weight_kg)?num(r.weight_kg)+' kg':'—'}</strong>
+        <span>${num(r.reps)||'—'}</span>
+        <span>${r.rir!==undefined&&r.rir!==''?esc(r.rir):(r.rpe?esc(r.rpe):'—')}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+
+  document.getElementById('sessionModal').classList.remove('hidden');
+}
+
 function exerciseInfoCard(e){
   const g=exerciseGuide(e.name);
   const recent=recentExercisePerformance(e.name);
