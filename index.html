@@ -4,16 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#111827">
-  <title>Mon Training</title>
-  <link rel="icon" type="image/png" href="icon-192.png">
+  <title>My Training</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=54">
+  <link rel="stylesheet" href="styles.css?v=55">
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <div class="eyebrow">PROGRAMME PERSONNEL</div>
-      <h1>Mon Training</h1>
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <img src="logo.svg" alt="" width="48" height="48" style="width:48px;height:48px;border-radius:14px;flex:0 0 auto">
+      <div>
+        <div class="eyebrow">PROGRAMME PERSONNEL</div>
+        <h1>My Training</h1>
+      </div>
     </div>
     <div class="top-actions">
       <button id="helpBtn" class="ghost help-btn" aria-label="Mode d'emploi">?</button>
@@ -105,31 +108,29 @@
     </section>
   </main>
 
-
   <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-card">
       <div class="section-title">
         <div>
           <div class="eyebrow">MODE D'EMPLOI</div>
-          <h2 id="helpTitle">Utiliser Mon Training</h2>
+          <h2 id="helpTitle">Utiliser My Training</h2>
         </div>
         <button id="closeHelpBtn" class="ghost">Fermer</button>
       </div>
 
       <div class="help-steps">
-        <div class="help-step"><span>1</span><div><strong>Démarrer</strong><p>Accueil → Démarrer, ou Programme → séance 1, 2 ou 3.</p></div></div>
+        <div class="help-step"><span>1</span><div><strong>Démarrer</strong><p>Accueil → Démarrer, ou Programme → séance 1, 2, 3 ou 4.</p></div></div>
         <div class="help-step"><span>2</span><div><strong>Faire une série</strong><p>Saisis la charge et les répétitions, puis touche <b>OK</b>. La série est enregistrée et le repos conseillé démarre automatiquement.</p></div></div>
         <div class="help-step"><span>3</span><div><strong>Chrono repos</strong><p>Le chrono reste toujours visible. Tu peux lancer 45 s, 60 s, 90 s ou 2 min, puis ajuster avec −15 / +15.</p></div></div>
         <div class="help-step"><span>4</span><div><strong>Technique</strong><p>Chaque exercice affiche les muscles ciblés, 2 consignes clés, l'erreur principale à éviter et un bouton Vidéo pour voir une démonstration claire.</p></div></div>
         <div class="help-step"><span>5</span><div><strong>Fin de séance</strong><p>Touche Terminer. Une séance vide n'est jamais enregistrée. Les charges cibles des prochaines séances sont recalculées automatiquement à partir de tes performances.</p></div></div>
         <div class="help-step"><span>6</span><div><strong>Progression</strong><p>Stats permet de suivre charge, 1RM estimé et volume. Un badge PR signale un nouveau record.</p></div></div>
         <div class="help-step"><span>7</span><div><strong>Sauvegarde</strong><p>Historique → Sauvegarder exporte une copie JSON. Garde aussi ton CSV Hevy d'origine.</p></div></div>
-        <div class="help-step"><span>8</span><div><strong>Progression automatique des charges</strong><p>Après chaque séance, l’appli recalcule les objectifs des séances 1, 2 et 3. Une hausse validée sur le même mouvement se répercute partout où ce mouvement apparaît. Les kilos ne sont jamais transférés arbitrairement entre deux machines différentes.</p></div></div>
-<div class="help-step"><span>9</span><div><strong>Raccourcis Android</strong><p>Depuis l'icône Mon Training, un appui long proposera Prochaine séance, Séance 1, Séance 2 et Séance 3.</p></div></div>
+        <div class="help-step"><span>8</span><div><strong>Progression automatique des charges</strong><p>Après chaque séance, l’appli recalcule les objectifs. Une hausse validée sur le même mouvement se répercute partout où ce mouvement apparaît. Les kilos ne sont jamais transférés arbitrairement entre deux machines différentes.</p></div></div>
+        <div class="help-step"><span>9</span><div><strong>Raccourcis Android</strong><p>Depuis l'icône My Training, un appui long propose la prochaine séance et les séances 1 à 4.</p></div></div>
       </div>
     </div>
   </div>
-
 
   <div id="sessionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sessionDetailTitle">
     <div class="modal-card session-modal-card">
