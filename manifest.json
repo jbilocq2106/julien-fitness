@@ -66,6 +66,18 @@
           "type": "image/png"
         }
       ]
+    },
+    {
+      "name": "Dimanche Full Body",
+      "short_name": "Full Body",
+      "url": "./?start=S4",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

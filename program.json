@@ -1,11 +1,13 @@
 {
-  "version": 1,
+  "version": 5,
   "updated": "2026-10-15",
+  "weekly_note": "4 séances / semaine • Séance 4 = Full Body du dimanche • aucun soulevé de terre",
   "sessions": [
     {
       "id": "S1",
       "name": "Séance 1 — Pecs / Bras / Abdos",
-      "focus": "Pectoraux • bras • abdos profonds",
+      "focus": "Priorité pectoraux • triceps • biceps • abdos profonds",
+      "day_hint": "Flexible",
       "exercises": [
         {
           "name": "Chest Press machine",
@@ -24,7 +26,7 @@
             },
             {
               "reps": "8–10",
-              "weight": 50
+              "weight": 52
             }
           ],
           "rest": 90
@@ -33,20 +35,20 @@
           "name": "Développé incliné haltères",
           "sets": [
             {
-              "reps": "8–12",
+              "reps": "10–12",
               "weight": 16
             },
             {
-              "reps": "8–12",
+              "reps": "10–12",
               "weight": 16
             },
             {
-              "reps": "8–12",
+              "reps": "10–12",
               "weight": 16
             }
           ],
           "rest": 90,
-          "note": "Monter à 18 kg si RIR ≥ 2 et exécution propre."
+          "note": "RIR 1–2, amplitude contrôlée."
         },
         {
           "name": "Écartés poulie vis-à-vis",
@@ -83,96 +85,68 @@
             }
           ],
           "rest": 90,
-          "note": "Charge à calibrer sur la machine."
+          "note": "Dos équilibré sans charger les lombaires."
         },
         {
           "name": "Extension triceps corde",
+          "superset": "A",
           "sets": [
             {
-              "reps": "12",
+              "reps": "12–15",
               "weight": 32
             },
             {
-              "reps": "12",
+              "reps": "10–12",
               "weight": 36
             },
             {
-              "reps": "12",
+              "reps": "10–12",
               "weight": 36
             }
           ],
           "rest": 60
         },
         {
-          "name": "Extension triceps unilatérale poulie",
+          "name": "Curl poulie basse corde",
+          "superset": "A",
           "sets": [
             {
               "reps": "12–15",
-              "weight": null
+              "weight": 27
             },
             {
               "reps": "12–15",
-              "weight": null
-            }
-          ],
-          "rest": 60
-        },
-        {
-          "name": "Curl incliné haltères",
-          "sets": [
-            {
-              "reps": "10–12",
-              "weight": null
+              "weight": 32
             },
             {
-              "reps": "10–12",
-              "weight": null
-            },
-            {
-              "reps": "10–12",
-              "weight": null
+              "reps": "12–15",
+              "weight": 32
             }
           ],
           "rest": 60
         },
         {
           "name": "Crunch poulie",
+          "superset": "B",
           "sets": [
             {
               "reps": "12–15",
-              "weight": null
+              "weight": 64
             },
             {
               "reps": "12–15",
-              "weight": null
+              "weight": 64
             },
             {
               "reps": "12–15",
-              "weight": null
-            }
-          ],
-          "rest": 60
-        },
-        {
-          "name": "Dead bug lent",
-          "sets": [
-            {
-              "reps": "8–10/côté",
-              "weight": 0
-            },
-            {
-              "reps": "8–10/côté",
-              "weight": 0
-            },
-            {
-              "reps": "8–10/côté",
-              "weight": 0
+              "weight": 64
             }
           ],
           "rest": 45
         },
         {
           "name": "Pallof press",
+          "superset": "B",
           "sets": [
             {
               "reps": "10–12/côté",
@@ -199,10 +173,6 @@
             {
               "reps": "20–30 s",
               "weight": 0
-            },
-            {
-              "reps": "20–30 s",
-              "weight": 0
             }
           ],
           "rest": 30
@@ -211,19 +181,20 @@
           "name": "Tapis incliné",
           "sets": [
             {
-              "reps": "30–40 min",
+              "reps": "25–35 min",
               "weight": 0
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 12 %"
+          "note": "5,5 km/h • 12 % • renseigner inclinaison, vitesse, durée et km"
         }
       ]
     },
     {
       "id": "S2",
       "name": "Séance 2 — Dos / Épaules / Bras / Abdos",
-      "focus": "Dos • épaules • bras • gainage",
+      "focus": "Dos • épaules • bras • stabilité du tronc",
+      "day_hint": "Flexible",
       "exercises": [
         {
           "name": "Tirage vertical",
@@ -233,11 +204,7 @@
               "weight": 45
             },
             {
-              "reps": "12",
-              "weight": 59
-            },
-            {
-              "reps": "12",
+              "reps": "10–12",
               "weight": 59
             },
             {
@@ -252,33 +219,32 @@
           "sets": [
             {
               "reps": "12/côté",
+              "weight": 18
+            },
+            {
+              "reps": "10–12/côté",
               "weight": 20
             },
             {
-              "reps": "12/côté",
-              "weight": 20
-            },
-            {
-              "reps": "12/côté",
+              "reps": "10–12/côté",
               "weight": 20
             }
           ],
-          "rest": 90,
-          "note": "Tester 22 kg seulement quand 20 kg est très propre."
+          "rest": 90
         },
         {
           "name": "Rowing poulie assis",
           "sets": [
             {
               "reps": "12",
+              "weight": 39
+            },
+            {
+              "reps": "10–12",
               "weight": 52
             },
             {
-              "reps": "12",
-              "weight": 59
-            },
-            {
-              "reps": "12",
+              "reps": "10–12",
               "weight": 59
             }
           ],
@@ -306,15 +272,11 @@
           "name": "Face pull corde",
           "sets": [
             {
-              "reps": "15",
+              "reps": "12–15",
               "weight": null
             },
             {
-              "reps": "15",
-              "weight": null
-            },
-            {
-              "reps": "15",
+              "reps": "12–15",
               "weight": null
             }
           ],
@@ -322,42 +284,45 @@
         },
         {
           "name": "Extension triceps au-dessus de la tête corde",
+          "superset": "A",
           "sets": [
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "12–15",
+              "weight": 14
             },
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "12–15",
+              "weight": 18
             },
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "12–15",
+              "weight": 18
             }
           ],
           "rest": 60
         },
         {
-          "name": "Curl poulie basse corde",
+          "name": "Curl pupitre machine",
+          "superset": "A",
           "sets": [
             {
-              "reps": "12–13",
-              "weight": 32
+              "reps": "12",
+              "weight": 23
             },
             {
-              "reps": "12–13",
-              "weight": 32
+              "reps": "10–14",
+              "weight": 27
             },
             {
-              "reps": "12–13",
-              "weight": 32
+              "reps": "10–14",
+              "weight": 27
             }
           ],
           "rest": 60
         },
         {
           "name": "Relevés de genoux chaise romaine",
+          "superset": "B",
           "sets": [
             {
               "reps": "10–15",
@@ -376,6 +341,7 @@
         },
         {
           "name": "Planche RKC",
+          "superset": "B",
           "sets": [
             {
               "reps": "20–30 s",
@@ -388,24 +354,6 @@
             {
               "reps": "20–30 s",
               "weight": 0
-            }
-          ],
-          "rest": 45
-        },
-        {
-          "name": "Wood Chop / Pallof press",
-          "sets": [
-            {
-              "reps": "10/côté",
-              "weight": null
-            },
-            {
-              "reps": "10/côté",
-              "weight": null
-            },
-            {
-              "reps": "10/côté",
-              "weight": null
             }
           ],
           "rest": 45
@@ -413,10 +361,6 @@
         {
           "name": "Vacuum / transverse",
           "sets": [
-            {
-              "reps": "20–30 s",
-              "weight": 0
-            },
             {
               "reps": "20–30 s",
               "weight": 0
@@ -432,33 +376,34 @@
           "name": "Tapis incliné",
           "sets": [
             {
-              "reps": "35–45 min",
+              "reps": "30–40 min",
               "weight": 0
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 12 %"
+          "note": "5,5 km/h • 12 % • renseigner inclinaison, vitesse, durée et km"
         }
       ]
     },
     {
       "id": "S3",
       "name": "Séance 3 — Jambes / Pecs / Bras / Abdos",
-      "focus": "Jambes 1×/semaine • pecs • bras • abdos",
+      "focus": "Vraie séance jambes • pectoraux • bras • abdos",
+      "day_hint": "Flexible",
       "exercises": [
         {
           "name": "Presse à cuisses",
           "sets": [
             {
               "reps": "12",
-              "weight": 60
+              "weight": 80
             },
             {
               "reps": "12",
-              "weight": 70
+              "weight": 80
             },
             {
-              "reps": "12",
+              "reps": "10–12",
               "weight": 80
             },
             {
@@ -470,19 +415,19 @@
           "note": "Pas de soulevé de terre."
         },
         {
-          "name": "Leg Curl",
+          "name": "Leg Curl assis",
           "sets": [
             {
-              "reps": "10–15",
-              "weight": null
+              "reps": "12",
+              "weight": 39
             },
             {
-              "reps": "10–15",
-              "weight": null
+              "reps": "10–12",
+              "weight": 45
             },
             {
-              "reps": "10–15",
-              "weight": null
+              "reps": "10–12",
+              "weight": 52
             }
           ],
           "rest": 75
@@ -524,19 +469,19 @@
           "rest": 60
         },
         {
-          "name": "Développé convergent / machine inclinée",
+          "name": "Chest Press machine",
           "sets": [
             {
-              "reps": "8–12",
-              "weight": null
+              "reps": "12",
+              "weight": 39
             },
             {
-              "reps": "8–12",
-              "weight": null
+              "reps": "10–12",
+              "weight": 45
             },
             {
-              "reps": "8–12",
-              "weight": null
+              "reps": "8–10",
+              "weight": 52
             }
           ],
           "rest": 90
@@ -545,115 +490,91 @@
           "name": "Pec Fly machine",
           "sets": [
             {
-              "reps": "15",
-              "weight": 32
-            },
-            {
               "reps": "12",
               "weight": 45
             },
             {
               "reps": "10–12",
-              "weight": 45
+              "weight": 52
+            },
+            {
+              "reps": "8–10",
+              "weight": 52
             }
           ],
           "rest": 75
         },
         {
-          "name": "Extension triceps barre V / droite",
+          "name": "Extension triceps corde",
+          "superset": "A",
           "sets": [
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "12–15",
+              "weight": 32
             },
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 36
             },
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 36
             }
           ],
           "rest": 60
-        },
-        {
-          "name": "Dips assistés — triceps",
-          "sets": [
-            {
-              "reps": "8–12",
-              "weight": null
-            },
-            {
-              "reps": "8–12",
-              "weight": null
-            }
-          ],
-          "rest": 75
         },
         {
           "name": "Curl pupitre machine",
+          "superset": "A",
           "sets": [
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "12",
+              "weight": 23
             },
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "10–14",
+              "weight": 27
             },
             {
-              "reps": "10–12",
-              "weight": null
+              "reps": "10–14",
+              "weight": 27
             }
           ],
           "rest": 60
         },
         {
-          "name": "Crunch inversé",
-          "sets": [
-            {
-              "reps": "12–15",
-              "weight": 0
-            },
-            {
-              "reps": "12–15",
-              "weight": 0
-            },
-            {
-              "reps": "12–15",
-              "weight": 0
-            }
-          ],
-          "rest": 45
-        },
-        {
           "name": "Dead bug + expiration complète",
+          "superset": "B",
           "sets": [
             {
-              "reps": "8/côté",
+              "reps": "8–10/côté",
               "weight": 0
             },
             {
-              "reps": "8/côté",
+              "reps": "8–10/côté",
               "weight": 0
             },
             {
-              "reps": "8/côté",
+              "reps": "8–10/côté",
               "weight": 0
             }
           ],
           "rest": 45
         },
         {
-          "name": "Planche latérale",
+          "name": "Crunch inversé",
+          "superset": "B",
           "sets": [
             {
-              "reps": "30–45 s/côté",
+              "reps": "12–15",
               "weight": 0
             },
             {
-              "reps": "30–45 s/côté",
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
               "weight": 0
             }
           ],
@@ -666,6 +587,179 @@
               "reps": "20–30 s",
               "weight": 0
             },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 30
+        },
+        {
+          "name": "Tapis incliné",
+          "sets": [
+            {
+              "reps": "15–25 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "5,5 km/h • 10–12 % • renseigner inclinaison, vitesse, durée et km"
+        }
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "Séance 4 — Dimanche Full Body",
+      "focus": "Full body ludique • rappel bras/pecs/abdos • fatigue maîtrisée",
+      "day_hint": "Dimanche",
+      "exercises": [
+        {
+          "name": "Presse à cuisses",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 70
+            },
+            {
+              "reps": "10–12",
+              "weight": 80
+            },
+            {
+              "reps": "10–12",
+              "weight": 80
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Chest Press machine",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 39
+            },
+            {
+              "reps": "10–12",
+              "weight": 45
+            },
+            {
+              "reps": "8–10",
+              "weight": 52
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Tirage vertical",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 45
+            },
+            {
+              "reps": "10–12",
+              "weight": 59
+            },
+            {
+              "reps": "10–12",
+              "weight": 59
+            }
+          ],
+          "rest": 90
+        },
+        {
+          "name": "Leg Curl assis",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 39
+            },
+            {
+              "reps": "10–12",
+              "weight": 45
+            }
+          ],
+          "rest": 75
+        },
+        {
+          "name": "Élévations latérales",
+          "superset": "A",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 6
+            },
+            {
+              "reps": "12–15",
+              "weight": 6
+            },
+            {
+              "reps": "10–12",
+              "weight": 7
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Extension triceps corde",
+          "superset": "A",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 32
+            },
+            {
+              "reps": "10–12",
+              "weight": 36
+            },
+            {
+              "reps": "10–12",
+              "weight": 36
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Curl poulie basse corde",
+          "superset": "B",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 27
+            },
+            {
+              "reps": "12–15",
+              "weight": 32
+            },
+            {
+              "reps": "12–15",
+              "weight": 32
+            }
+          ],
+          "rest": 60
+        },
+        {
+          "name": "Pallof press",
+          "superset": "B",
+          "sets": [
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            },
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            },
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            }
+          ],
+          "rest": 45
+        },
+        {
+          "name": "Vacuum / transverse",
+          "sets": [
             {
               "reps": "20–30 s",
               "weight": 0
@@ -686,7 +780,7 @@
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 10–12 %"
+          "note": "5,5 km/h • 10–12 % • renseigner inclinaison, vitesse, durée et km"
         }
       ]
     }
