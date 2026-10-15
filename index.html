@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827">
   <title>Mon Training</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=53">
 </head>
 <body>
   <header class="topbar">
@@ -65,6 +65,7 @@
           <h2 id="workoutTitle"></h2>
           <div id="workoutElapsed" class="muted">00:00</div>
           <div class="muted workout-hint">↕ Tu peux changer l'ordre à tout moment • Supersets facultatifs</div>
+          <button id="rirToggleBtn" class="ghost rir-toggle">Afficher RIR</button>
         </div>
         <div class="workout-actions">
           <button id="cancelWorkoutBtn" class="ghost danger-outline">Annuler</button>
@@ -164,6 +165,6 @@
     <button data-view="statsView">Stats</button>
   </nav>
 
-  <script src="app.js?v=52"></script>
+  <script src="app.js?v=53"></script>
 </body>
 </html>

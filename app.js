@@ -4,6 +4,7 @@ let state={history:[],sessions:[],program:null,nextSessionId:'S1',activeWorkout:
 let timer={end:0,remaining:90,running:false,interval:null};
 let workoutTick=null,wakeLock=null;
 let shortcutHandled=false;
+let showRir=localStorage.getItem('mt_show_rir')==='1';
 
 function save(){localStorage.setItem(DBKEY,JSON.stringify({history:state.history,sessions:state.sessions,nextSessionId:state.nextSessionId,activeWorkout:state.activeWorkout,progressionOverrides:state.progressionOverrides||{},v4Migrated:!!state.v4Migrated}));}
 function load(){
@@ -455,6 +456,8 @@ function renderWorkout(){
   const w=state.activeWorkout;if(!w)return;
   document.getElementById('workoutTitle').textContent=w.name;
   document.getElementById('testModeBanner').classList.toggle('hidden',!w.testMode);
+  const rirBtn=document.getElementById('rirToggleBtn');
+  if(rirBtn)rirBtn.textContent=showRir?'Masquer RIR':'Afficher RIR';
 
   document.getElementById('exerciseList').innerHTML=w.exercises.map((e,ei)=>{
     const cardio=isCardioName(e.name);
@@ -485,12 +488,14 @@ function renderWorkout(){
         </div>
         <button class="cardio-done ${e.cardio?.done?'primary':'secondary'}" data-cardio-done="${ei}">${e.cardio?.done?'✓ Cardio validé':'Valider le cardio'}</button>
       `:`
-        <div class="set-head v4-set-head"><span>Série</span><span>kg</span><span>reps</span><span>RIR</span><span></span></div>
-        ${e.sets.map((s,si)=>`<div class="set-row v4-set-row ${s.done?'completed':''}" data-e="${ei}" data-s="${si}">
+        <div class="set-head ${showRir?'v4-set-head':'rir-hidden-head'}">
+          <span>Série</span><span>kg</span><span>reps</span>${showRir?'<span>RIR</span>':''}<span></span>
+        </div>
+        ${e.sets.map((s,si)=>`<div class="set-row ${showRir?'v4-set-row':'rir-hidden-row'} ${s.done?'completed':''}" data-e="${ei}" data-s="${si}">
           <div class="set-num">${s.i}</div>
           <input inputmode="decimal" placeholder="${s.targetWeight??'kg'}" value="${s.weight}" data-field="weight" aria-label="Poids série ${s.i}">
           <input inputmode="numeric" placeholder="${esc(s.targetReps)}" value="${s.reps}" data-field="reps" aria-label="Répétitions série ${s.i}">
-          <input inputmode="decimal" placeholder="2" value="${s.rir??''}" data-field="rir" aria-label="RIR série ${s.i}">
+          ${showRir?`<input inputmode="decimal" placeholder="2" value="${s.rir??''}" data-field="rir" aria-label="RIR série ${s.i}">`:''}
           <button class="done">${s.done?'✓':'OK'}</button>
         </div>`).join('')}
       `}
@@ -768,6 +773,12 @@ document.getElementById('closeHelpBtn').onclick=()=>document.getElementById('hel
 document.getElementById('helpModal').onclick=(e)=>{if(e.target.id==='helpModal')e.currentTarget.classList.add('hidden');};
 document.getElementById('closeSessionBtn').onclick=()=>document.getElementById('sessionModal').classList.add('hidden');
 document.getElementById('sessionModal').onclick=(e)=>{if(e.target.id==='sessionModal')e.currentTarget.classList.add('hidden');};
+
+document.getElementById('rirToggleBtn').onclick=()=>{
+  showRir=!showRir;
+  localStorage.setItem('mt_show_rir',showRir?'1':'0');
+  if(state.activeWorkout)renderWorkout();
+};
 
 document.getElementById('startNextBtn').onclick=()=>startWorkout(state.nextSessionId);
 document.getElementById('refreshProgramBtn').onclick=loadProgram;

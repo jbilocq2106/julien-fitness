@@ -80,3 +80,11 @@ label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}select{w
   .workout-head{gap:8px}.workout-actions{min-width:72px}.workout-actions button{font-size:11px;padding:8px 6px}
   .exercise-title-row{gap:5px}.exercise-quick-actions{min-width:72px}.rest-now,.ss-toggle{font-size:9px;padding:6px}
 }
+
+
+/* V5.3 — RIR facultatif, masqué par défaut */
+.rir-toggle{margin-top:7px;padding:5px 8px;font-size:10px;color:var(--muted)}
+.rir-hidden-head,.rir-hidden-row{grid-template-columns:30px 1fr 1fr 48px}
+@media (max-width:420px){
+  .rir-hidden-head,.rir-hidden-row{grid-template-columns:26px 1fr 1fr 44px;gap:5px}
+}
