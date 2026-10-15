@@ -1,5 +1,5 @@
-const CACHE='mon-training-v54';
-const CORE=['./','index.html','styles.css','app.js','program.json','manifest.json','icon-192.png','icon-512.png'];
+const CACHE='mon-training-v55';
+const CORE=['./','index.html','styles.css','app.js','program.json','manifest.json','logo.svg','icon-192.png','icon-512.png'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -28,7 +28,8 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('app.js') ||
     url.pathname.endsWith('styles.css') ||
     url.pathname.endsWith('program.json') ||
-    url.pathname.endsWith('manifest.json')
+    url.pathname.endsWith('manifest.json') ||
+    url.pathname.endsWith('logo.svg')
   );
 
   if(dynamic){
