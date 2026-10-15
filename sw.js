@@ -1,5 +1,5 @@
-const CACHE='my-training-v56';
-const CORE=['./','index.html','styles.css?v=56','app.js?v=56','program.json','manifest.json','favicon.png?v=56','icon-192.png?v=56','icon-512.png?v=56'];
+const CACHE='my-training-v57';
+const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','program.json','manifest.json','favicon.png?v=56','icon-192.png?v=56','icon-512.png?v=56'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -26,7 +26,9 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('/') ||
     url.pathname.endsWith('index.html') ||
     url.pathname.endsWith('app.js') ||
+    url.pathname.endsWith('features-v57.js') ||
     url.pathname.endsWith('styles.css') ||
+    url.pathname.endsWith('features-v57.css') ||
     url.pathname.endsWith('program.json') ||
     url.pathname.endsWith('manifest.json')
   );
