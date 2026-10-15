@@ -1,0 +1,26 @@
+/* My Training v57 — aperçu exercice + durée adaptative */
+.duration-panel{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#0e1727;border:1px solid var(--line);border-radius:12px;
+  padding:10px 11px;margin:-2px 0 9px;
+}
+.duration-label{font-size:12px;color:#dbeafe}
+.duration-label strong{color:var(--accent);font-size:14px}
+.duration-adapted{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
+.duration-edit{font-size:11px;padding:7px 9px;white-space:nowrap}
+.program-demo-btn{border:1px solid var(--line);cursor:pointer;padding:0}
+.program-demo-btn:active{transform:scale(.94)}
+.exercise-demo-modal{display:flex;flex-direction:column;gap:9px}
+.demo-name{font-size:13px;color:var(--muted)}
+.demo-name strong{color:var(--text)}
+.demo-recent{display:flex;justify-content:space-between;gap:12px;background:#0e1727;border-radius:10px;padding:10px;font-size:12px}
+.demo-recent span{color:var(--muted)}
+.demo-cue{font-size:13px;color:#dbeafe;background:#0e1727;border-radius:10px;padding:9px 10px}
+.demo-avoid{font-size:12px;color:#fca5a5;padding:2px 2px 4px}
+.demo-big{margin-top:4px}
+@media(max-width:420px){
+  .duration-panel{padding:9px}
+  .duration-label{font-size:11px}
+  .duration-label strong{font-size:13px}
+  .duration-edit{font-size:10px}
+}
