@@ -1,5 +1,5 @@
-const CACHE='mon-training-v55';
-const CORE=['./','index.html','styles.css','app.js','program.json','manifest.json','logo.svg','icon-192.png','icon-512.png'];
+const CACHE='my-training-v56';
+const CORE=['./','index.html','styles.css?v=56','app.js?v=56','program.json','manifest.json','favicon.png?v=56','icon-192.png?v=56','icon-512.png?v=56'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -11,7 +11,7 @@ self.addEventListener('install',event=>{
 self.addEventListener('activate',event=>{
   event.waitUntil(
     caches.keys()
-      .then(keys=>Promise.all(keys.filter(k=>k.startsWith('mon-training-')&&k!==CACHE).map(k=>caches.delete(k))))
+      .then(keys=>Promise.all(keys.filter(k=>(k.startsWith('mon-training-')||k.startsWith('my-training-'))&&k!==CACHE).map(k=>caches.delete(k))))
       .then(()=>self.clients.claim())
   );
 });
@@ -28,8 +28,7 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('app.js') ||
     url.pathname.endsWith('styles.css') ||
     url.pathname.endsWith('program.json') ||
-    url.pathname.endsWith('manifest.json') ||
-    url.pathname.endsWith('logo.svg')
+    url.pathname.endsWith('manifest.json')
   );
 
   if(dynamic){

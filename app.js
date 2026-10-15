@@ -559,14 +559,14 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
     if(e.cardio?.done){
       const durationMin=num(e.cardio.duration),distance=num(e.cardio.distance),speed=num(e.cardio.speed),incline=num(e.cardio.incline);
       state.history.unshift({
-        title,start_time:start.toISOString(),end_time:end.toISOString(),description:'Mon Training',
+        title,start_time:start.toISOString(),end_time:end.toISOString(),description:'My Training',
         exercise_title:e.name,superset_id:'',exercise_notes:e.note,set_index:0,set_type:'cardio',
         weight_kg:0,reps:0,distance_km:distance||'',duration_seconds:durationMin?durationMin*60:'',
         speed_kmh:speed||'',incline_percent:incline||'',rpe:'',rir:'',exercise_order:exerciseIndex+1
       });
     }
     e.sets.filter(s=>s.done&&num(s.reps)>0).forEach((s,i)=>state.history.unshift({
-      title,start_time:start.toISOString(),end_time:end.toISOString(),description:'Mon Training',
+      title,start_time:start.toISOString(),end_time:end.toISOString(),description:'My Training',
       exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:'normal',
       weight_kg:num(s.weight),reps:num(s.reps),distance_km:'',duration_seconds:'',speed_kmh:'',incline_percent:'',
       rpe:'',rir:String(s.rir??''),exercise_order:exerciseIndex+1
@@ -620,7 +620,7 @@ function renderHistory(){
   bindWorkoutLinks(document.getElementById('historyList'));
 }
 document.getElementById('exportBtn').onclick=()=>{
-  const blob=new Blob([JSON.stringify({history:state.history,sessions:state.sessions,nextSessionId:state.nextSessionId,progressionOverrides:state.progressionOverrides},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mon-training-backup.json';a.click();URL.revokeObjectURL(a.href);
+  const blob=new Blob([JSON.stringify({history:state.history,sessions:state.sessions,nextSessionId:state.nextSessionId,progressionOverrides:state.progressionOverrides},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='my-training-backup.json';a.click();URL.revokeObjectURL(a.href);
 };
 let statsMetric='weight';
 
