@@ -16,5 +16,56 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Prochaine séance",
+      "short_name": "Prochaine",
+      "description": "Démarrer directement la prochaine séance",
+      "url": "./?start=next",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Séance 1",
+      "short_name": "Séance 1",
+      "url": "./?start=S1",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Séance 2",
+      "short_name": "Séance 2",
+      "url": "./?start=S2",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Séance 3",
+      "short_name": "Séance 3",
+      "url": "./?start=S3",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

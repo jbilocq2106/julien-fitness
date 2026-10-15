@@ -3,6 +3,7 @@ const DBKEY='mt_data_v1';
 let state={history:[],sessions:[],program:null,nextSessionId:'S1',activeWorkout:null};
 let timer={end:0,remaining:90,running:false,interval:null};
 let workoutTick=null,wakeLock=null;
+let shortcutHandled=false;
 
 function save(){localStorage.setItem(DBKEY,JSON.stringify({history:state.history,sessions:state.sessions,nextSessionId:state.nextSessionId,activeWorkout:state.activeWorkout}));}
 function load(){try{const d=JSON.parse(localStorage.getItem(DBKEY)||'{}');Object.assign(state,d);}catch(e){}}
@@ -10,7 +11,7 @@ async function loadProgram(){
   const old=state.program;
   try{state.program=await fetch('program.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json());}
   catch(e){ if(!old){document.getElementById('nextSessionName').textContent='Programme indisponible';return;} state.program=old; }
-  renderProgram();renderHome();
+  renderProgram();renderHome();handleShortcutLaunch();
 }
 function fmt(n){return new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(n||0)}
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='historyView')renderHistory();if(id==='statsView')renderStatsSelect();}
@@ -28,9 +29,156 @@ function renderHome(){
   const recent=uniqueWorkouts(state.history).slice(0,5);
   document.getElementById('recentList').innerHTML=recent.length?recent.map(w=>`<div class="list-item"><div><strong>${esc(w.title)}</strong><small>${esc(w.start_time)}</small></div><small>${w.sets} séries</small></div>`).join(''):'<div class="muted">Aucune séance importée.</div>';
 }
+
+const EXERCISE_GUIDES=[
+  {keys:['chest press','développé convergent','machine inclinée'],type:'press',muscles:'Pectoraux • triceps • deltoïde antérieur',cues:['Omoplates serrées et poitrine haute','Pousse sans décoller les épaules'],avoid:'Épaules en avant en fin de poussée'},
+  {keys:['développé incliné haltères'],type:'inclinePress',muscles:'Haut des pectoraux • triceps',cues:['Banc modérément incliné','Descente lente, coudes sous contrôle'],avoid:'Inclinaison trop forte qui transforme en développé épaules'},
+  {keys:['écartés poulie','pec fly','butterfly'],type:'fly',muscles:'Pectoraux',cues:['Coudes légèrement fléchis','Ramène les bras comme si tu entourais un tonneau'],avoid:'Chercher trop loin derrière le buste'},
+  {keys:['tirage vertical'],type:'pulldown',muscles:'Grand dorsal • biceps • haut du dos',cues:['Poitrine sortie, épaules basses','Tire les coudes vers les côtes'],avoid:'Tirer derrière la nuque'},
+  {keys:['rowing haltère'],type:'row1',muscles:'Dos • grand dorsal • biceps',cues:['Dos neutre et gainé','Ramène le coude vers la hanche'],avoid:'Tourner le buste pour finir la répétition'},
+  {keys:['rowing poulie','rowing poitrine'],type:'row',muscles:'Milieu du dos • rhomboïdes • biceps',cues:['Poitrine stable','Serre les omoplates en fin de tirage'],avoid:'Se balancer en arrière'},
+  {keys:['élévations latérales'],type:'lateral',muscles:'Deltoïde moyen',cues:['Bras souples, poignets neutres','Monte jusqu’à hauteur d’épaule'],avoid:'Hausser les trapèzes'},
+  {keys:['face pull'],type:'facepull',muscles:'Arrière d’épaule • trapèzes • rotateurs externes',cues:['Tire vers le front','Écarte les mains en fin de mouvement'],avoid:'Charge trop lourde et mouvement raccourci'},
+  {keys:['extension triceps corde','extension triceps barre'],type:'pushdown',muscles:'Triceps',cues:['Coudes collés au corps','Extension complète sans bouger les épaules'],avoid:'Laisser les coudes partir vers l’avant'},
+  {keys:['extension triceps unilatérale'],type:'pushdown1',muscles:'Triceps',cues:['Épaule fixe','Contrôle la remontée'],avoid:'Tourner le buste'},
+  {keys:['au-dessus de la tête corde'],type:'overheadTri',muscles:'Triceps • longue portion',cues:['Coudes orientés vers l’avant','Étirement contrôlé derrière la tête'],avoid:'Creuser fortement le bas du dos'},
+  {keys:['dips assistés'],type:'dips',muscles:'Triceps • pectoraux',cues:['Buste plutôt vertical pour les triceps','Descends seulement dans une amplitude confortable'],avoid:'Épaules très basses ou douloureuses'},
+  {keys:['curl incliné'],type:'curl',muscles:'Biceps',cues:['Bras en arrière du buste','Garde les coudes immobiles'],avoid:'Décoller les coudes vers l’avant'},
+  {keys:['curl poulie','curl pupitre'],type:'curl',muscles:'Biceps • brachial',cues:['Mouvement contrôlé','Contracte sans casser les poignets'],avoid:'Balancer le buste'},
+  {keys:['crunch poulie'],type:'crunch',muscles:'Grand droit • gainage abdominal',cues:['Enroule le sternum vers le bassin','Expire fortement en bas'],avoid:'Tirer seulement avec les bras'},
+  {keys:['crunch inversé'],type:'reverseCrunch',muscles:'Abdominaux • bassin',cues:['Enroule le bassin vers le thorax','Mouvement lent, sans élan'],avoid:'Balancer les jambes'},
+  {keys:['dead bug'],type:'deadbug',muscles:'Transverse • gainage profond',cues:['Plaque doucement les lombaires','Expire en allongeant bras/jambe'],avoid:'Laisser le bas du dos se creuser'},
+  {keys:['pallof'],type:'pallof',muscles:'Transverse • obliques • anti-rotation',cues:['Bassin et épaules face devant','Éloigne les mains sans tourner'],avoid:'Laisser le câble faire pivoter le tronc'},
+  {keys:['wood chop'],type:'woodchop',muscles:'Obliques • tronc',cues:['Tourne avec contrôle','Garde les côtes basses'],avoid:'Tirer uniquement avec les bras'},
+  {keys:['vacuum'],type:'vacuum',muscles:'Transverse',cues:['Expire presque tout l’air','Rentre le ventre sans bloquer la gorge'],avoid:'Forcer longtemps en apnée'},
+  {keys:['relevés de genoux'],type:'kneeRaise',muscles:'Abdominaux • fléchisseurs de hanche',cues:['Commence par rétroverser le bassin','Monte les genoux sans élan'],avoid:'Se balancer sur les appuis'},
+  {keys:['planche rkc'],type:'plank',muscles:'Transverse • sangle abdominale',cues:['Serre fessiers et abdos fort','Coudes vers les pieds sans bouger'],avoid:'Creuser les lombaires'},
+  {keys:['planche latérale'],type:'sidePlank',muscles:'Obliques • moyen fessier',cues:['Corps aligné','Pousse le sol avec l’avant-bras'],avoid:'Laisser le bassin tomber'},
+  {keys:['presse à cuisses'],type:'legpress',muscles:'Quadriceps • fessiers • ischios',cues:['Pieds stables sur la plateforme','Descends tant que le bassin reste plaqué'],avoid:'Décoller le bassin ou verrouiller brutalement les genoux'},
+  {keys:['leg curl'],type:'legcurl',muscles:'Ischio-jambiers',cues:['Bassin stable','Ramène les talons sans donner d’élan'],avoid:'Soulever les hanches'},
+  {keys:['leg extension'],type:'legext',muscles:'Quadriceps',cues:['Genou aligné avec l’axe de la machine','Monte puis redescends lentement'],avoid:'Claquer les genoux en extension'},
+  {keys:['mollets'],type:'calf',muscles:'Mollets',cues:['Amplitude complète','Marque une courte pause en haut'],avoid:'Faire des rebonds rapides'},
+  {keys:['tapis'],type:'treadmill',muscles:'Cardio • jambes • dépense énergétique',cues:['Posture haute, mains libres si possible','Cadence régulière et respiration contrôlée'],avoid:'Se suspendre aux poignées'}
+];
+
+function normText(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function exerciseGuide(name){
+  const n=normText(name);
+  return EXERCISE_GUIDES.find(g=>g.keys.some(k=>n.includes(normText(k))))||
+    {type:'generic',muscles:'Muscles principaux de l’exercice',cues:['Exécution lente et contrôlée','Garde 1–2 répétitions en réserve'],avoid:'Sacrifier la technique pour augmenter la charge'};
+}
+function historyAliases(name){
+  const n=normText(name);
+  const groups=[
+    [['tirage vertical'],['tirage verticale poulie haute','tirage vertical']],
+    [['pec fly','écartés poulie','chest press'],['butterfly (pec deck)','pec fly','écarté','chest press']],
+    [['rowing haltère'],['rowing haltère','rowing haltere']],
+    [['rowing poulie','rowing poitrine'],['rowing poulie assis','rowing poulie','rowing']],
+    [['élévations latérales'],['élévation latérale','elevation laterale']],
+    [['curl poulie'],['curl poulie basse corde','curl poulie']],
+    [['extension triceps corde'],['extension triceps corde']],
+    [['presse à cuisses'],['presse à cuisses','presse cuisses']]
+  ];
+  const hit=groups.find(([need])=>need.some(k=>n.includes(normText(k))));
+  return hit?hit[1].map(normText):[n];
+}
+function recentExercisePerformance(name){
+  const aliases=historyAliases(name);
+  const rows=state.history.filter(r=>{
+    const ex=normText(r.exercise_title);
+    return aliases.some(a=>ex.includes(a)) && num(r.reps)>0;
+  }).sort((a,b)=>dateVal(b.start_time)-dateVal(a.start_time));
+  if(!rows.length)return null;
+  const latestDate=rows[0].start_time;
+  const same=rows.filter(r=>r.start_time===latestDate);
+  const best=same.slice().sort((a,b)=>e1rm(num(b.weight_kg),num(b.reps))-e1rm(num(a.weight_kg),num(a.reps)))[0];
+  return {date:latestDate,weight:num(best.weight_kg),reps:num(best.reps)};
+}
+function exerciseIllustration(type){
+  const base=(body,arrow='')=>`<svg class="exercise-svg" viewBox="0 0 120 82" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${body}${arrow}</g>
+  </svg>`;
+  const head='<circle cx="60" cy="16" r="7"/>';
+  const person=(arms,legs='<path d="M60 51 L48 73 M60 51 L72 73"/>')=>head+'<path d="M60 24 L60 51"/>'+arms+legs;
+  const arrow=(d)=>`<path class="motion-arrow" d="${d}"/><path class="motion-arrow" d="M92 22 l-7 -4 M92 22 l-4 7"/>`;
+  switch(type){
+    case 'press': return base(person('<path d="M60 31 L43 38 L25 38 M60 31 L77 38 L95 38"/>'),'<path class="motion-arrow" d="M28 29 L18 29 M92 29 L102 29"/>');
+    case 'inclinePress': return base('<path d="M30 62 L82 38"/>'+head.replace('cx="60" cy="16"','cx="46" cy="41"')+'<path d="M52 45 L70 38 L86 25 M52 45 L67 52 L87 43 M47 49 L36 66 M55 52 L52 72"/>','<path class="motion-arrow" d="M84 40 L96 26"/>');
+    case 'fly': return base(person('<path d="M60 31 L35 26 M60 31 L85 26"/>'),'<path class="motion-arrow" d="M33 31 Q60 48 87 31"/>');
+    case 'pulldown': return base('<path d="M25 7 L95 7"/>'+person('<path d="M60 31 L38 18 L27 8 M60 31 L82 18 L93 8"/>'),'<path class="motion-arrow" d="M103 12 L103 45"/>');
+    case 'row': return base('<path d="M25 61 L91 61"/>'+head.replace('cx="60" cy="16"','cx="49" cy="30"')+'<path d="M55 34 L69 48 L89 48 M55 34 L46 52 L34 61 M58 39 L45 58 M65 45 L79 61"/>','<path class="motion-arrow" d="M91 39 L72 39"/>');
+    case 'row1': return base('<path d="M25 58 L90 58"/>'+head.replace('cx="60" cy="16"','cx="50" cy="28"')+'<path d="M56 32 L72 42 L89 36 M56 32 L44 50 L31 58 M60 38 L50 58 M70 45 L78 58"/>','<path class="motion-arrow" d="M93 34 L78 24"/>');
+    case 'lateral': return base(person('<path d="M60 31 L31 31 M60 31 L89 31"/>'),'<path class="motion-arrow" d="M28 45 Q25 33 31 21 M92 45 Q95 33 89 21"/>');
+    case 'facepull': return base(person('<path d="M60 31 L42 25 L29 31 M60 31 L78 25 L91 31"/>'),'<path class="motion-arrow" d="M96 31 L80 27"/>');
+    case 'pushdown': return base(person('<path d="M60 30 L46 35 L46 54 M60 30 L74 35 L74 54"/>'),'<path class="motion-arrow" d="M84 39 L84 63"/>');
+    case 'overheadTri': return base(person('<path d="M60 30 L49 17 L55 5 M60 30 L71 17 L65 5"/>'),'<path class="motion-arrow" d="M83 30 L83 8"/>');
+    case 'curl': return base(person('<path d="M60 31 L44 43 L35 54 M60 31 L76 43 L85 54"/>'),'<path class="motion-arrow" d="M29 58 Q37 44 43 39"/>');
+    case 'crunch': return base('<path d="M25 66 L95 66"/>'+head.replace('cx="60" cy="16"','cx="48" cy="30"')+'<path d="M54 34 Q61 48 73 53 M73 53 L86 66 M73 53 L64 66 M55 36 L43 52"/>','<path class="motion-arrow" d="M42 22 Q57 28 63 41"/>');
+    case 'reverseCrunch': return base('<path d="M20 68 L100 68"/>'+head.replace('cx="60" cy="16"','cx="33" cy="52"')+'<path d="M40 53 L60 55 L75 43 L90 34 M40 53 L53 68"/>','<path class="motion-arrow" d="M91 40 Q84 27 73 24"/>');
+    case 'deadbug': return base('<path d="M15 68 L105 68"/>'+head.replace('cx="60" cy="16"','cx="42" cy="54"')+'<path d="M49 55 L62 52 L80 36 M60 53 L78 63 M60 53 L47 35"/>','<path class="motion-arrow" d="M83 34 L96 25"/>');
+    case 'pallof': return base(person('<path d="M60 31 L78 36 L100 36 M60 31 L78 42 L100 42"/>'),'<path class="motion-arrow" d="M82 56 L82 18"/>');
+    case 'woodchop': return base(person('<path d="M60 31 L78 20 L94 10 M60 31 L72 46 L88 61"/>'),'<path class="motion-arrow" d="M98 14 Q83 39 91 62"/>');
+    case 'vacuum': return base(person('<path d="M60 31 L45 41 M60 31 L75 41"/>'),'<path class="motion-arrow" d="M45 45 L55 45 M75 45 L65 45"/>');
+    case 'kneeRaise': return base('<path d="M27 7 L93 7"/>'+person('<path d="M60 30 L42 10 M60 30 L78 10"/>','<path d="M60 51 L47 55 L42 42 M60 51 L73 55 L78 42"/>'),'<path class="motion-arrow" d="M90 64 Q80 47 72 42"/>');
+    case 'plank': return base('<path d="M20 65 L100 65"/>'+head.replace('cx="60" cy="16"','cx="91" cy="45"')+'<path d="M84 48 L57 51 L31 59 M57 51 L72 65 M35 59 L24 65"/>');
+    case 'sidePlank': return base('<path d="M20 67 L100 67"/>'+head.replace('cx="60" cy="16"','cx="86" cy="30"')+'<path d="M80 36 L60 47 L36 59 M60 47 L72 67 M38 59 L27 67 M80 36 L72 18"/>');
+    case 'legpress': return base('<path d="M22 68 L64 68 M86 14 L104 52"/>'+head.replace('cx="60" cy="16"','cx="38" cy="43"')+'<path d="M44 47 L58 55 L75 47 L88 34 M58 55 L45 68"/>','<path class="motion-arrow" d="M89 35 L99 23"/>');
+    case 'legcurl': return base('<path d="M20 48 L85 48"/>'+head.replace('cx="60" cy="16"','cx="31" cy="34"')+'<path d="M38 37 L56 43 L72 49 L85 64 M56 43 L46 48"/>','<path class="motion-arrow" d="M90 64 Q84 50 75 47"/>');
+    case 'legext': return base('<path d="M25 30 L70 30 L70 65"/>'+head.replace('cx="60" cy="16"','cx="35" cy="18"')+'<path d="M40 24 L53 38 L67 41 L86 41 M53 38 L43 30"/>','<path class="motion-arrow" d="M87 50 L103 42"/>');
+    case 'calf': return base(person('<path d="M60 31 L44 44 M60 31 L76 44"/>'),'<path class="motion-arrow" d="M98 66 L98 48"/>');
+    case 'dips': return base('<path d="M24 38 L45 38 M75 38 L96 38"/>'+person('<path d="M60 31 L45 39 M60 31 L75 39"/>'),'<path class="motion-arrow" d="M106 25 L106 55"/>');
+    case 'treadmill': return base('<path d="M18 67 L102 67 L88 75 L28 75"/>'+head.replace('cx="60" cy="16"','cx="63" cy="23"')+'<path d="M61 31 L55 46 L42 57 M56 43 L76 50 M55 46 L66 61 M42 57 L28 67"/>','<path class="motion-arrow" d="M80 17 L98 17"/>');
+    default: return base(person('<path d="M60 31 L42 43 M60 31 L78 43"/>'),'<path class="motion-arrow" d="M95 20 L95 50"/>');
+  }
+}
+function exerciseInfoCard(e){
+  const g=exerciseGuide(e.name);
+  const recent=recentExercisePerformance(e.name);
+  const target=e.sets?.[0];
+  const targetText=target?(target.weight?`${target.weight} kg × ${target.reps}`:`${target.reps}`):'—';
+  const recentText=recent?(recent.weight?`${recent.weight} kg × ${recent.reps}`:`${recent.reps} reps`):'Pas encore de donnée';
+  return `<div class="exercise-guide">
+    <div class="exercise-visual">${exerciseIllustration(g.type)}</div>
+    <div class="exercise-guide-body">
+      <div class="muscle-chip">${esc(g.muscles)}</div>
+      <div class="guide-pair"><span>Dernier</span><strong>${esc(recentText)}</strong></div>
+      <div class="guide-pair"><span>Objectif</span><strong>${esc(targetText)}</strong></div>
+    </div>
+    <button class="technique-toggle ghost" type="button">Technique</button>
+    <div class="technique-details hidden">
+      <div>✓ ${esc(g.cues[0])}</div>
+      <div>✓ ${esc(g.cues[1])}</div>
+      <div class="avoid">À éviter : ${esc(g.avoid)}</div>
+    </div>
+  </div>`;
+}
+function handleShortcutLaunch(){
+  if(shortcutHandled||!state.program)return;
+  shortcutHandled=true;
+  const params=new URLSearchParams(location.search);
+  const start=params.get('start');
+  if(!start)return;
+  history.replaceState({},'',location.pathname);
+  if(start==='next')startWorkout(state.nextSessionId);
+  else if(['S1','S2','S3'].includes(start))startWorkout(start);
+}
+
 function renderProgram(){
   if(!state.program)return;
-  document.getElementById('programCards').innerHTML=state.program.sessions.map(s=>`<div class="card session-card"><div class="section-title"><div><h3>${esc(s.name)}</h3><div class="muted">${esc(s.focus)}</div></div><button class="primary" onclick="startWorkout('${s.id}')">Démarrer</button></div>${s.exercises.map(e=>`<div class="exercise-row"><span>${esc(e.name)}</span><span class="badge">${e.sets.length} série${e.sets.length>1?'s':''} • ${e.rest?e.rest+'s':'—'}</span></div>`).join('')}</div>`).join('');
+  document.getElementById('programCards').innerHTML=state.program.sessions.map(s=>`<div class="card session-card">
+    <div class="section-title">
+      <div><h3>${esc(s.name)}</h3><div class="muted">${esc(s.focus)}</div></div>
+      <button class="primary" onclick="startWorkout('${s.id}')">Démarrer</button>
+    </div>
+    ${s.exercises.map(e=>{
+      const g=exerciseGuide(e.name);
+      return `<div class="exercise-row program-exercise-row">
+        <div class="program-mini">${exerciseIllustration(g.type)}</div>
+        <div class="program-exercise-main"><span>${esc(e.name)}</span><small>${esc(g.muscles)}</small></div>
+        <span class="badge">${e.sets.length} série${e.sets.length>1?'s':''} • ${e.rest?e.rest+'s':'—'}</span>
+      </div>`;
+    }).join('')}
+  </div>`).join('');
 }
 function startWorkout(id){
   const s=getSession(id); if(!s)return;
@@ -41,9 +189,36 @@ window.startWorkout=startWorkout;
 function renderWorkout(){
   const w=state.activeWorkout;if(!w)return;
   document.getElementById('workoutTitle').textContent=w.name;
-  document.getElementById('exerciseList').innerHTML=w.exercises.map((e,ei)=>`<div class="exercise"><h3>${esc(e.name)}</h3>${e.note?`<div class="exercise-note">${esc(e.note)}</div>`:''}<div class="muted">Repos conseillé : ${e.rest||0}s</div>${e.sets.map((s,si)=>`<div class="set-row ${s.done?'completed':''}" data-e="${ei}" data-s="${si}"><div class="set-num">${s.i}</div><input inputmode="decimal" placeholder="${s.targetWeight??'kg'}" value="${s.weight}" data-field="weight"><input inputmode="numeric" placeholder="${esc(s.targetReps)}" value="${s.reps}" data-field="reps"><button class="done">${s.done?'✓':'OK'}</button></div>`).join('')}</div>`).join('');
-  document.querySelectorAll('.set-row input').forEach(inp=>inp.onchange=(ev)=>{const row=ev.target.closest('.set-row');state.activeWorkout.exercises[+row.dataset.e].sets[+row.dataset.s][ev.target.dataset.field]=ev.target.value;save();});
-  document.querySelectorAll('.set-row .done').forEach(btn=>btn.onclick=(ev)=>{const row=ev.target.closest('.set-row'),e=state.activeWorkout.exercises[+row.dataset.e],s=e.sets[+row.dataset.s];s.done=!s.done;save();renderWorkout();if(s.done&&e.rest)startTimer(e.rest);});
+  document.getElementById('exerciseList').innerHTML=w.exercises.map((e,ei)=>`<div class="exercise">
+    <div class="exercise-title-row">
+      <div><h3>${esc(e.name)}</h3>${e.note?`<div class="exercise-note">${esc(e.note)}</div>`:''}</div>
+      ${e.rest?`<button class="rest-now secondary" data-rest="${e.rest}">Repos ${e.rest}s</button>`:''}
+    </div>
+    ${exerciseInfoCard(e)}
+    <div class="set-head"><span>Série</span><span>kg</span><span>reps</span><span></span></div>
+    ${e.sets.map((s,si)=>`<div class="set-row ${s.done?'completed':''}" data-e="${ei}" data-s="${si}">
+      <div class="set-num">${s.i}</div>
+      <input inputmode="decimal" placeholder="${s.targetWeight??'kg'}" value="${s.weight}" data-field="weight" aria-label="Poids série ${s.i}">
+      <input inputmode="numeric" placeholder="${esc(s.targetReps)}" value="${s.reps}" data-field="reps" aria-label="Répétitions série ${s.i}">
+      <button class="done">${s.done?'✓':'OK'}</button>
+    </div>`).join('')}
+  </div>`).join('');
+
+  document.querySelectorAll('.set-row input').forEach(inp=>inp.onchange=(ev)=>{
+    const row=ev.target.closest('.set-row');
+    state.activeWorkout.exercises[+row.dataset.e].sets[+row.dataset.s][ev.target.dataset.field]=ev.target.value;
+    save();
+  });
+  document.querySelectorAll('.set-row .done').forEach(btn=>btn.onclick=(ev)=>{
+    const row=ev.target.closest('.set-row'),e=state.activeWorkout.exercises[+row.dataset.e],s=e.sets[+row.dataset.s];
+    s.done=!s.done;save();renderWorkout();if(s.done&&e.rest)startTimer(e.rest);
+  });
+  document.querySelectorAll('.rest-now').forEach(btn=>btn.onclick=()=>startTimer(+btn.dataset.rest));
+  document.querySelectorAll('.technique-toggle').forEach(btn=>btn.onclick=()=>{
+    const details=btn.closest('.exercise-guide').querySelector('.technique-details');
+    details.classList.toggle('hidden');
+    btn.textContent=details.classList.contains('hidden')?'Technique':'Masquer';
+  });
 }
 function startWorkoutClock(){clearInterval(workoutTick);workoutTick=setInterval(()=>{if(!state.activeWorkout)return;document.getElementById('workoutElapsed').textContent=timeFmt(Math.floor((Date.now()-state.activeWorkout.started)/1000));},1000)}
 document.getElementById('finishWorkoutBtn').onclick=()=>{
@@ -229,6 +404,11 @@ document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>startTimer(+b
 document.getElementById('plus15').onclick=()=>{const l=timer.running?Math.max(0,Math.ceil((timer.end-Date.now())/1000)):timer.remaining;startTimer(l+15)};
 document.getElementById('minus15').onclick=()=>{const l=timer.running?Math.max(0,Math.ceil((timer.end-Date.now())/1000)):timer.remaining;startTimer(Math.max(0,l-15))};
 document.getElementById('timerToggle').onclick=()=>{if(timer.running){timer.remaining=Math.max(0,Math.ceil((timer.end-Date.now())/1000));timer.running=false;clearInterval(timer.interval);}else startTimer(timer.remaining||90);timerRender();};
+
+document.getElementById('helpBtn').onclick=()=>document.getElementById('helpModal').classList.remove('hidden');
+document.getElementById('closeHelpBtn').onclick=()=>document.getElementById('helpModal').classList.add('hidden');
+document.getElementById('helpModal').onclick=(e)=>{if(e.target.id==='helpModal')e.currentTarget.classList.add('hidden');};
+
 document.getElementById('startNextBtn').onclick=()=>startWorkout(state.nextSessionId);
 document.getElementById('refreshProgramBtn').onclick=loadProgram;
 document.getElementById('wakeBtn').onclick=async()=>{try{if(!('wakeLock'in navigator))return alert('Wake Lock non disponible sur ce navigateur.');if(wakeLock){await wakeLock.release();wakeLock=null;document.getElementById('wakeBtn').textContent='Écran allumé';}else{wakeLock=await navigator.wakeLock.request('screen');document.getElementById('wakeBtn').textContent='Écran verrouillé';}}catch(e){}};
