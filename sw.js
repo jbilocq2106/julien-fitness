@@ -1,4 +1,4 @@
-const CACHE='mon-training-v53';
+const CACHE='mon-training-v54';
 const CORE=['./','index.html','styles.css','app.js','program.json','manifest.json','icon-192.png','icon-512.png'];
 
 self.addEventListener('install',event=>{

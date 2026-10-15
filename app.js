@@ -345,12 +345,12 @@ function openWorkoutDetail(key){
 
     return `<div class="history-exercise">
       <h3>${esc(name)}</h3>
-      <div class="history-set-head"><span>#</span><span>Charge</span><span>Reps</span><span>RIR/RPE</span></div>
-      ${sets.map((r,i)=>`<div class="history-set-row">
+      <div class="history-set-head ${showRir?'':'history-rir-hidden'}"><span>#</span><span>Charge</span><span>Reps</span>${showRir?'<span>RIR/RPE</span>':''}</div>
+      ${sets.map((r,i)=>`<div class="history-set-row ${showRir?'':'history-rir-hidden'}">
         <span>${i+1}</span>
         <strong>${num(r.weight_kg)?num(r.weight_kg)+' kg':'—'}</strong>
         <span>${num(r.reps)||'—'}</span>
-        <span>${r.rir!==undefined&&r.rir!==''?esc(r.rir):(r.rpe?esc(r.rpe):'—')}</span>
+        ${showRir?`<span>${r.rir!=null&&r.rir!==''?esc(r.rir):(r.rpe?esc(r.rpe):'—')}</span>`:''}
       </div>`).join('')}
     </div>`;
   }).join('');
