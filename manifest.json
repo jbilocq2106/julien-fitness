@@ -1,11 +1,17 @@
 {
-  "name": "Mon Training",
-  "short_name": "Training",
+  "name": "My Training",
+  "short_name": "My Training",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#111827",
   "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
@@ -25,9 +31,9 @@
       "url": "./?start=next",
       "icons": [
         {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -37,9 +43,9 @@
       "url": "./?start=S1",
       "icons": [
         {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -49,9 +55,9 @@
       "url": "./?start=S2",
       "icons": [
         {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -61,9 +67,9 @@
       "url": "./?start=S3",
       "icons": [
         {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     },
@@ -73,9 +79,9 @@
       "url": "./?start=S4",
       "icons": [
         {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
+          "src": "logo.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     }
