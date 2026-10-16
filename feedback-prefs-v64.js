@@ -17,7 +17,6 @@
     const data=load();
     const now=new Date().toISOString();
 
-    // Pec Fly is liked: remove any old "disliked" state for all common names.
     Object.keys(data).forEach(k=>{
       const name=norm(data[k]?.name||k);
       if(name.includes('pec fly')||name.includes('butterfly')||name.includes('bug fly')){
@@ -29,7 +28,6 @@
       data[k]={...existing,name:existing.name||k,disliked:false,liked:true,updatedAt:now};
     });
 
-    // Dead bug is disliked and should have useful replacements ready.
     data[DEAD_BUG_KEY]={
       ...(data[DEAD_BUG_KEY]||{}),
       name:DEAD_BUG_NAME,
@@ -39,7 +37,6 @@
       alternatives:DEAD_BUG_ALTS.slice()
     };
 
-    // Also catch the exact active-workout spelling if it differs slightly.
     (state.activeWorkout?.exercises||[]).forEach(e=>{
       if(norm(e.name).includes('dead bug')){
         data[keyFor(e.name)]={name:e.name,disliked:true,liked:false,updatedAt:now,alternatives:DEAD_BUG_ALTS.slice()};
@@ -52,6 +49,10 @@
     save(data);
   }
 
+  function setTextIfChanged(el,text){
+    if(el&&el.textContent!==text)el.textContent=text;
+  }
+
   function tuneFeedbackModal(){
     const body=document.getElementById('sessionDetailBody');
     if(!body)return;
@@ -62,12 +63,12 @@
       const small=row.querySelector('small');
       const n=norm(name);
       if(n.includes('dead bug')){
-        if(input)input.checked=true;
-        if(small)small.textContent='Marqué comme peu apprécié';
+        if(input&&!input.checked)input.checked=true;
+        setTextIfChanged(small,'Marqué comme peu apprécié');
       }
       if(n.includes('pec fly')||n.includes('butterfly')||n.includes('bug fly')){
-        if(input)input.checked=false;
-        if(small)small.textContent='Tu as indiqué que cet exercice te plaît';
+        if(input&&input.checked)input.checked=false;
+        setTextIfChanged(small,'Tu as indiqué que cet exercice te plaît');
       }
     });
 
@@ -81,7 +82,8 @@
         list.className='mt-alt-list';
         card.appendChild(list);
       }
-      list.innerHTML=DEAD_BUG_ALTS.map(a=>`<span>${a}</span>`).join('');
+      const wanted=DEAD_BUG_ALTS.map(a=>`<span>${a}</span>`).join('');
+      if(list.innerHTML!==wanted)list.innerHTML=wanted;
     });
   }
 
@@ -113,9 +115,16 @@
 
   const modalBody=document.getElementById('sessionDetailBody');
   if(modalBody){
+    let tuning=false;
     const observer=new MutationObserver(()=>{
-      applyExplicitPreferences();
-      tuneFeedbackModal();
+      if(tuning)return;
+      tuning=true;
+      observer.disconnect();
+      try{tuneFeedbackModal();}
+      finally{
+        tuning=false;
+        observer.observe(modalBody,{childList:true,subtree:true});
+      }
     });
     observer.observe(modalBody,{childList:true,subtree:true});
   }
