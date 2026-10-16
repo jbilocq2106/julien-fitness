@@ -165,5 +165,6 @@
     .then(()=>loadScript('mtHistoryOrderV75','history-order-v75.js?v=77'))
     .then(()=>loadScript('mtExerciseHistoryDetailV78','history-exercise-detail-v78.js?v=78'))
     .then(()=>loadScript('mtCardioReferenceV79','cardio-reference-v79.js?v=79'))
+    .then(()=>loadScript('mtHistoryCardioEditV80','history-cardio-edit-v80.js?v=80'))
     .catch(()=>{});
 })();
