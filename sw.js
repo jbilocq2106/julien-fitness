@@ -1,5 +1,5 @@
-const CACHE='my-training-v74';
-const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=73','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=74','timed-sets-v65.js?v=73','finish-check-v66.js?v=74','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','feedback-alternatives-v69.js?v=70','session-time-v70.js?v=70','deadbug-recovery-v71.js?v=71','recorded-session-edit-v72.js?v=72','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
+const CACHE='my-training-v75';
+const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=73','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=75','timed-sets-v65.js?v=73','finish-check-v66.js?v=74','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','feedback-alternatives-v69.js?v=70','session-time-v70.js?v=70','deadbug-recovery-v71.js?v=71','recorded-session-edit-v72.js?v=72','history-order-v75.js?v=75','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -42,6 +42,7 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('session-time-v70.js') ||
     url.pathname.endsWith('deadbug-recovery-v71.js') ||
     url.pathname.endsWith('recorded-session-edit-v72.js') ||
+    url.pathname.endsWith('history-order-v75.js') ||
     url.pathname.endsWith('styles.css') ||
     url.pathname.endsWith('features-v57.css') ||
     url.pathname.endsWith('program.json') ||
