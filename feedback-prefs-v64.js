@@ -155,7 +155,7 @@
     });
   }
   loadScript('mtTimedSetsV65','timed-sets-v65.js?v=73')
-    .then(()=>loadScript('mtFinishCheckV66','finish-check-v66.js?v=66'))
+    .then(()=>loadScript('mtFinishCheckV66','finish-check-v66.js?v=74'))
     .then(()=>loadScript('mtTreadmillV67','treadmill-v67.js?v=67'))
     .then(()=>loadScript('mtTreadmillAlertV68','treadmill-alert-v68.js?v=68'))
     .then(()=>loadScript('mtFeedbackAlternativesV69','feedback-alternatives-v69.js?v=70'))
