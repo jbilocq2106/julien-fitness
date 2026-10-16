@@ -1,4 +1,4 @@
-/* My Training v68 — spoken rest alert, headphone routing, and top progress bar */
+/* My Training v73 — spoken rest alert with male-preferred voice, headphone routing, and top progress bar */
 (function(){
   const REST_STORE='mt_rest_timer_v63';
   let restTotalSeconds=0;
@@ -33,11 +33,15 @@
     if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});
   }
 
-  function englishVoice(){
+  function englishMaleVoice(){
     try{
       const voices=window.speechSynthesis?.getVoices?.()||[];
-      return voices.find(v=>/^en[-_]/i.test(v.lang)&&/google|samsung|microsoft/i.test(v.name)) ||
-             voices.find(v=>/^en[-_]/i.test(v.lang)) || null;
+      const en=voices.filter(v=>/^en[-_]/i.test(v.lang));
+      const maleHint=/\b(male|man|david|mark|guy|ryan|daniel|christopher|eric|brian|matthew|george|james|john|aaron|arthur|oliver|thomas|alex)\b/i;
+      return en.find(v=>maleHint.test(`${v.name} ${v.voiceURI||''}`)) ||
+             en.find(v=>/google.*male|microsoft.*(david|mark|guy|ryan)/i.test(`${v.name} ${v.voiceURI||''}`)) ||
+             en.find(v=>/google|samsung|microsoft/i.test(v.name)) ||
+             en[0] || null;
     }catch(e){return null;}
   }
 
@@ -47,9 +51,9 @@
       const u=new SpeechSynthesisUtterance("Let's go!");
       u.lang='en-US';
       u.volume=1;
-      u.rate=1.16;
-      u.pitch=1.04;
-      const voice=englishVoice();
+      u.rate=1.15;
+      u.pitch=.78;
+      const voice=englishMaleVoice();
       if(voice)u.voice=voice;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
