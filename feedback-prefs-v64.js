@@ -147,5 +147,6 @@
   loadScript('mtTimedSetsV65','timed-sets-v65.js?v=65')
     .then(()=>loadScript('mtFinishCheckV66','finish-check-v66.js?v=66'))
     .then(()=>loadScript('mtTreadmillV67','treadmill-v67.js?v=67'))
+    .then(()=>loadScript('mtTreadmillAlertV68','treadmill-alert-v68.js?v=68'))
     .catch(()=>{});
 })();
