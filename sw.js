@@ -1,5 +1,5 @@
-const CACHE='my-training-v59';
-const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
+const CACHE='my-training-v61';
+const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -28,6 +28,8 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('app.js') ||
     url.pathname.endsWith('features-v57.js') ||
     url.pathname.endsWith('cardio-v59.js') ||
+    url.pathname.endsWith('swap-v60.js') ||
+    url.pathname.endsWith('swap-priority-v61.js') ||
     url.pathname.endsWith('styles.css') ||
     url.pathname.endsWith('features-v57.css') ||
     url.pathname.endsWith('program.json') ||
