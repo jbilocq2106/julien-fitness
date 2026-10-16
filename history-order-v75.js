@@ -1,6 +1,6 @@
 /* My Training v76 — chronological set order + one-time repair for latest leg workout */
 (function(){
-  const REPAIR_KEY='mt_history_repair_20261016_press_legcurl_v2';
+  const REPAIR_KEY='mt_history_repair_20261016_full_v3';
 
   function n(v){const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)?x:0;}
   function norm(s){
@@ -30,6 +30,18 @@
       description:source?.description||'My Training'
     };
   }
+  function addUntil(rows,count,weight,reps){
+    if(!rows.length)return false;
+    let changed=false;
+    const source=rows.find(r=>n(r.weight_kg)===weight && n(r.reps)===reps) || rows[rows.length-1];
+    while(rows.length<count){
+      const repaired=cloneSet(source,nextSetIndex(rows),weight,reps);
+      state.history.unshift(repaired);
+      rows.push(repaired);
+      changed=true;
+    }
+    return changed;
+  }
 
   function repairLatestLegWorkout(){
     if(localStorage.getItem(REPAIR_KEY)==='done')return;
@@ -53,26 +65,16 @@
     let changed=false;
 
     const leg=rows.filter(r=>norm(r.exercise_title).includes('leg curl assis'));
-    if(leg.length<3 && leg.length>0){
-      const source=leg.find(r=>n(r.weight_kg)===52 && n(r.reps)===12) || leg[leg.length-1];
-      while(leg.length<3){
-        const repaired=cloneSet(source,nextSetIndex(leg),52,12);
-        state.history.unshift(repaired);
-        leg.push(repaired);
-        changed=true;
-      }
-    }
+    changed=addUntil(leg,3,52,12)||changed;
 
     const press=rows.filter(r=>norm(r.exercise_title).includes('presse a cuisses'));
-    if(press.length<4 && press.length>0){
-      const source=press.find(r=>n(r.weight_kg)===80 && n(r.reps)===12) || press[press.length-1];
-      while(press.length<4){
-        const repaired=cloneSet(source,nextSetIndex(press),80,12);
-        state.history.unshift(repaired);
-        press.push(repaired);
-        changed=true;
-      }
-    }
+    changed=addUntil(press,4,80,12)||changed;
+
+    const chest=rows.filter(r=>norm(r.exercise_title).includes('chest press'));
+    changed=addUntil(chest,3,59,9)||changed;
+
+    const curl=rows.filter(r=>norm(r.exercise_title).includes('curl pupitre'));
+    changed=addUntil(curl,3,27,14)||changed;
 
     if(changed && typeof save==='function')save();
     localStorage.setItem(REPAIR_KEY,'done');
