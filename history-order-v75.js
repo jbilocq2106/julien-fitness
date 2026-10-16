@@ -1,7 +1,5 @@
-/* My Training v76 — chronological set order + one-time repair for latest leg workout */
+/* My Training v77 — chronological set order + robust repair for latest leg workout */
 (function(){
-  const REPAIR_KEY='mt_history_repair_20261016_full_v3';
-
   function n(v){const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)?x:0;}
   function norm(s){
     if(typeof normText==='function')return normText(s);
@@ -9,7 +7,7 @@
   }
   function escHtml(s){
     if(typeof esc==='function')return esc(s);
-    return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
   }
   function rowDate(r){
     if(typeof dateVal==='function')return dateVal(r?.start_time);
@@ -33,7 +31,7 @@
   function addUntil(rows,count,weight,reps){
     if(!rows.length)return false;
     let changed=false;
-    const source=rows.find(r=>n(r.weight_kg)===weight && n(r.reps)===reps) || rows[rows.length-1];
+    const source=rows[rows.length-1];
     while(rows.length<count){
       const repaired=cloneSet(source,nextSetIndex(rows),weight,reps);
       state.history.unshift(repaired);
@@ -43,25 +41,28 @@
     return changed;
   }
 
-  function repairLatestLegWorkout(){
-    if(localStorage.getItem(REPAIR_KEY)==='done')return;
-    if(!Array.isArray(state?.history)||!state.history.length)return;
-
+  function latestLegWorkoutRows(){
+    if(!Array.isArray(state?.history)||!state.history.length)return null;
     const workouts=new Map();
     state.history.forEach(r=>{
       const key=`${r.title||''}|${r.start_time||''}`;
       if(!workouts.has(key))workouts.set(key,[]);
       workouts.get(key).push(r);
     });
-
     const ordered=[...workouts.entries()].sort((a,b)=>rowDate(b[1][0])-rowDate(a[1][0]));
     const target=ordered.find(([,rows])=>{
       const names=rows.map(r=>norm(r.exercise_title));
-      return names.some(x=>x.includes('leg curl assis')) && names.some(x=>x.includes('presse a cuisses'));
+      return names.some(x=>x.includes('leg curl assis')) &&
+             names.some(x=>x.includes('presse a cuisses')) &&
+             names.some(x=>x.includes('chest press')) &&
+             names.some(x=>x.includes('curl pupitre'));
     });
-    if(!target)return;
+    return target?.[1]||null;
+  }
 
-    const rows=target[1];
+  function ensureLatestWorkoutRepair(){
+    const rows=latestLegWorkoutRows();
+    if(!rows)return false;
     let changed=false;
 
     const leg=rows.filter(r=>norm(r.exercise_title).includes('leg curl assis'));
@@ -77,7 +78,7 @@
     changed=addUntil(curl,3,27,14)||changed;
 
     if(changed && typeof save==='function')save();
-    localStorage.setItem(REPAIR_KEY,'done');
+    return changed;
   }
 
   function sortedSets(sets){
@@ -90,6 +91,9 @@
   }
 
   function chronologicalWorkoutDetail(key){
+    /* Re-apply on every opening. It is idempotent: existing rows are never duplicated. */
+    ensureLatestWorkoutRepair();
+
     const rows=state.history.filter(r=>`${r.title||''}|${r.start_time||''}`===key);
     if(!rows.length)return;
 
@@ -135,7 +139,7 @@
     document.getElementById('sessionModal').classList.remove('hidden');
   }
 
-  repairLatestLegWorkout();
+  ensureLatestWorkoutRepair();
 
   if(typeof openWorkoutDetail==='function'){
     openWorkoutDetail=chronologicalWorkoutDetail;
