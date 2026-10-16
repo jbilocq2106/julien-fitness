@@ -1,4 +1,4 @@
-/* My Training v65 — countdown button for timed sets + strong triple beep */
+/* My Training v68 — countdown button for timed sets + motivating voice */
 (function(){
   const STORE='mt_timed_set_v65';
   let active=null;
@@ -12,11 +12,9 @@
 
   function secondsFromTarget(target){
     const t=norm(target).replace(/,/g,'.').trim();
-    // Timed sets are written like "20–30 s", "30 sec", "45 secondes".
     if(!/(^|\s)(s|sec|secs|seconde|secondes)(\s|$|\/)/.test(t))return 0;
     const nums=(t.match(/\d+(?:\.\d+)?/g)||[]).map(Number).filter(Number.isFinite);
     if(!nums.length)return 0;
-    // For a range such as 20–30 s, use the requested upper target (30 s).
     return Math.max(...nums);
   }
 
@@ -51,42 +49,47 @@
     if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});
   }
 
-  function tripleBeep(){
+  function englishVoice(){
+    try{
+      const voices=window.speechSynthesis?.getVoices?.()||[];
+      return voices.find(v=>/^en[-_]/i.test(v.lang)&&/google|samsung|microsoft/i.test(v.name)) ||
+             voices.find(v=>/^en[-_]/i.test(v.lang)) || null;
+    }catch(e){return null;}
+  }
+
+  function speakComeOn(){
+    try{
+      if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return false;
+      const u=new SpeechSynthesisUtterance('Come on!');
+      u.lang='en-US';
+      u.volume=1;
+      u.rate=1.10;
+      u.pitch=1.02;
+      const voice=englishVoice();
+      if(voice)u.voice=voice;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+      return true;
+    }catch(e){return false;}
+  }
+
+  function fallbackBeep(){
     const ac=getAudioContext();
     if(!ac)return;
     const play=()=>{
-      const comp=ac.createDynamicsCompressor();
-      comp.threshold.value=-20;
-      comp.knee.value=8;
-      comp.ratio.value=10;
-      comp.attack.value=.002;
-      comp.release.value=.12;
-      const master=ac.createGain();
-      master.gain.value=.82;
-      master.connect(comp);comp.connect(ac.destination);
-
-      const beep=(when)=>{
-        const env=ac.createGain();
-        env.gain.setValueAtTime(.0001,when);
-        env.gain.exponentialRampToValueAtTime(.58,when+.01);
-        env.gain.setValueAtTime(.58,when+.16);
-        env.gain.exponentialRampToValueAtTime(.0001,when+.28);
-        env.connect(master);
-
-        const o1=ac.createOscillator();
-        o1.type='square';o1.frequency.setValueAtTime(1260,when);
-        o1.connect(env);o1.start(when);o1.stop(when+.29);
-
-        const o2=ac.createOscillator(),g2=ac.createGain();
-        o2.type='sine';o2.frequency.setValueAtTime(1880,when);g2.gain.value=.34;
-        o2.connect(g2);g2.connect(env);o2.start(when);o2.stop(when+.29);
-      };
-      const t=ac.currentTime+.02;
-      beep(t);beep(t+.36);beep(t+.72);
-      setTimeout(()=>{try{master.disconnect();comp.disconnect();}catch(e){}},1400);
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='square';o.frequency.value=1300;
+      g.gain.setValueAtTime(.0001,ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(.34,ac.currentTime+.01);
+      g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.22);
+      o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.24);
     };
     if(ac.state==='suspended')ac.resume().then(play).catch(()=>{}); else play();
-    if(navigator.vibrate)navigator.vibrate([180,90,180,90,180]);
+  }
+
+  function motivateEnd(){
+    if(navigator.vibrate)navigator.vibrate([180,90,180]);
+    if(!speakComeOn())fallbackBeep();
   }
 
   function key(ei,si){return `${ei}:${si}`;}
@@ -117,9 +120,8 @@
     if(!active)return;
     if(leftSeconds()>0){updateButtons();return;}
     clearInterval(tick);tick=null;
-    if(!endAlertPlayed){endAlertPlayed=true;tripleBeep();}
+    if(!endAlertPlayed){endAlertPlayed=true;motivateEnd();}
     updateButtons();
-    // Keep the finished state briefly so the user sees which set ended.
     setTimeout(()=>{
       if(active&&leftSeconds()<=0){active=null;persist();updateButtons();}
     },3500);
@@ -135,7 +137,6 @@
     primeAudio();
     const k=key(ei,si);
     if(active&&key(active.ei,active.si)===k&&leftSeconds()>0){
-      // Second tap stops the current exercise timer without touching workout data.
       active=null;endAlertPlayed=false;persist();clearInterval(tick);tick=null;updateButtons();
       return;
     }
@@ -195,7 +196,6 @@
   function restore(){
     const stored=loadActive();
     if(stored){
-      // Do not restore a timer from another completed/replaced workout.
       if(state.activeWorkout&&(!stored.workoutStarted||stored.workoutStarted===state.activeWorkout.started)){
         active=stored;
         endAlertPlayed=false;
