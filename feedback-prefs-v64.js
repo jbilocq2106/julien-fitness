@@ -162,5 +162,6 @@
     .then(()=>loadScript('mtTreadmillAlertV68','treadmill-alert-v68.js?v=68'))
     .then(()=>loadScript('mtFeedbackAlternativesV69','feedback-alternatives-v69.js?v=70'))
     .then(()=>loadScript('mtSessionTimeV70','session-time-v70.js?v=70'))
+    .then(()=>loadScript('mtDeadBugRecoveryV71','deadbug-recovery-v71.js?v=71'))
     .catch(()=>{});
 })();
