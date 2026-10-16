@@ -1,4 +1,4 @@
-/* My Training v63 — louder rest alert, headphone routing, and top progress bar */
+/* My Training v68 — spoken rest alert, headphone routing, and top progress bar */
 (function(){
   const REST_STORE='mt_rest_timer_v63';
   let restTotalSeconds=0;
@@ -33,57 +33,42 @@
     if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});
   }
 
-  function playStrongDoubleBeep(){
+  function englishVoice(){
+    try{
+      const voices=window.speechSynthesis?.getVoices?.()||[];
+      return voices.find(v=>/^en[-_]/i.test(v.lang)&&/google|samsung|microsoft/i.test(v.name)) ||
+             voices.find(v=>/^en[-_]/i.test(v.lang)) || null;
+    }catch(e){return null;}
+  }
+
+  function speakLetsGo(){
+    try{
+      if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return false;
+      const u=new SpeechSynthesisUtterance("Let's go!");
+      u.lang='en-US';
+      u.volume=1;
+      u.rate=1.16;
+      u.pitch=1.04;
+      const voice=englishVoice();
+      if(voice)u.voice=voice;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+      return true;
+    }catch(e){return false;}
+  }
+
+  function playFallbackBeep(){
     const ac=getAudioContext();
     if(!ac)return;
-
     const play=()=>{
-      const compressor=ac.createDynamicsCompressor();
-      compressor.threshold.value=-18;
-      compressor.knee.value=12;
-      compressor.ratio.value=8;
-      compressor.attack.value=0.002;
-      compressor.release.value=0.12;
-
-      const master=ac.createGain();
-      master.gain.value=0.78;
-      master.connect(compressor);
-      compressor.connect(ac.destination);
-
-      const oneBeep=(when)=>{
-        const env=ac.createGain();
-        env.gain.setValueAtTime(0.0001,when);
-        env.gain.exponentialRampToValueAtTime(0.52,when+0.012);
-        env.gain.setValueAtTime(0.52,when+0.15);
-        env.gain.exponentialRampToValueAtTime(0.0001,when+0.28);
-        env.connect(master);
-
-        const o1=ac.createOscillator();
-        o1.type='square';
-        o1.frequency.setValueAtTime(1180,when);
-        o1.connect(env);
-        o1.start(when);
-        o1.stop(when+0.29);
-
-        const o2=ac.createOscillator();
-        const overtone=ac.createGain();
-        o2.type='sine';
-        o2.frequency.setValueAtTime(1760,when);
-        overtone.gain.value=0.36;
-        o2.connect(overtone);
-        overtone.connect(env);
-        o2.start(when);
-        o2.stop(when+0.29);
-      };
-
-      const t=ac.currentTime+0.025;
-      oneBeep(t);
-      oneBeep(t+0.39);
-      setTimeout(()=>{try{master.disconnect();compressor.disconnect();}catch(e){}},950);
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='square';o.frequency.value=1240;
+      g.gain.setValueAtTime(.0001,ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(.34,ac.currentTime+.01);
+      g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.25);
+      o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.27);
     };
-
-    if(ac.state==='suspended')ac.resume().then(play).catch(()=>{});
-    else play();
+    if(ac.state==='suspended')ac.resume().then(play).catch(()=>{}); else play();
   }
 
   function restLeft(){
@@ -136,15 +121,13 @@
   `;
   document.head.appendChild(style);
 
-  // Prime Web Audio from the user's first touch. Android routes this media audio
-  // to the active output, including Bluetooth earbuds/headphones.
   document.addEventListener('pointerdown',primeAudio,{capture:true});
   document.addEventListener('keydown',primeAudio,{capture:true});
 
   if(typeof buzz==='function'){
     buzz=function(){
-      if(navigator.vibrate)navigator.vibrate([260,120,260]);
-      playStrongDoubleBeep();
+      if(navigator.vibrate)navigator.vibrate([220,90,220]);
+      if(!speakLetsGo())playFallbackBeep();
     };
     window.buzz=buzz;
   }
