@@ -1,5 +1,5 @@
-const CACHE='my-training-v65';
-const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=63','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=64','timed-sets-v65.js?v=65','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
+const CACHE='my-training-v66';
+const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=63','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=64','timed-sets-v65.js?v=65','finish-check-v66.js?v=66','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -35,6 +35,7 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('muscles-feedback-v63.js') ||
     url.pathname.endsWith('feedback-prefs-v64.js') ||
     url.pathname.endsWith('timed-sets-v65.js') ||
+    url.pathname.endsWith('finish-check-v66.js') ||
     url.pathname.endsWith('styles.css') ||
     url.pathname.endsWith('features-v57.css') ||
     url.pathname.endsWith('program.json') ||
