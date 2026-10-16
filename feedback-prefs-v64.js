@@ -130,3 +130,13 @@
     window.renderWorkout=renderWorkout;
   }
 })();
+
+// v65: load countdown buttons for exercises prescribed in seconds.
+(function(){
+  if(document.querySelector('script[data-mt-timed-v65]'))return;
+  const s=document.createElement('script');
+  s.src='timed-sets-v65.js?v=65';
+  s.dataset.mtTimedV65='1';
+  s.defer=true;
+  document.head.appendChild(s);
+})();
