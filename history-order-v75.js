@@ -1,6 +1,6 @@
-/* My Training v75 — chronological set order + one-time repair for the latest leg session */
+/* My Training v76 — chronological set order + one-time repair for latest leg workout */
 (function(){
-  const REPAIR_KEY='mt_history_repair_20261016_legcurl_v1';
+  const REPAIR_KEY='mt_history_repair_20261016_press_legcurl_v2';
 
   function n(v){const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)?x:0;}
   function norm(s){
@@ -16,8 +16,22 @@
     const d=Date.parse(r?.start_time||'');
     return Number.isNaN(d)?0:d;
   }
+  function nextSetIndex(rows){
+    if(!rows.length)return 0;
+    return Math.max(...rows.map(r=>Number.isFinite(Number(r.set_index))?Number(r.set_index):-1))+1;
+  }
+  function cloneSet(source,setIndex,weight,reps){
+    return {
+      ...source,
+      set_index:setIndex,
+      set_type:source?.set_type||'normal',
+      weight_kg:weight,
+      reps:reps,
+      description:source?.description||'My Training'
+    };
+  }
 
-  function repairLatestLegCurl(){
+  function repairLatestLegWorkout(){
     if(localStorage.getItem(REPAIR_KEY)==='done')return;
     if(!Array.isArray(state?.history)||!state.history.length)return;
 
@@ -36,17 +50,31 @@
     if(!target)return;
 
     const rows=target[1];
-    const leg=rows.filter(r=>norm(r.exercise_title).includes('leg curl assis'));
-    const alreadyThird=leg.some(r=>n(r.set_index)>=2) || leg.length>=3;
+    let changed=false;
 
-    if(!alreadyThird && leg.length===2){
-      const source=leg.find(r=>n(r.weight_kg)===52 && n(r.reps)===12) || leg[0];
-      const maxIndex=Math.max(...leg.map(r=>Number.isFinite(Number(r.set_index))?Number(r.set_index):-1));
-      const repaired={...source,set_index:maxIndex+1,weight_kg:52,reps:12,description:source.description||'My Training'};
-      state.history.unshift(repaired);
-      if(typeof save==='function')save();
+    const leg=rows.filter(r=>norm(r.exercise_title).includes('leg curl assis'));
+    if(leg.length<3 && leg.length>0){
+      const source=leg.find(r=>n(r.weight_kg)===52 && n(r.reps)===12) || leg[leg.length-1];
+      while(leg.length<3){
+        const repaired=cloneSet(source,nextSetIndex(leg),52,12);
+        state.history.unshift(repaired);
+        leg.push(repaired);
+        changed=true;
+      }
     }
 
+    const press=rows.filter(r=>norm(r.exercise_title).includes('presse a cuisses'));
+    if(press.length<4 && press.length>0){
+      const source=press.find(r=>n(r.weight_kg)===80 && n(r.reps)===12) || press[press.length-1];
+      while(press.length<4){
+        const repaired=cloneSet(source,nextSetIndex(press),80,12);
+        state.history.unshift(repaired);
+        press.push(repaired);
+        changed=true;
+      }
+    }
+
+    if(changed && typeof save==='function')save();
     localStorage.setItem(REPAIR_KEY,'done');
   }
 
@@ -105,7 +133,7 @@
     document.getElementById('sessionModal').classList.remove('hidden');
   }
 
-  repairLatestLegCurl();
+  repairLatestLegWorkout();
 
   if(typeof openWorkoutDetail==='function'){
     openWorkoutDetail=chronologicalWorkoutDetail;
