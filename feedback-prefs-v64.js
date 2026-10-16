@@ -131,12 +131,20 @@
   }
 })();
 
-// v65: load countdown buttons for exercises prescribed in seconds.
+/* Load the newer workout helpers in sequence without replacing the active session. */
 (function(){
-  if(document.querySelector('script[data-mt-timed-v65]'))return;
-  const s=document.createElement('script');
-  s.src='timed-sets-v65.js?v=65';
-  s.dataset.mtTimedV65='1';
-  s.defer=true;
-  document.head.appendChild(s);
+  function loadScript(id,src){
+    return new Promise((resolve,reject)=>{
+      if(document.getElementById(id)){resolve();return;}
+      const s=document.createElement('script');
+      s.id=id;
+      s.src=src;
+      s.onload=resolve;
+      s.onerror=reject;
+      document.body.appendChild(s);
+    });
+  }
+  loadScript('mtTimedSetsV65','timed-sets-v65.js?v=65')
+    .then(()=>loadScript('mtFinishCheckV66','finish-check-v66.js?v=66'))
+    .catch(()=>{});
 })();
