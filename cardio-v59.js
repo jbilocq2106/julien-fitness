@@ -1,52 +1,56 @@
-/* My Training v59 — dedicated treadmill cardio sessions */
+/* My Training v67 — dedicated treadmill cardio sessions optimized for fat loss */
 const MT_CARDIO_SESSIONS=[
   {
     id:'C1',
-    name:'Cardio 1 — Tapis incliné',
+    name:'Cardio 1 — Endurance inclinée',
     duration:'40 min',
     durationValue:'40',
     speed:'5,2–5,5 km/h',
     speedValue:'5.35',
     incline:'8–10 %',
     inclineValue:'9',
-    intensity:'Intensité confortable',
-    structure:'5 min échauffement • 30 min bloc principal • 5 min retour au calme'
+    intensity:'Modérée • RPE 4–5/10',
+    targetHr:'FC cible : ~65–72 % de ta FC max',
+    structure:'5 min échauffement • 30 min bloc régulier • 5 min retour au calme'
   },
   {
     id:'C2',
-    name:'Cardio 2 — Tapis incliné',
+    name:'Cardio 2 — Tempo incliné',
     duration:'45 min',
     durationValue:'45',
     speed:'5,0–5,4 km/h',
     speedValue:'5.2',
     incline:'10–12 %',
     inclineValue:'11',
-    intensity:'Intensité modérée',
+    intensity:'Modérée soutenue • RPE 5–6/10',
+    targetHr:'FC cible : ~70–78 % de ta FC max',
     structure:'5 min échauffement • 35 min bloc principal • 5 min retour au calme'
   },
   {
     id:'C3',
-    name:'Cardio 3 — Tapis incliné',
-    duration:'35 min',
-    durationValue:'35',
-    speed:'5,3–5,6 km/h',
-    speedValue:'5.45',
-    incline:'12–15 %',
-    inclineValue:'13.5',
-    intensity:'Intensité soutenue',
-    structure:'5 min échauffement • 25 min bloc principal • 5 min retour au calme'
+    name:'Cardio 3 — Intervalles inclinaison',
+    duration:'36 min',
+    durationValue:'36',
+    speed:'5,0–5,8 km/h',
+    speedValue:'5.3',
+    incline:'6–15 %',
+    inclineValue:'8',
+    intensity:'Intervalles • RPE 7–8/10 sur les blocs',
+    targetHr:'FC : pics ~80–90 % max • moyenne souvent ~70–80 %',
+    structure:'6 min échauffement • 8 × (90 s à 12–15 % / 90 s à 6–8 %) • 6 min retour au calme'
   },
   {
     id:'C4',
-    name:'Cardio 4 — Tapis incliné',
-    duration:'45–50 min',
-    durationValue:'47.5',
-    speed:'5,0–5,5 km/h',
-    speedValue:'5.25',
-    incline:'7–10 %',
-    inclineValue:'8.5',
-    intensity:'Endurance',
-    structure:'5 min échauffement • 35–40 min bloc principal • 5 min retour au calme'
+    name:'Cardio 4 — Endurance longue',
+    duration:'50 min',
+    durationValue:'50',
+    speed:'5,0–5,4 km/h',
+    speedValue:'5.2',
+    incline:'7–9 %',
+    inclineValue:'8',
+    intensity:'Facile à modérée • RPE 4–5/10',
+    targetHr:'FC cible : ~65–72 % de ta FC max',
+    structure:'5 min échauffement • 40 min continu • 5 min retour au calme'
   }
 ];
 
@@ -71,7 +75,7 @@ function mtStartCardioSession(id,testMode=false){
     ? strengthIds[(currentIdx-1+strengthIds.length)%strengthIds.length]
     : 'S4';
 
-  const note=`${c.speed} • ${c.incline} • ${c.intensity} • ${c.structure}`;
+  const note=`${c.speed} • ${c.incline} • ${c.intensity} • ${c.targetHr} • ${c.structure}`;
   state.activeWorkout={
     id:anchorId,
     cardioSessionId:c.id,
@@ -90,6 +94,7 @@ function mtStartCardioSession(id,testMode=false){
         speed:c.speedValue,
         duration:c.durationValue,
         distance:'',
+        avgHr:'',
         done:false
       },
       sets:[]
@@ -125,6 +130,7 @@ function mtRenderCardioProgram(){
           <div>
             <div class="duration-label">⏱ Durée <strong>${esc(c.duration)}</strong></div>
             <div class="duration-adapted">${esc(c.structure)}</div>
+            <div class="duration-adapted">${esc(c.targetHr)}</div>
           </div>
         </div>
         <div class="exercise-row program-exercise-row">
