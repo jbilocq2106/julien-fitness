@@ -1,4 +1,4 @@
-/* My Training v68 — countdown button for timed sets + motivating voice */
+/* My Training v73 — countdown button for timed sets + male-preferred motivating voice */
 (function(){
   const STORE='mt_timed_set_v65';
   let active=null;
@@ -49,11 +49,15 @@
     if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});
   }
 
-  function englishVoice(){
+  function englishMaleVoice(){
     try{
       const voices=window.speechSynthesis?.getVoices?.()||[];
-      return voices.find(v=>/^en[-_]/i.test(v.lang)&&/google|samsung|microsoft/i.test(v.name)) ||
-             voices.find(v=>/^en[-_]/i.test(v.lang)) || null;
+      const en=voices.filter(v=>/^en[-_]/i.test(v.lang));
+      const maleHint=/\b(male|man|david|mark|guy|ryan|daniel|christopher|eric|brian|matthew|george|james|john|aaron|arthur|oliver|thomas|alex)\b/i;
+      return en.find(v=>maleHint.test(`${v.name} ${v.voiceURI||''}`)) ||
+             en.find(v=>/google.*male|microsoft.*(david|mark|guy|ryan)/i.test(`${v.name} ${v.voiceURI||''}`)) ||
+             en.find(v=>/google|samsung|microsoft/i.test(v.name)) ||
+             en[0] || null;
     }catch(e){return null;}
   }
 
@@ -63,9 +67,9 @@
       const u=new SpeechSynthesisUtterance('Come on!');
       u.lang='en-US';
       u.volume=1;
-      u.rate=1.10;
-      u.pitch=1.02;
-      const voice=englishVoice();
+      u.rate=1.08;
+      u.pitch=.76;
+      const voice=englishMaleVoice();
       if(voice)u.voice=voice;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
