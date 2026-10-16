@@ -1,8 +1,39 @@
-/* My Training v67 — end-of-workout check with deliberate skip option */
+/* My Training v74 — end-of-workout check + preserve entered sets */
 (function(){
   function escHtml(s){
     if(typeof esc==='function')return esc(s);
     return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function n(v){
+    if(typeof num==='function')return num(v);
+    const x=Number(String(v??'').replace(',','.'));
+    return Number.isFinite(x)?x:0;
+  }
+
+  /*
+   * Safety net: if repetitions were entered, the set was performed enough to
+   * deserve preservation. Mark it done automatically at workout close even if
+   * the user forgot to press OK/✓. Empty sets stay incomplete and still go
+   * through the normal end-of-workout check.
+   */
+  function autoValidateEnteredSets(w){
+    let changed=0;
+    const now=new Date().toISOString();
+    (w?.exercises||[]).forEach(e=>{
+      if(!e||e.skipped||e.cardio)return;
+      (e.sets||[]).forEach(s=>{
+        if(s?.done)return;
+        if(n(s?.reps)>0){
+          s.done=true;
+          s.autoValidatedOnFinish=true;
+          s.autoValidatedAt=now;
+          changed++;
+        }
+      });
+    });
+    if(changed&&typeof save==='function')save();
+    return changed;
   }
 
   function statusFor(e){
@@ -51,7 +82,7 @@
     if(typeof save==='function')save();
   }
 
-  function showIncompleteModal(items,onContinue){
+  function showIncompleteModal(items,onContinue,autoValidatedCount=0){
     const modal=document.getElementById('sessionModal');
     const title=document.getElementById('sessionDetailTitle');
     const meta=document.getElementById('sessionDetailMeta');
@@ -64,7 +95,8 @@
     title.textContent='Contrôle fin de séance';
     meta.textContent=`${items.length} exercice${items.length>1?'s':''} pas totalement validé${items.length>1?'s':''}`;
     body.innerHTML=`
-      <p class="mt-finish-check-intro">Ce contrôle sert surtout à éviter un oubli. Si tu as volontairement laissé un exercice ou des séries, coche <b>Zapper</b> pour pouvoir clôturer.</p>
+      ${autoValidatedCount?`<div class="mt-auto-saved">✓ ${autoValidatedCount} série${autoValidatedCount>1?'s':''} renseignée${autoValidatedCount>1?'s':''} sauvegardée${autoValidatedCount>1?'s':''} automatiquement.</div>`:''}
+      <p class="mt-finish-check-intro">Les séries avec des répétitions saisies sont conservées automatiquement, même si le bouton OK/✓ a été oublié. Pour les séries réellement non faites, coche <b>Zapper</b>.</p>
       <div class="mt-finish-check-list">
         ${items.map(({e,index,status})=>{
           const detail=status.cardio?'Cardio non validé':`${status.done}/${status.total} série${status.total>1?'s':''} validée${status.done>1?'s':''}`;
@@ -119,6 +151,7 @@
   style.textContent=`
     #timerDock .mt-rest-actions-compact{grid-template-columns:repeat(2,minmax(64px,1fr));align-content:center}
     #timerDock .mt-rest-actions-compact button{font-size:14px;min-height:40px}
+    .mt-auto-saved{margin-bottom:10px;padding:9px 10px;border-radius:10px;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.28);color:#86efac;font-size:12px;font-weight:800;line-height:1.4}
     .mt-finish-check-intro{color:var(--muted);font-size:13px;line-height:1.45;margin-bottom:12px}
     .mt-finish-check-list{display:grid;gap:8px}
     .mt-finish-check-item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:11px 12px;border-radius:12px}
@@ -142,9 +175,15 @@
     finishBtn.onclick=function(ev){
       const w=state.activeWorkout;
       if(!w||w.testMode)return previousFinish.call(this,ev);
+
+      const autoValidatedCount=autoValidateEnteredSets(w);
+      if(autoValidatedCount&&typeof renderWorkout==='function'){
+        try{renderWorkout();}catch(e){}
+      }
+
       const incomplete=incompleteDetails(w);
       if(!incomplete.length)return previousFinish.call(this,ev);
-      showIncompleteModal(incomplete,()=>previousFinish.call(finishBtn,ev));
+      showIncompleteModal(incomplete,()=>previousFinish.call(finishBtn,ev),autoValidatedCount);
     };
   }
 
