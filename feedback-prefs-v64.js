@@ -163,5 +163,6 @@
     .then(()=>loadScript('mtFeedbackAlternativesV69','feedback-alternatives-v69.js?v=70'))
     .then(()=>loadScript('mtSessionTimeV70','session-time-v70.js?v=70'))
     .then(()=>loadScript('mtDeadBugRecoveryV71','deadbug-recovery-v71.js?v=71'))
+    .then(()=>loadScript('mtRecordedSessionEditV72','recorded-session-edit-v72.js?v=72'))
     .catch(()=>{});
 })();
