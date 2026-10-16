@@ -1,5 +1,5 @@
-const CACHE='my-training-v67';
-const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=63','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=64','timed-sets-v65.js?v=65','finish-check-v66.js?v=66','treadmill-v67.js?v=67','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
+const CACHE='my-training-v68';
+const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=63','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=64','timed-sets-v65.js?v=65','finish-check-v66.js?v=66','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -37,6 +37,7 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('timed-sets-v65.js') ||
     url.pathname.endsWith('finish-check-v66.js') ||
     url.pathname.endsWith('treadmill-v67.js') ||
+    url.pathname.endsWith('treadmill-alert-v68.js') ||
     url.pathname.endsWith('styles.css') ||
     url.pathname.endsWith('features-v57.css') ||
     url.pathname.endsWith('program.json') ||
@@ -58,5 +59,18 @@ self.addEventListener('fetch',event=>{
 
   event.respondWith(
     caches.match(req).then(cached=>cached||fetch(req))
+  );
+});
+
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({type:'window',includeUncontrolled:true}).then(clients=>{
+      for(const client of clients){
+        if('focus' in client)return client.focus();
+      }
+      const url=event.notification?.data?.url||'./';
+      return self.clients.openWindow?self.clients.openWindow(url):undefined;
+    })
   );
 });
