@@ -1,10 +1,11 @@
-/* My Training v73 — countdown button for timed sets + male-preferred motivating voice */
+/* My Training v73 — countdown button for timed sets + stronger male motivating voice */
 (function(){
   const STORE='mt_timed_set_v65';
   let active=null;
   let tick=null;
   let audioContext=null;
   let endAlertPlayed=false;
+  let cachedEnglishVoices=[];
 
   function norm(s){
     return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -49,33 +50,54 @@
     if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});
   }
 
-  function englishMaleVoice(){
+  function refreshVoices(){
     try{
-      const voices=window.speechSynthesis?.getVoices?.()||[];
-      const en=voices.filter(v=>/^en[-_]/i.test(v.lang));
-      const maleHint=/\b(male|man|david|mark|guy|ryan|daniel|christopher|eric|brian|matthew|george|james|john|aaron|arthur|oliver|thomas|alex)\b/i;
-      return en.find(v=>maleHint.test(`${v.name} ${v.voiceURI||''}`)) ||
-             en.find(v=>/google.*male|microsoft.*(david|mark|guy|ryan)/i.test(`${v.name} ${v.voiceURI||''}`)) ||
-             en.find(v=>/google|samsung|microsoft/i.test(v.name)) ||
-             en[0] || null;
-    }catch(e){return null;}
+      cachedEnglishVoices=(window.speechSynthesis?.getVoices?.()||[]).filter(v=>/^en[-_]/i.test(v.lang));
+    }catch(e){cachedEnglishVoices=[];}
+    return cachedEnglishVoices;
+  }
+
+  function englishMaleVoice(){
+    const en=refreshVoices();
+    const exact=[
+      /google uk english male/i,
+      /microsoft (guy|david|mark|ryan|george|james|thomas|daniel)/i,
+      /\b(male|masculine|man)\b/i,
+      /\b(david|mark|guy|ryan|daniel|christopher|eric|brian|matthew|george|james|john|aaron|arthur|oliver|thomas|alex)\b/i
+    ];
+    for(const re of exact){
+      const hit=en.find(v=>re.test(`${v.name} ${v.voiceURI||''}`));
+      if(hit)return hit;
+    }
+    return en.find(v=>/^en-GB/i.test(v.lang)&&!/female|woman/i.test(`${v.name} ${v.voiceURI||''}`)) ||
+           en.find(v=>/^en-AU/i.test(v.lang)&&!/female|woman/i.test(`${v.name} ${v.voiceURI||''}`)) ||
+           en.find(v=>/^en-US/i.test(v.lang)&&!/female|woman/i.test(`${v.name} ${v.voiceURI||''}`)) ||
+           en[0] || null;
   }
 
   function speakComeOn(){
     try{
       if(!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return false;
-      const u=new SpeechSynthesisUtterance('Come on!');
-      u.lang='en-US';
-      u.volume=1;
-      u.rate=1.08;
-      u.pitch=.76;
-      const voice=englishMaleVoice();
-      if(voice)u.voice=voice;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
+      const speak=()=>{
+        const u=new SpeechSynthesisUtterance('Come on!');
+        const voice=englishMaleVoice();
+        u.lang=voice?.lang||'en-GB';
+        u.volume=1;
+        u.rate=1.00;
+        u.pitch=.44;
+        if(voice)u.voice=voice;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      };
+      if(!refreshVoices().length){setTimeout(speak,180);}else speak();
       return true;
     }catch(e){return false;}
   }
+
+  try{
+    window.speechSynthesis?.addEventListener?.('voiceschanged',refreshVoices);
+    refreshVoices();
+  }catch(e){}
 
   function fallbackBeep(){
     const ac=getAudioContext();
