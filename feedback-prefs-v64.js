@@ -82,7 +82,7 @@
         list.className='mt-alt-list';
         card.appendChild(list);
       }
-      // Once v69 has turned the alternatives into actionable buttons, never
+      // Once v69/v70 has turned the alternatives into actionable buttons, never
       // overwrite them back to passive <span> elements.
       if(list.querySelector('button[data-mt-feedback-alt]'))return;
       const wanted=DEAD_BUG_ALTS.map(a=>`<span>${a}</span>`).join('');
@@ -160,6 +160,7 @@
     .then(()=>loadScript('mtFinishCheckV66','finish-check-v66.js?v=66'))
     .then(()=>loadScript('mtTreadmillV67','treadmill-v67.js?v=67'))
     .then(()=>loadScript('mtTreadmillAlertV68','treadmill-alert-v68.js?v=68'))
-    .then(()=>loadScript('mtFeedbackAlternativesV69','feedback-alternatives-v69.js?v=69'))
+    .then(()=>loadScript('mtFeedbackAlternativesV69','feedback-alternatives-v69.js?v=70'))
+    .then(()=>loadScript('mtSessionTimeV70','session-time-v70.js?v=70'))
     .catch(()=>{});
 })();
