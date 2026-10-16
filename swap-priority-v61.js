@@ -20,32 +20,33 @@
     return 'Autre option';
   }
 
-  let reordering=false;
   function reorderSwapChoices(){
-    if(reordering)return;
     const list=document.querySelector('#sessionDetailBody .mt-swap-list');
     if(!list)return;
     const buttons=[...list.querySelectorAll('.mt-swap-choice')];
     if(!buttons.length)return;
 
-    reordering=true;
-    buttons
+    const ranked=buttons
       .map((btn,index)=>({btn,index,rank:priorityFor(btn)}))
-      .sort((a,b)=>a.rank-b.rank||a.index-b.index)
-      .forEach(({btn,rank})=>{
-        let tag=btn.querySelector('.mt-swap-priority');
-        if(!tag){
-          tag=document.createElement('span');
-          tag.className='mt-swap-priority';
-          btn.prepend(tag);
-        }
-        tag.textContent=labelFor(rank);
-        list.appendChild(btn);
-      });
+      .sort((a,b)=>a.rank-b.rank||a.index-b.index);
+
+    ranked.forEach(({btn,rank})=>{
+      let tag=btn.querySelector('.mt-swap-priority');
+      if(!tag){
+        tag=document.createElement('span');
+        tag.className='mt-swap-priority';
+        btn.prepend(tag);
+      }
+      const label=labelFor(rank);
+      if(tag.textContent!==label)tag.textContent=label;
+    });
+
+    const orderChanged=ranked.some(({btn},i)=>btn!==buttons[i]);
+    if(orderChanged)ranked.forEach(({btn})=>list.appendChild(btn));
 
     const intro=document.querySelector('#sessionDetailBody .mt-swap-intro');
-    if(intro)intro.textContent='Machine occupée ? Je te propose d’abord une alternative aux haltères, puis au poids du corps, et seulement ensuite une autre machine.';
-    reordering=false;
+    const message='Machine occupée ? Je te propose d’abord une alternative aux haltères, puis au poids du corps, et seulement ensuite une autre machine.';
+    if(intro&&intro.textContent!==message)intro.textContent=message;
   }
 
   const style=document.createElement('style');
