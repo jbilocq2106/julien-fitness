@@ -39,3 +39,8 @@ voiceCopy.onclick=async()=>{const value=voiceRequest.value.trim();if(!value){voi
 
 const prestationNote=document.querySelector('#prestation-note'),prestationStatus=document.querySelector('#prestation-status');
 if(prestationNote){prestationNote.value=localStorage.getItem('myteam_prestation_notes')||'';document.querySelector('#prestation-save').onclick=()=>{localStorage.setItem('myteam_prestation_notes',prestationNote.value);prestationStatus.textContent='Notes enregistrées uniquement sur cet appareil.'};}
+
+for(const kind of ['planning','prestation']){
+ const input=document.getElementById(kind+'-pdf'),message=document.getElementById(kind+'-pdf-status');
+ if(input)input.addEventListener('change',()=>{const file=input.files?.[0];if(!file)return;if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){message.textContent='Choisis un fichier PDF.';return}message.textContent='PDF sélectionné : '+file.name+'. Lecture automatique non encore disponible ; aucune donnée importée ni envoyée.';});
+}
