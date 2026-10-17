@@ -3,6 +3,10 @@
   const KEY='mt_focus_exercise_v87';
   let current=0;
 
+  function workout(){
+    try{return typeof state!=='undefined'?state.activeWorkout:null}catch{return null}
+  }
+
   function complete(e){
     if(!e)return false;
     if(e.cardio)return !!e.cardio.done;
@@ -42,7 +46,7 @@
   }
 
   function show(index,scroll=true){
-    const w=window.state?.activeWorkout;
+    const w=workout();
     const cards=[...document.querySelectorAll('#exerciseList .exercise')];
     if(!w||!cards.length)return;
     index=Math.max(0,Math.min(index,cards.length-1));
@@ -67,7 +71,7 @@
   }
 
   function applyFocus(){
-    const w=window.state?.activeWorkout;
+    const w=workout();
     const list=document.getElementById('exerciseList');
     const cards=list?[...list.querySelectorAll('.exercise')]:[];
     if(!w||!cards.length){document.body.classList.remove('mt-focus-mode');return;}
@@ -109,13 +113,13 @@
   `;
   document.head.appendChild(style);
 
-  if(typeof window.renderWorkout==='function'){
-    const previous=window.renderWorkout;
-    window.renderWorkout=function(){
+  if(typeof renderWorkout==='function'){
+    const previous=renderWorkout;
+    renderWorkout=function(){
       previous.apply(this,arguments);
       applyFocus();
     };
-    try{renderWorkout=window.renderWorkout}catch{}
+    window.renderWorkout=renderWorkout;
   }
 
   document.addEventListener('click',e=>{
@@ -124,7 +128,7 @@
   },true);
 
   const observer=new MutationObserver(()=>{
-    if(window.state?.activeWorkout&&document.querySelector('#exerciseList .exercise'))applyFocus();
+    if(workout()&&document.querySelector('#exerciseList .exercise'))applyFocus();
   });
   const list=document.getElementById('exerciseList');
   if(list)observer.observe(list,{childList:true,subtree:false});
