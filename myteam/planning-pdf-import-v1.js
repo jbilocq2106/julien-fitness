@@ -33,6 +33,14 @@
     return 'afternoon';
   }
   function fmtTotal(min){return Math.floor(min/60)+' h '+String(min%60).padStart(2,'0');}
+  function archiveRows(rows,meta){
+    if(!Array.isArray(rows)||!rows.length)return;
+    const byMonth={};
+    for(const s of rows){const m=String(s?.date||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))(byMonth[m]||(byMonth[m]=[])).push(s)}
+    let history={};try{history=JSON.parse(localStorage.getItem('myteam_planning_history')||'{}')||{}}catch{}
+    for(const [month,monthRows] of Object.entries(byMonth))history[month]={rows:monthRows,meta:meta||{},savedAt:new Date().toISOString()};
+    localStorage.setItem('myteam_planning_history',JSON.stringify(history));
+  }
 
   function rowFromItems(items){
     const sorted=[...items].sort((a,b)=>a.x-b.x);
@@ -124,12 +132,14 @@
       const rows=await extractRows(file),parsed=parse(rows);
       if(parsed.shifts.length<8)throw new Error('Je n’ai pas reconnu assez de lignes de planning. Aucun changement effectué.');
       let old=[];try{const x=JSON.parse(localStorage.getItem('myteam_shifts')||'[]');if(Array.isArray(x))old=x}catch{}
+      let oldMeta={};try{oldMeta=JSON.parse(localStorage.getItem('myteam_planning_meta')||'{}')||{}}catch{}
       const diff=changedDays(old,parsed.shifts);
       const computed=parsed.shifts.reduce((n,s)=>n+minutes(s.start,s.end),0);
       const source=parsed.creationDate?`créé le ${parsed.creationDate}`:file.name;
       const total=parsed.declaredTotal||fmtTotal(computed);
       const msg=`Planning détecté : ${source}\n${parsed.shifts.length} lignes • total ${total}\n${diff.length} jour(s) différent(s) de MyTEAM.\n\nRemplacer le planning actuel ?`;
       if(!confirm(msg)){status.textContent='Import annulé. Le planning actuel est conservé.';input.value='';return}
+      archiveRows(old,oldMeta);
       localStorage.setItem('myteam_shifts',JSON.stringify(parsed.shifts));
       localStorage.setItem('myteam_planning_meta',JSON.stringify({fileName:file.name,creationDate:parsed.creationDate,total,importedAt:new Date().toISOString(),source:'pdf-local'}));
       localStorage.setItem('myteam_planning_seed_version','pdf-import');
