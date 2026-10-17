@@ -1,4 +1,4 @@
-const CACHE='my-training-v73';
+const CACHE='my-training-v74-separated';
 const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=73','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=73','timed-sets-v65.js?v=73','finish-check-v66.js?v=66','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','feedback-alternatives-v69.js?v=70','session-time-v70.js?v=70','deadbug-recovery-v71.js?v=71','recorded-session-edit-v72.js?v=72','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
@@ -22,6 +22,11 @@ self.addEventListener('fetch',event=>{
 
   const url=new URL(req.url);
   const sameOrigin=url.origin===self.location.origin;
+
+  // MyTEAM est une application PWA séparée dans /team4/.
+  // My Training ne doit jamais mettre en cache ni intercepter ses fichiers.
+  if(sameOrigin && url.pathname.includes('/julien-fitness/team4/')) return;
+
   const dynamic = sameOrigin && (
     url.pathname.endsWith('/') ||
     url.pathname.endsWith('index.html') ||
