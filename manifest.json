@@ -3,7 +3,7 @@
   "name": "My Training",
   "short_name": "My Training",
   "description": "Application personnelle de suivi musculation, cardio et progression.",
-  "start_url": "/julien-fitness/",
+  "start_url": "/julien-fitness/?v=86",
   "scope": "/julien-fitness/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
@@ -12,14 +12,14 @@
   "theme_color": "#111827",
   "prefer_related_applications": false,
   "icons": [
-    {"src":"icon-192.png?v=85","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"icon-512.png?v=85","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {"src":"icon-192.png?v=86","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png?v=86","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ],
   "shortcuts": [
-    {"name":"Prochaine séance","short_name":"Prochaine","description":"Démarrer directement la prochaine séance","url":"./?start=next","icons":[{"src":"icon-192.png?v=85","sizes":"192x192","type":"image/png"}]},
-    {"name":"Séance 1","short_name":"Séance 1","url":"./?start=S1","icons":[{"src":"icon-192.png?v=85","sizes":"192x192","type":"image/png"}]},
-    {"name":"Séance 2","short_name":"Séance 2","url":"./?start=S2","icons":[{"src":"icon-192.png?v=85","sizes":"192x192","type":"image/png"}]},
-    {"name":"Séance 3","short_name":"Séance 3","url":"./?start=S3","icons":[{"src":"icon-192.png?v=85","sizes":"192x192","type":"image/png"}]},
-    {"name":"Dimanche Full Body","short_name":"Full Body","url":"./?start=S4","icons":[{"src":"icon-192.png?v=85","sizes":"192x192","type":"image/png"}]}
+    {"name":"Prochaine séance","short_name":"Prochaine","description":"Démarrer directement la prochaine séance","url":"./?start=next&v=86","icons":[{"src":"icon-192.png?v=86","sizes":"192x192","type":"image/png"}]},
+    {"name":"Séance 1","short_name":"Séance 1","url":"./?start=S1&v=86","icons":[{"src":"icon-192.png?v=86","sizes":"192x192","type":"image/png"}]},
+    {"name":"Séance 2","short_name":"Séance 2","url":"./?start=S2&v=86","icons":[{"src":"icon-192.png?v=86","sizes":"192x192","type":"image/png"}]},
+    {"name":"Séance 3","short_name":"Séance 3","url":"./?start=S3&v=86","icons":[{"src":"icon-192.png?v=86","sizes":"192x192","type":"image/png"}]},
+    {"name":"Dimanche Full Body","short_name":"Full Body","url":"./?start=S4&v=86","icons":[{"src":"icon-192.png?v=86","sizes":"192x192","type":"image/png"}]}
   ]
 }
