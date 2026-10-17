@@ -1,5 +1,5 @@
-const CACHE='myteam-shell-v3';
-const ASSETS=['./','./index.html','./app.js','./agents-migration-v3.js?v=3','./manifest.webmanifest','./icon.svg'];
+const CACHE='myteam-shell-v4';
+const ASSETS=['./','./index.html','./app.js','./agents-migration-v3.js?v=3','./prestation-share-v1.js?v=1','./manifest.webmanifest','./icon.svg'];
 
 self.addEventListener('install',e=>{
   self.skipWaiting();
@@ -14,15 +14,16 @@ self.addEventListener('activate',e=>{
   );
 });
 
-async function withAgentMigration(response){
+async function withEnhancements(response){
   if(!response)return response;
   const type=response.headers.get('content-type')||'';
   if(!type.includes('text/html'))return response;
-  const html=await response.text();
-  const patched=html.includes('agents-migration-v3.js')?html:html.replace('</body>','<script src="./agents-migration-v3.js?v=3"></script></body>');
+  let html=await response.text();
+  if(!html.includes('agents-migration-v3.js'))html=html.replace('</body>','<script src="./agents-migration-v3.js?v=3"></script></body>');
+  if(!html.includes('prestation-share-v1.js'))html=html.replace('</body>','<script src="./prestation-share-v1.js?v=1"></script></body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');
-  return new Response(patched,{status:response.status,statusText:response.statusText,headers});
+  return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
 
 self.addEventListener('fetch',e=>{
@@ -40,7 +41,7 @@ self.addEventListener('fetch',e=>{
         if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{});}
       }catch{}
       if(!response)response=await caches.match(req)||await caches.match('./index.html');
-      return withAgentMigration(response);
+      return withEnhancements(response);
     })());
     return;
   }
