@@ -10,7 +10,7 @@
     return Object.entries(agentProfiles)
       .filter(([name,p])=>{
         if(deleted.has(name)||Number(p?.team)!==Number(team))return false;
-        return p?.rosterSeed20260721===true||p?.manualAdded===true||p?.prestationAdded===true||p?.teamManual===true;
+        return p?.rosterSeedCurrentV2===true||p?.rosterSeed20260721===true||p?.manualAdded===true||p?.prestationAdded===true||p?.teamManual===true;
       })
       .map(([name,p])=>({
         name,
@@ -114,7 +114,7 @@
       await load('./hours-v1.js?v=20261017-7');
       await load('./salary-v2.js?v=20261017-1');
       await load('./agents-migration-v3.js?v=5');
-      await load('./roster-v6.js?v=20261017-1');
+      await load('./roster-v6.js?v=20261017-2');
       renderDirectAgents();
       await load('./prestation-share-v1.js?v=2');
       await load('./prestation-rules-v1.js?v=20261017-1');
