@@ -6,12 +6,22 @@
     return new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0)));
   };
   const validShift=x=>x&&typeof x==='object'&&/^\d{4}-\d\d-\d\d$/.test(x.date)&&/^\d\d:\d\d$/.test(x.start)&&/^\d\d:\d\d$/.test(x.end)&&typeof (x.post||'')==='string'&&['morning','afternoon','night','training'].includes(x.type);
+  const archiveRows=(rows,meta)=>{
+    if(!Array.isArray(rows)||!rows.length)return;
+    const byMonth={};for(const s of rows){const m=String(s?.date||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))(byMonth[m]||(byMonth[m]=[])).push(s)}
+    let history={};try{history=JSON.parse(localStorage.getItem('myteam_planning_history')||'{}')||{}}catch{}
+    for(const [month,monthRows] of Object.entries(byMonth))history[month]={rows:monthRows,meta:meta||{},savedAt:new Date().toISOString()};
+    localStorage.setItem('myteam_planning_history',JSON.stringify(history));
+  };
   const match=location.hash.match(/^#planning=([A-Za-z0-9_-]+)$/);
   if(match){
     try{
       const payload=JSON.parse(decodeBase64Url(match[1]));
       const rows=Array.isArray(payload)?payload:payload.shifts;
       if(!Array.isArray(rows)||!rows.length||rows.length>100||!rows.every(validShift))throw Error('Format de planning invalide');
+      let old=[];try{const x=JSON.parse(localStorage.getItem('myteam_shifts')||'[]');if(Array.isArray(x))old=x}catch{}
+      let oldMeta={};try{oldMeta=JSON.parse(localStorage.getItem('myteam_planning_meta')||'{}')||{}}catch{}
+      archiveRows(old,oldMeta);
       localStorage.setItem('myteam_shifts',JSON.stringify(rows));
       if(payload&&payload.meta&&typeof payload.meta==='object')localStorage.setItem('myteam_planning_meta',JSON.stringify(payload.meta));
       imported=true;
