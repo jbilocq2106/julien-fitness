@@ -44,3 +44,6 @@ for(const kind of ['planning','prestation']){
  const input=document.getElementById(kind+'-pdf'),message=document.getElementById(kind+'-pdf-status');
  if(input)input.addEventListener('change',()=>{const file=input.files?.[0];if(!file)return;if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){message.textContent='Choisis un fichier PDF.';return}message.textContent='PDF sélectionné : '+file.name+'. Lecture automatique non encore disponible ; aucune donnée importée ni envoyée.';});
 }
+
+const prestationPhoto=document.querySelector('#prestation-photo'),prestationPhotoStatus=document.querySelector('#prestation-photo-status');
+if(prestationPhoto)prestationPhoto.addEventListener('change',()=>{const file=prestationPhoto.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){prestationPhotoStatus.textContent='Sélectionne une photo.';return}prestationPhotoStatus.textContent='Photo sélectionnée : '+file.name+'. La reconnaissance et le contrôle automatique restent à développer. Aucune photo envoyée.';});
