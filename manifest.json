@@ -1,10 +1,7 @@
 {
-  "id": "./",
   "name": "My Training",
   "short_name": "My Training",
-  "description": "Suivi des séances de musculation, cardio, progression et historique d'entraînement.",
   "start_url": "./",
-  "scope": "./",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#111827",
