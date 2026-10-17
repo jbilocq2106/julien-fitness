@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>My Team</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="icon.svg" class="brand-logo" alt="">
+        <div><strong>My Team</strong><span>Chef d’équipe · référent de confiance</span></div>
+      </div>
+      <button id="installBtn" class="ghost small" hidden>Installer</button>
+    </header>
+
+    <main>
+      <section id="home" class="view active">
+        <div class="hero card">
+          <div class="eyebrow">Ligne de conduite</div>
+          <h1>Équité, confiance, reconnaissance</h1>
+          <p>Valoriser les efforts, la ponctualité, l’assiduité et le volontariat, avec des décisions cohérentes et explicables.</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="card stat"><strong id="statAgents">0</strong><span>agents</span></div>
+          <div class="card stat"><strong id="statToday">0</strong><span>faits aujourd’hui</span></div>
+          <div class="card stat"><strong id="statFollow">0</strong><span>à suivre</span></div>
+        </div>
+
+        <div class="card">
+          <div class="section-head"><h2>Conseil management</h2><button id="nextAdvice" class="ghost small">Autre conseil</button></div>
+          <p id="adviceText" class="advice"></p>
+        </div>
+
+        <div class="quick-grid">
+          <button class="quick card" data-go="log"><span>📝</span><strong>Nouvelle entrée</strong><small>Main courante</small></button>
+          <button class="quick card" data-go="team"><span>👥</span><strong>Équipe</strong><small>Fiches agents</small></button>
+          <button class="quick card" data-go="dashboard"><span>⚖️</span><strong>Pilotage</strong><small>Équité & suivi</small></button>
+          <button class="quick card" data-action="export"><span>💾</span><strong>Sauvegarder</strong><small>Exporter les données</small></button>
+        </div>
+      </section>
+
+      <section id="team" class="view">
+        <div class="section-head"><h1>Équipe</h1><button id="addAgentBtn" class="primary small">+ Agent</button></div>
+        <p class="muted">Une fiche professionnelle par agent. Pas de données personnelles inutiles.</p>
+        <div id="agentList" class="stack"></div>
+      </section>
+
+      <section id="log" class="view">
+        <div class="section-head"><h1>Main courante</h1><button id="addLogBtn" class="primary small">+ Entrée</button></div>
+        <div class="filters">
+          <button class="chip active" data-filter="all">Tout</button>
+          <button class="chip" data-filter="today">Aujourd’hui</button>
+          <button class="chip" data-filter="follow">À suivre</button>
+          <button class="chip" data-filter="supervisor">À transmettre</button>
+        </div>
+        <div id="logList" class="stack"></div>
+      </section>
+
+      <section id="dashboard" class="view">
+        <h1>Pilotage</h1>
+        <div class="card">
+          <div class="eyebrow">Principes communs</div>
+          <ul class="principles">
+            <li>Mêmes règles pour tous, exceptions justifiées.</li>
+            <li>Qualification et besoin opérationnel avant préférence personnelle.</li>
+            <li>Reconnaître l’effort sans créer de favoritisme.</li>
+            <li>Distinguer faits, déclarations et appréciations.</li>
+            <li>Tracer les décisions importantes et les suites données.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Indicateurs</h2>
+          <div id="indicatorList" class="stack compact"></div>
+        </div>
+        <div class="card">
+          <h2>Synthèse superviseur</h2>
+          <p class="muted">Génère un résumé factuel à partir de la main courante.</p>
+          <button id="summaryBtn" class="secondary big">Générer la synthèse du jour</button>
+          <textarea id="summaryOutput" rows="10" placeholder="La synthèse apparaîtra ici."></textarea>
+        </div>
+      </section>
+
+      <section id="settings" class="view">
+        <h1>Réglages</h1>
+        <div class="card">
+          <h2>Données</h2>
+          <p class="muted">Les données de cette V1 restent sur ce téléphone.</p>
+          <div class="row">
+            <button id="exportBtn" class="secondary">Exporter JSON</button>
+            <label class="secondary file-label">Importer<input id="importInput" type="file" accept="application/json" hidden></label>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Version</h2>
+          <p>My Team v1 · base personnelle offline-first.</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="active" data-view="home"><span>🏠</span><small>Accueil</small></button>
+      <button data-view="team"><span>👥</span><small>Équipe</small></button>
+      <button data-view="log"><span>📝</span><small>Main courante</small></button>
+      <button data-view="dashboard"><span>⚖️</span><small>Pilotage</small></button>
+      <button data-view="settings"><span>⚙️</span><small>Réglages</small></button>
+    </nav>
+  </div>
+
+  <dialog id="agentDialog">
+    <form method="dialog" id="agentForm" class="dialog-inner">
+      <button class="close" value="cancel" aria-label="Fermer">×</button>
+      <div class="eyebrow">Fiche agent</div>
+      <h2>Ajouter un agent</h2>
+      <label>Nom / prénom<input id="agentName" required></label>
+      <label>Qualifications / habilitations<textarea id="agentQuals" rows="2" placeholder="Ex. postes autorisés, formations…"></textarea></label>
+      <label>Desiderata / préférences<textarea id="agentPrefs" rows="2" placeholder="Demandes exprimées par l’agent"></textarea></label>
+      <label>Postes moins appréciés / contraintes professionnelles<textarea id="agentLess" rows="2"></textarea></label>
+      <label>Notes factuelles de suivi<textarea id="agentNotes" rows="3"></textarea></label>
+      <button class="primary big" value="default">Enregistrer</button>
+    </form>
+  </dialog>
+
+  <dialog id="logDialog">
+    <form method="dialog" id="logForm" class="dialog-inner">
+      <button class="close" value="cancel" aria-label="Fermer">×</button>
+      <div class="eyebrow">Main courante</div>
+      <h2>Nouvelle entrée</h2>
+      <label>Catégorie<select id="logCategory"><option>Planning</option><option>Présence / absence</option><option>Retard / assiduité</option><option>Passage sur poste</option><option>Fonctionnement du poste</option><option>Demande d’agent</option><option>Consigne</option><option>Incident</option><option>Autre</option></select></label>
+      <label>Agent concerné<select id="logAgent"><option value="">— Aucun / général —</option></select></label>
+      <label>Nature<select id="logNature"><option value="fact">Fait constaté</option><option value="declared">Déclaration de l’agent</option><option value="assessment">Appréciation managériale</option></select></label>
+      <label>Contenu<textarea id="logText" rows="4" required placeholder="Décrire précisément et factuellement."></textarea></label>
+      <label>Action prise<textarea id="logAction" rows="2"></textarea></label>
+      <div class="checks"><label><input id="logFollow" type="checkbox"> À suivre</label><label><input id="logSupervisor" type="checkbox"> À transmettre au superviseur</label></div>
+      <button class="primary big" value="default">Enregistrer</button>
+    </form>
+  </dialog>
+
+  <script src="app.js?v=1"></script>
+</body>
+</html>
