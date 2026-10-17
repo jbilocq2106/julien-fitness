@@ -1,0 +1,13 @@
+{
+  "name": "My Team",
+  "short_name": "My Team",
+  "description": "Pilotage d’équipe, main courante et management de proximité.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#081018",
+  "theme_color": "#0f172a",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
