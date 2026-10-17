@@ -92,3 +92,38 @@ label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}select{w
 @media (max-width:420px){
   .rir-hidden-head,.rir-hidden-row{grid-template-columns:26px 1fr 1fr 44px;gap:5px}
 }
+
+
+/* Mobile Z Flip 7: lisibilite tactile sans modifier les donnees */
+@media (max-width:600px){
+ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+ body{font-size:16px;line-height:1.45;overflow-x:hidden}
+ main{width:100%;max-width:100%;padding:12px}
+ .card,.exercise{padding:15px;margin-bottom:12px}
+ h1,.brand h1{font-size:23px}
+ h2,.hero h2{font-size:21px}
+ h3,.exercise h3,.session-card h3{font-size:18px}
+ .muted,.badge,.exercise-note,.program-exercise-main small,.muscle-chip,.guide-pair,.auto-target,.workout-hint,.superset-note,.day-chip,.ss-chip,.cardio-grid label,.history-set-head,.set-head,.help-step p,label{font-size:13px}
+ .list-item,.history-set-row,.cardio-history,.technique-details{font-size:15px}
+ button,select,input{font-size:16px;min-height:44px}
+ .bottom-nav button{font-size:14px;min-height:56px}
+ .bottom-nav{height:calc(76px + env(safe-area-inset-bottom))}
+ :root{--nav:76px}
+ .metric-btn,.rest-now,.ss-toggle,.rir-toggle,.technique-toggle,.test-start,.workout-actions button,.session-actions button,.timer-actions button{font-size:13px;min-height:40px}
+ .set-row input,.v4-set-row input,.cardio-grid input{font-size:16px;min-height:44px}
+ .set-row,.rir-hidden-row,.rir-hidden-head{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr) 48px}
+ .v4-set-row,.v4-set-head{grid-template-columns:26px minmax(0,1fr) minmax(0,1fr) minmax(0,.7fr) 44px;gap:5px}
+ .hero{flex-wrap:wrap;align-items:center}
+ .hero>div{flex:1 1 175px;min-width:0}
+ .hero button{flex:0 0 auto}
+ .section-title{flex-wrap:wrap}
+ .exercise-guide{grid-template-columns:64px minmax(0,1fr);gap:9px}
+ .exercise-visual{width:64px}
+ .exercise-svg{max-width:64px}
+ .technique-toggle{grid-column:1/-1}
+ .timer-actions button{font-size:13px}
+ .workout-head{flex-wrap:wrap}
+ .workout-head>div:first-child{flex:1 1 190px;min-width:0}
+ .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .stat span{font-size:23px}
+}
