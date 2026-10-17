@@ -1,20 +1,30 @@
 (()=>{
   if(typeof agentProfiles==='undefined'||typeof renderAgents!=='function')return;
 
-  const SEED_KEY='myteam_team_roster_20260721_v1';
+  const SEED_KEY='myteam_team_roster_current_v2';
+
+  // Team 4 actuelle : liste déjà validée dans MyTEAM.
+  const team4=[
+    ['ADAM Manon','F'],['BORGESE Myriam','F'],['DAL FARRA Shirley','F'],["D'AVERSI Margaux",'F'],['DIELS Elisa','F'],['GAGNANT Deborah','F'],['GARCIA Maeva','F'],['LUCK Océane','F'],['OUINNE Melyse','F'],['WILTGEN Ophélie','F'],
+    ['BERAUT Geoffrey','M'],['BIGONI-HOUDUSSE Alexandre','M'],['BILOCQ Julien','M'],['BURG Jeremy','M'],['CLESEUR Noah','M'],['DORRION Albert','M'],['FREZAL Joey','M'],['HENRAT Corentin','M'],['HUMMEL Aurelien','M'],['JACOTEZ Tim','M'],['MATEI Vitor','M'],['PANATO Joey','M'],['SANDSTROM Mike','M'],['SCARPINO Loic','M'],['STASIAK Valentin','M'],['TUMMINELLI Attilio','M'],['WILLEMS Jeremy','M']
+  ];
+
+  // Les autres équipes sont complétées depuis la photo fournie.
+  // La photo est antérieure à la Team 4 actuelle : sa colonne "équipe 2"
+  // correspond à l'ancien groupe dont provient la majorité de la Team 4 actuelle.
+  // On conserve donc Team 4 telle qu'elle a déjà été validée et on répartit
+  // les trois autres colonnes dans les onglets restants.
   const teams={
     1:[
-      ['EL GAMAH','F'],['LALLOZ Steven','M'],['MIGNOT Auriane','F'],['HILT Killian','M'],['VALENTINI','M'],['WEISSE','M'],['MARIE','M'],['BERNARD Noelya','F'],['JULIA Melissa','F'],['KARASU Laetitia','F'],['RODRIGUEZ Mathias','M'],['MALICK','M'],['SCHMID Sebastien','M'],['DACHOUFF Michael','M'],['ANTONIOL Christophe','M'],['GARRABI Omar','M'],['KERGOAT Maxime','M'],['VIEL','M'],['COLLELA','M'],['MOURER','F'],['DIELS Elisa','F'],['GIANOLI','F'],['MUNIER Eva','F'],['HOFFART','F'],['MOLTER','M']
-    ],
-    2:[
-      ['BILOCQ Julien','M'],['BORGESE Myriam','F'],['GAGNANT Deborah','F'],["D'AVERSI Margaux",'F'],['BERAUT Geoffrey','M'],['JACOTEZ Tim','M'],['SANDSTROM Mike','M'],['BIGONI-HOUDUSSE Alexandre','M'],['WILLEMS Jeremy','M'],['BURG Jeremy','M'],['PANATO Joey','M'],['TUMMINELLI Attilio','M'],['HENRAT Corentin','M'],['CLESEUR Noah','M'],['SCARPINO Loic','M'],['HUMMEL Aurelien','M'],['JACQUET Evan','M'],['MATEI Vitor','M'],['DORRION Albert','M'],['STASIAK Valentin','M'],['LECLERC','F'],['LUCK Océane','F'],['WILTGEN Ophélie','F'],['ADAM Manon','F'],['GARCIA Maeva','F']
-    ],
-    3:[
       ['PILLA','M'],['TRIPODI Adrien','M'],['CAIROL','F'],['SAUTEZ Jerome','M'],['HAUDIQUET','F'],['MOURON','F'],['THIBAUD','F'],['MOUDEBER Ryan','M'],['NETO','M'],['FELTEN Laurent','M'],['MAILLOT Jean Gabriel Axel','M'],['KIRSCHTETTER Teddy','M'],['DOS SANTOS MARTINS Anabela','F'],['LEBRUN Celine','F'],['VILLI','M'],['BRIDELANCE Damien','M'],['REHAMNIA','M'],['KRIEG','M'],['DURLI','M'],['GUFFROY','M'],['KESSLER Jordan','M'],['BEHARI','M'],['LECLERE','M'],['FINCK Carole','F'],['HANCE Clotilde','F']
     ],
-    4:[
+    2:[
       ['SEBRIER Kevin','M'],['FRANCESCHINI','F'],['DOSIL','M'],['MALAINHO','M'],['TERRIEN','F'],['DA SILVA MARTINS','F'],['MIANO Marie','F'],['CLAREN','M'],['DA ROCHA','M'],['BODEVING Patrick','M'],['FRANGIAMORE','M'],['FROUSSART Lucas','M'],['DURAND','M'],['YOVE Rénaldo','M'],['ALI VELOU','M'],['FRIESS SCHAEFFER Killian','M'],['GUGLIETTI','M'],["KOUAHO N'TAKPE Come Landry",'M'],['VERDIN Romain','M'],['SERJANTU Andrian','M'],['KIZILDAG','F'],['MARINI Katia','F'],['FROSIO','F'],['CHOUMAKER','F']
-    ]
+    ],
+    3:[
+      ['EL GAMAH','F'],['LALLOZ Steven','M'],['MIGNOT Auriane','F'],['HILT Killian','M'],['VALENTINI','M'],['WEISSE','M'],['MARIE','M'],['BERNARD Noelya','F'],['JULIA Melissa','F'],['KARASU Laetitia','F'],['RODRIGUEZ Mathias','M'],['MALICK','M'],['SCHMID Sebastien','M'],['DACHOUFF Michael','M'],['ANTONIOL Christophe','M'],['GARRABI Omar','M'],['KERGOAT Maxime','M'],['VIEL','M'],['COLLELA','M'],['MOURER','F'],['GIANOLI','F'],['MUNIER Eva','F'],['HOFFART','F'],['MOLTER','M']
+    ],
+    4:team4
   };
 
   window.myteamTeamSeed=teams;
@@ -40,15 +50,15 @@
       const name=existing||seedName;
       const p=agentProfiles[name]||{};
       const next={...p};
-      if(!alreadySeeded||!p.rosterSeed20260721){
+      if(!alreadySeeded||!p.rosterSeedCurrentV2){
         next.team=team;
         next.gender=gender;
       }else{
         if(![1,2,3,4].includes(Number(next.team)))next.team=team;
         if(!['F','M'].includes(next.gender))next.gender=gender;
       }
-      next.rosterSeed20260721=true;
-      next.rosterSource='Photo équipes 21/07/2026';
+      next.rosterSeedCurrentV2=true;
+      next.rosterSource=team===4?'Team 4 actuelle validée':'Photo équipes 21/07/2026';
       next.rosterSeedName=seedName;
       agentProfiles[name]=next;
       changed=true;
@@ -62,5 +72,5 @@
   }
 
   const status=document.querySelector('#agent-import-status');
-  if(status)status.textContent='Équipes 1 à 4 chargées depuis la photo • Team 4 affichée en priorité • qualifications existantes conservées.';
+  if(status)status.textContent='Team 4 actuelle conservée en priorité • Teams 1, 2 et 3 complétées depuis la photo • qualifications existantes conservées.';
 })();
