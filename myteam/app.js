@@ -6,6 +6,22 @@
   const fmtDate=v=>{if(!v)return '?';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}`:v};
   const deletedNames=()=>{try{const d=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');return new Set(Array.isArray(d)?d:[])}catch{return new Set()}};
 
+  function restoreCurrentPlanningFromArchive(){
+    try{
+      const now=new Date(),month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const active=JSON.parse(localStorage.getItem('myteam_shifts')||'[]');
+      if(Array.isArray(active)&&active.some(s=>String(s?.date||'').startsWith(month)))return false;
+      const history=JSON.parse(localStorage.getItem('myteam_planning_history')||'{}')||{};
+      const saved=history?.[month]?.rows;
+      if(!Array.isArray(saved)||!saved.length)return false;
+      localStorage.setItem('myteam_shifts',JSON.stringify(saved));
+      if(history[month]?.meta)localStorage.setItem('myteam_planning_meta',JSON.stringify(history[month].meta));
+      localStorage.setItem('myteam_planning_repair',JSON.stringify({month,restoredAt:new Date().toISOString(),reason:'current-month-missing'}));
+      return true;
+    }catch{return false}
+  }
+  restoreCurrentPlanningFromArchive();
+
   function currentRoster(team){
     const deleted=deletedNames();
     if(typeof agentProfiles==='undefined'||!agentProfiles)return [];
@@ -122,7 +138,7 @@
       await load('./prestation-share-v1.js?v=2');
       await load('./prestation-rules-v1.js?v=20261017-1');
       await load('./prestation-analysis-demo-v1.js?v=20261017-3');
-      await load('./planning-pdf-import-v2.js?v=20261017-1');
+      await load('./planning-pdf-import-v2.js?v=20261017-2');
       renderDirectAgents();
     }catch(err){
       document.querySelector('.voice-box')?.remove();
