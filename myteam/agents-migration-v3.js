@@ -61,3 +61,11 @@
     console.error('Migration agents MyTEAM',err);
   }
 })();
+
+(()=>{
+  if(document.querySelector('script[data-myteam-agent-editor]'))return;
+  const s=document.createElement('script');
+  s.src='./agent-editor-v1.js?v=20261017-1';
+  s.dataset.myteamAgentEditor='1';
+  document.head.appendChild(s);
+})();
