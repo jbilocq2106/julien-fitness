@@ -24,8 +24,18 @@
   const overlap=(a,b,c,d)=>Math.max(0,Math.min(b,d)-Math.max(a,c))/60000;
   const duration=s=>{const[a,b]=interval(s);return(b-a)/60000};
   const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const currentMonthKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`};
 
   function readRows(){try{const x=JSON.parse(localStorage.getItem('myteam_shifts')||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
+  function readHistory(){try{return JSON.parse(localStorage.getItem('myteam_planning_history')||'{}')||{}}catch{return{}}}
+  function readActuals(){try{return JSON.parse(localStorage.getItem('myteam_salary_actuals')||'{}')||{}}catch{return{}}}
+  function saveActuals(x){localStorage.setItem('myteam_salary_actuals',JSON.stringify(x))}
+  function preserveRows(rows){
+    if(!Array.isArray(rows)||!rows.length)return;
+    const byMonth={};for(const s of rows){const m=String(s?.date||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))(byMonth[m]||(byMonth[m]=[])).push(s)}
+    const hist=readHistory();for(const [m,r] of Object.entries(byMonth)){if(!hist[m])hist[m]={rows:r,meta:{source:'local'},savedAt:new Date().toISOString()};else if(Array.isArray(hist[m].rows)&&r.length>=hist[m].rows.length)hist[m].rows=r}
+    localStorage.setItem('myteam_planning_history',JSON.stringify(hist));
+  }
   function monthRows(rows){
     const counts={};for(const s of rows){const m=String(s.date||'').slice(0,7);if(/^\d{4}-\d{2}$/.test(m))counts[m]=(counts[m]||0)+1}
     const month=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
@@ -88,6 +98,13 @@
     return {total,night,sunday,holiday,overtime,chefDays:chefDays.size,sundayGross,nightGross,holidayGross,overtimeGross:overtimeBaseGross+overtimeSuppGross,chefGross,xrayGross,gross,social,dependency,taxable,tax,credit,net};
   }
 
+  function importActualFromHash(){
+    const m=location.hash.match(/^#salary=([0-9]{4}-[0-9]{2}),([0-9]+(?:\.[0-9]+)?)(?:,([0-9]+(?:\.[0-9]+)?))?$/);
+    if(!m)return false;
+    const actuals=readActuals();actuals[m[1]]={net:Number(m[2]),gross:m[3]?Number(m[3]):null,updatedAt:new Date().toISOString()};saveActuals(actuals);
+    history.replaceState(null,'',location.pathname+location.search);return true;
+  }
+
   function ensureUI(){
     const nav=document.querySelector('.tabs');const main=document.querySelector('main');if(!nav||!main)return null;
     let tab=document.querySelector('[data-tab="salary"]');
@@ -98,17 +115,28 @@
     return section;
   }
 
+  function historyHtml(currentMonth){
+    const hist=readHistory(),actuals=readActuals(),today=currentMonthKey();
+    const months=Object.keys(hist).filter(m=>m<today&&m!==currentMonth&&Array.isArray(hist[m]?.rows)&&hist[m].rows.length).sort().reverse();
+    if(!months.length)return '<div class="card" style="margin-top:12px"><h3>Historique des mois</h3><p class="muted">Les mois terminés seront classés ici automatiquement.</p></div>';
+    return `<div class="card" style="margin-top:12px"><h3>Historique des mois</h3><div style="display:grid;gap:8px">${months.map(m=>{
+      const c=calculate(hist[m].rows,true),a=actuals[m];const shown=a?.net??c.net;const status=a?.net!=null?'Réel':'Estimé';
+      return `<div style="background:#132033;border:1px solid #3b4e66;border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b>${monthLabel(m)}</b><br><span class="muted" style="font-size:12px">${hours(c.total)} • ${status}</span></div><div style="text-align:right"><b style="font-size:18px">${euro(shown)}</b>${a?.gross?`<br><span class="muted" style="font-size:12px">brut ${euro(a.gross)}</span>`:''}</div></div>`;
+    }).join('')}</div><p class="muted" style="font-size:12px;margin-bottom:0">Dès qu’une fiche de paie réelle est intégrée, le montant estimé du mois est remplacé par le montant réel. Tout reste stocké localement sur ce téléphone.</p></div>`;
+  }
+
   function render(){
     const section=ensureUI();if(!section)return;
-    const all=readRows(),picked=monthRows(all),label=monthLabel(picked.month);
-    if(!picked.rows.length){section.innerHTML='<h2>Salaire</h2><p>Aucun planning chargé.</p>';return}
+    const all=readRows();preserveRows(all);const picked=monthRows(all),label=monthLabel(picked.month),today=currentMonthKey();
+    if(!picked.rows.length){section.innerHTML='<h2>Salaire</h2><p>Aucun planning chargé.</p>'+historyHtml('');return}
     const includeXray=localStorage.getItem('myteam_salary_xray')!=='0';
-    const c=calculate(picked.rows,includeXray);
+    const c=calculate(picked.rows,includeXray);const actual=readActuals()[picked.month];const isPast=picked.month<today;
+    const mainNet=actual?.net??c.net;const badge=actual?.net!=null?'Salaire réel':(isPast?'Mois terminé • estimation':'Prévision du mois');
     section.innerHTML=`<h2>Salaire — ${label}</h2>
       <div style="background:#132033;border:1px solid #40536a;border-radius:14px;padding:15px;margin-bottom:12px">
-        <div style="font-size:13px;color:#aebacc">Prévision à partir du planning et de tes dernières fiches G4S</div>
-        <div style="font-size:28px;font-weight:900;margin:5px 0">≈ ${euro(c.net)} net</div>
-        <div style="font-size:17px;font-weight:800">${euro(c.gross)} brut estimé</div>
+        <div style="font-size:13px;color:#aebacc">${badge}</div>
+        <div style="font-size:28px;font-weight:900;margin:5px 0">${actual?.net!=null?'': '≈ '}${euro(mainNet)} net</div>
+        <div style="font-size:17px;font-weight:800">${actual?.gross?euro(actual.gross):euro(c.gross)} brut ${actual?.gross?'réel':'estimé'}</div>
       </div>
       <div class="card" style="margin:0 0 12px;background:#17263a">
         <p><b>Base mensuelle</b><span style="float:right">${euro(RATES.baseMonthly)}</span></p>
@@ -125,13 +153,16 @@
         <p><b>Imposable estimé</b><span style="float:right">${euro(c.taxable)}</span></p>
         <p><b>Impôt estimé</b><span style="float:right">− ${euro(c.tax)}</span></p>
         <p><b>Crédits d’impôt estimés</b><span style="float:right">+ ${euro(c.credit)}</span></p>
-        <hr style="border:0;border-top:1px solid #46576b"><p><b>NET PRÉVISIONNEL</b><span style="float:right;font-size:20px">${euro(c.net)}</span></p>
-        <p class="muted" style="clear:both;font-size:12px">Estimation, pas une fiche de paie. Paramètres calibrés sur tes bulletins 2026 : base 3 608,63 €, dimanche 70 %, nuit 20 %, prime de fonction par journée chef, cotisations et barème d’impôt observés. La prime RX peut varier selon l’éligibilité du mois. Quand une nouvelle fiche de paie est disponible, les paramètres peuvent être recalibrés.</p>
-      </div>`;
+        <hr style="border:0;border-top:1px solid #46576b"><p><b>${actual?.net!=null?'NET RÉEL':'NET PRÉVISIONNEL'}</b><span style="float:right;font-size:20px">${euro(mainNet)}</span></p>
+        <p class="muted" style="clear:both;font-size:12px">Les prévisions sont calculées à partir du planning et des paramètres observés sur tes fiches de paie. Une fiche de paie réelle remplace ensuite la prévision du mois dans l’historique.</p>
+      </div>${historyHtml(picked.month)}`;
     const x=section.querySelector('#salary-xray');if(x)x.onchange=()=>{localStorage.setItem('myteam_salary_xray',x.checked?'1':'0');render()};
   }
 
+  const importedActual=importActualFromHash();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(render,0));else setTimeout(render,0);
   document.addEventListener('click',e=>{if(e.target?.dataset?.tab==='salary')setTimeout(render,0)});
   window.MyTeamRenderSalary=render;
+  window.MyTeamSetActualSalary=(month,net,gross=null)=>{const a=readActuals();a[month]={net:Number(net),gross:gross==null?null:Number(gross),updatedAt:new Date().toISOString()};saveActuals(a);render()};
+  if(importedActual)setTimeout(render,100);
 })();
