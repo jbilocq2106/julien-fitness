@@ -8,17 +8,17 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>My Training</title>
-  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png?v=87">
-  <link rel="apple-touch-icon" href="icon-192.png?v=87">
-  <link rel="manifest" href="manifest.json?v=87">
-  <link rel="stylesheet" href="styles.css?v=87">
-  <link rel="stylesheet" href="features-v57.css?v=87">
-  <link rel="stylesheet" href="phone-force-v86.css?v=87">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png?v=88">
+  <link rel="apple-touch-icon" href="icon-192.png?v=88">
+  <link rel="manifest" href="manifest.json?v=88">
+  <link rel="stylesheet" href="styles.css?v=88">
+  <link rel="stylesheet" href="features-v57.css?v=88">
+  <link rel="stylesheet" href="phone-force-v86.css?v=88">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <img class="brand-logo" src="icon-192.png?v=87" alt="" width="44" height="44">
+      <img class="brand-logo" src="icon-192.png?v=88" alt="" width="44" height="44">
       <div class="brand-copy">
         <div class="eyebrow">PROGRAMME PERSONNEL</div>
         <h1>My Training</h1>
@@ -40,26 +40,16 @@
         </div>
         <button id="startNextBtn" class="primary big">Démarrer</button>
       </div>
-
       <div class="stats-grid">
         <div class="card stat"><span id="statSessions">0</span><small>séances</small></div>
         <div class="card stat"><span id="statSets">0</span><small>séries</small></div>
         <div class="card stat"><span id="statVolume">0</span><small>kg volume</small></div>
       </div>
-
       <div class="card">
-        <div class="section-title">
-          <h3>Historique Hevy</h3>
-          <button id="importBtn" class="secondary">Importer CSV</button>
-          <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
-        </div>
+        <div class="section-title"><h3>Historique Hevy</h3><button id="importBtn" class="secondary">Importer CSV</button><input id="csvInput" type="file" accept=".csv,text/csv" hidden></div>
         <p id="importStatus" class="muted">Importe ton export Hevy une seule fois. Les données restent sur ce téléphone.</p>
       </div>
-
-      <div class="card">
-        <div class="section-title"><h3>Dernières séances</h3></div>
-        <div id="recentList" class="list"></div>
-      </div>
+      <div class="card"><div class="section-title"><h3>Dernières séances</h3></div><div id="recentList" class="list"></div></div>
     </section>
 
     <section id="programView" class="view">
@@ -77,75 +67,42 @@
           <div class="muted workout-hint">↕ Tu peux changer l'ordre à tout moment • Supersets facultatifs</div>
           <button id="rirToggleBtn" class="ghost rir-toggle">Afficher RIR</button>
         </div>
-        <div class="workout-actions">
-          <button id="cancelWorkoutBtn" class="ghost danger-outline">Annuler</button>
-          <button id="finishWorkoutBtn" class="danger">Terminer</button>
-        </div>
+        <div class="workout-actions"><button id="cancelWorkoutBtn" class="ghost danger-outline">Annuler</button><button id="finishWorkoutBtn" class="danger">Terminer</button></div>
       </div>
       <div id="exerciseList"></div>
     </section>
 
-    <section id="historyView" class="view">
-      <div class="section-title"><h2>Historique</h2><button id="exportBtn" class="ghost">Sauvegarder</button></div>
-      <div id="historyList" class="list"></div>
-    </section>
+    <section id="historyView" class="view"><div class="section-title"><h2>Historique</h2><button id="exportBtn" class="ghost">Sauvegarder</button></div><div id="historyList" class="list"></div></section>
 
     <section id="statsView" class="view">
       <h2>Progression</h2>
       <div class="card">
-        <label for="exerciseSelect">Exercice</label>
-        <select id="exerciseSelect"></select>
-        <div class="metric-tabs" aria-label="Mesure affichée">
-          <button class="metric-btn active" data-metric="weight">Charge</button>
-          <button class="metric-btn" data-metric="e1rm">1RM estimé</button>
-          <button class="metric-btn" data-metric="volume">Volume</button>
-        </div>
-        <div id="exerciseStats" class="stats-panel"></div>
-        <div id="exerciseSummary" class="progress-summary"></div>
+        <label for="exerciseSelect">Exercice</label><select id="exerciseSelect"></select>
+        <div class="metric-tabs" aria-label="Mesure affichée"><button class="metric-btn active" data-metric="weight">Charge</button><button class="metric-btn" data-metric="e1rm">1RM estimé</button><button class="metric-btn" data-metric="volume">Volume</button></div>
+        <div id="exerciseStats" class="stats-panel"></div><div id="exerciseSummary" class="progress-summary"></div>
         <div class="chart-title-row"><strong id="chartMetricTitle">Meilleure charge par séance</strong><span id="chartUnit" class="muted">kg</span></div>
         <svg id="progressChart" viewBox="0 0 340 170" role="img" aria-label="Courbe de progression"></svg>
       </div>
     </section>
   </main>
 
-  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card">
-      <div class="section-title"><div><div class="eyebrow">MODE D'EMPLOI</div><h2 id="helpTitle">Utiliser My Training</h2></div><button id="closeHelpBtn" class="ghost">Fermer</button></div>
-      <div class="help-steps">
-        <div class="help-step"><span>1</span><div><strong>Démarrer</strong><p>Accueil → Démarrer, ou Programme → séance 1, 2, 3 ou 4.</p></div></div>
-        <div class="help-step"><span>2</span><div><strong>Faire une série</strong><p>Saisis la charge et les répétitions, puis touche <b>OK</b>.</p></div></div>
-        <div class="help-step"><span>3</span><div><strong>Chrono repos</strong><p>Le chrono de repos se lance automatiquement après validation d’une série.</p></div></div>
-      </div>
-    </div>
-  </div>
+  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="modal-card"><div class="section-title"><div><div class="eyebrow">MODE D'EMPLOI</div><h2 id="helpTitle">Utiliser My Training</h2></div><button id="closeHelpBtn" class="ghost">Fermer</button></div><div class="help-steps"><div class="help-step"><span>1</span><div><strong>Démarrer</strong><p>Accueil → Démarrer, ou Programme → séance 1, 2, 3 ou 4.</p></div></div><div class="help-step"><span>2</span><div><strong>Faire une série</strong><p>Saisis la charge et les répétitions, puis touche <b>OK</b>.</p></div></div><div class="help-step"><span>3</span><div><strong>Chrono repos</strong><p>Le chrono de repos se lance automatiquement après validation d’une série.</p></div></div></div></div></div>
 
-  <div id="sessionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sessionDetailTitle">
-    <div class="modal-card session-modal-card">
-      <div class="section-title"><div><div class="eyebrow">DÉTAIL DE LA SÉANCE</div><h2 id="sessionDetailTitle">Séance</h2><div id="sessionDetailMeta" class="muted"></div></div><button id="closeSessionBtn" class="ghost">Fermer</button></div>
-      <div id="sessionDetailBody"></div>
-    </div>
-  </div>
+  <div id="sessionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sessionDetailTitle"><div class="modal-card session-modal-card"><div class="section-title"><div><div class="eyebrow">DÉTAIL DE LA SÉANCE</div><h2 id="sessionDetailTitle">Séance</h2><div id="sessionDetailMeta" class="muted"></div></div><button id="closeSessionBtn" class="ghost">Fermer</button></div><div id="sessionDetailBody"></div></div></div>
 
-  <div id="timerDock" class="timer-dock">
-    <div class="timer-main"><button id="timerToggle" class="timer-time">01:30</button><div class="timer-actions"><button id="minus15">−15</button><button id="plus15">+15</button></div></div>
-  </div>
+  <div id="timerDock" class="timer-dock"><div class="timer-main"><button id="timerToggle" class="timer-time">01:30</button><div class="timer-actions"><button id="minus15">−15</button><button id="plus15">+15</button></div></div></div>
 
-  <nav class="bottom-nav">
-    <button data-view="homeView" class="active">Accueil</button>
-    <button data-view="programView">Programme</button>
-    <button data-view="historyView">Historique</button>
-    <button data-view="statsView">Stats</button>
-  </nav>
+  <nav class="bottom-nav"><button data-view="homeView" class="active">Accueil</button><button data-view="programView">Programme</button><button data-view="historyView">Historique</button><button data-view="statsView">Stats</button></nav>
 
-  <script src="app.js?v=87"></script>
-  <script src="features-v57.js?v=87"></script>
-  <script src="cardio-v59.js?v=87"></script>
-  <script src="swap-v60.js?v=87"></script>
-  <script src="swap-priority-v61.js?v=87"></script>
-  <script src="session-safety-v63.js?v=87"></script>
-  <script src="rest-ui-v63.js?v=87"></script>
-  <script src="muscles-feedback-v63.js?v=87"></script>
-  <script src="feedback-prefs-v64.js?v=87"></script>
-  <script src="focus-workout-v87.js?v=87"></script>
+  <script src="app.js?v=88"></script>
+  <script src="features-v57.js?v=88"></script>
+  <script src="cardio-v59.js?v=88"></script>
+  <script src="swap-v60.js?v=88"></script>
+  <script src="swap-priority-v61.js?v=88"></script>
+  <script src="session-safety-v63.js?v=88"></script>
+  <script src="rest-ui-v63.js?v=88"></script>
+  <script src="muscles-feedback-v63.js?v=88"></script>
+  <script src="feedback-prefs-v64.js?v=88"></script>
+  <script src="focus-workout-v87.js?v=88"></script>
 </body>
 </html>
