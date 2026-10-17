@@ -45,11 +45,12 @@
 
   (async()=>{
     try{
-      await load('../team4/app.js?v=20261017-5');
+      await load('../team4/app.js?v=20261017-6');
       renderDirectAgents();
-      await load('./hours-v1.js?v=20261017-5');
+      await load('./hours-v1.js?v=20261017-6');
+      await load('./salary-v1.js?v=20261017-1');
       await load('./agents-migration-v3.js?v=4');
-      await load('./roster-v5.js?v=20261017-5');
+      await load('./roster-v5.js?v=20261017-6');
       renderDirectAgents();
       await load('./prestation-share-v1.js?v=2');
       await load('./planning-pdf-import-v1.js?v=2');
