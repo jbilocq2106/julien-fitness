@@ -45,6 +45,7 @@
 
   (async()=>{
     try{
+      await load('./pwa-install-v1.js?v=20261017-1');
       await load('../team4/app.js?v=20261017-7');
       renderDirectAgents();
       await load('./hours-v1.js?v=20261017-7');
