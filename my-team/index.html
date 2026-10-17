@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <title>My Team</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=2">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <div class="app-shell">
@@ -24,13 +24,14 @@
         <div class="hero card">
           <div class="eyebrow">Ligne de conduite</div>
           <h1>Équité, confiance, reconnaissance</h1>
-          <p>Valoriser les efforts, la ponctualité, l’assiduité et le volontariat, avec des décisions cohérentes et explicables.</p>
+          <p>Être un référent fiable : reconnaître les efforts, écouter les agents, expliquer les décisions et garder des règles cohérentes pour tous.</p>
         </div>
 
-        <div class="stats-grid">
+        <div class="stats-grid four">
           <div class="card stat"><strong id="statAgents">0</strong><span>agents</span></div>
           <div class="card stat"><strong id="statToday">0</strong><span>faits aujourd’hui</span></div>
           <div class="card stat"><strong id="statFollow">0</strong><span>à suivre</span></div>
+          <div class="card stat"><strong id="statTodayAssignments">0</strong><span>affectations aujourd’hui</span></div>
         </div>
 
         <div class="card">
@@ -41,14 +42,15 @@
         <div class="quick-grid">
           <button class="quick card" data-go="log"><span>📝</span><strong>Nouvelle entrée</strong><small>Main courante</small></button>
           <button class="quick card" data-go="team"><span>👥</span><strong>Équipe</strong><small>Fiches agents</small></button>
-          <button class="quick card" data-go="dashboard"><span>⚖️</span><strong>Pilotage</strong><small>Équité & suivi</small></button>
-          <button class="quick card" data-action="export"><span>💾</span><strong>Sauvegarder</strong><small>Exporter les données</small></button>
+          <button class="quick card" data-go="operations"><span>📅</span><strong>Organisation</strong><small>Postes, heures, congés</small></button>
+          <button class="quick card" data-go="dashboard"><span>⚖️</span><strong>Pilotage</strong><small>Équité & synthèse</small></button>
         </div>
       </section>
 
       <section id="team" class="view">
         <div class="section-head"><h1>Équipe</h1><button id="addAgentBtn" class="primary small">+ Agent</button></div>
-        <p class="muted">Une fiche professionnelle par agent. Pas de données personnelles inutiles.</p>
+        <p class="muted">Une fiche professionnelle par agent. Les informations restent factuelles et utiles au fonctionnement de l’équipe.</p>
+        <input id="agentSearch" class="search" type="search" placeholder="Rechercher un agent, une qualification, un poste…">
         <div id="agentList" class="stack"></div>
       </section>
 
@@ -63,6 +65,26 @@
         <div id="logList" class="stack"></div>
       </section>
 
+      <section id="operations" class="view">
+        <div class="section-head"><h1>Organisation</h1></div>
+        <div class="segment" role="tablist">
+          <button class="active" data-ops-tab="assignments">Affectations & heures</button>
+          <button data-ops-tab="leaves">Congés / absences</button>
+        </div>
+
+        <div id="assignmentsPanel" class="ops-panel active">
+          <div class="section-head"><h2>Affectations</h2><button id="addAssignmentBtn" class="primary small">+ Affectation</button></div>
+          <p class="muted">Enregistre les postes réellement tenus et les heures. Le tableau de bord montre les répartitions sans classer les agents.</p>
+          <div id="assignmentList" class="stack"></div>
+        </div>
+
+        <div id="leavesPanel" class="ops-panel">
+          <div class="section-head"><h2>Congés / absences</h2><button id="addLeaveBtn" class="primary small">+ Entrée</button></div>
+          <p class="muted">Congés, formation, récupération, absence ou autre indisponibilité professionnelle.</p>
+          <div id="leaveList" class="stack"></div>
+        </div>
+      </section>
+
       <section id="dashboard" class="view">
         <h1>Pilotage</h1>
         <div class="card">
@@ -70,36 +92,45 @@
           <ul class="principles">
             <li>Mêmes règles pour tous, exceptions justifiées.</li>
             <li>Qualification et besoin opérationnel avant préférence personnelle.</li>
-            <li>Reconnaître l’effort sans créer de favoritisme.</li>
-            <li>Distinguer faits, déclarations et appréciations.</li>
+            <li>Reconnaître le volontariat, la ponctualité et l’assiduité sans créer de favoritisme.</li>
+            <li>Distinguer faits constatés, déclarations de l’agent et appréciations managériales.</li>
             <li>Tracer les décisions importantes et les suites données.</li>
           </ul>
         </div>
+
         <div class="card">
-          <h2>Indicateurs</h2>
+          <div class="section-head"><h2>Indicateurs</h2><span class="muted" id="dashboardPeriod"></span></div>
           <div id="indicatorList" class="stack compact"></div>
         </div>
+
+        <div class="card">
+          <h2>Répartition des heures · mois en cours</h2>
+          <p class="muted">Lecture factuelle des heures saisies. Aucun score ni classement automatique.</p>
+          <div id="hoursTable" class="data-table"></div>
+        </div>
+
+        <div class="card">
+          <h2>Répartition des postes · mois en cours</h2>
+          <p class="muted">Permet de repérer les rotations déséquilibrées et de les expliquer si elles sont liées aux qualifications ou aux besoins.</p>
+          <div id="postsTable" class="data-table"></div>
+        </div>
+
         <div class="card">
           <h2>Synthèse superviseur</h2>
-          <p class="muted">Génère un résumé factuel à partir de la main courante.</p>
+          <p class="muted">Résumé factuel de la journée à partir de la main courante, des affectations et des absences.</p>
           <button id="summaryBtn" class="secondary big">Générer la synthèse du jour</button>
-          <textarea id="summaryOutput" rows="10" placeholder="La synthèse apparaîtra ici."></textarea>
+          <textarea id="summaryOutput" rows="12" placeholder="La synthèse apparaîtra ici."></textarea>
+          <button id="copySummaryBtn" class="ghost big">Copier la synthèse</button>
         </div>
-      </section>
 
-      <section id="settings" class="view">
-        <h1>Réglages</h1>
         <div class="card">
-          <h2>Données</h2>
-          <p class="muted">Les données de cette V1 restent sur ce téléphone.</p>
+          <h2>Données & sauvegarde</h2>
+          <p class="muted">My Team fonctionne localement sur ce téléphone. Exporte régulièrement une sauvegarde JSON.</p>
           <div class="row">
             <button id="exportBtn" class="secondary">Exporter JSON</button>
             <label class="secondary file-label">Importer<input id="importInput" type="file" accept="application/json" hidden></label>
           </div>
-        </div>
-        <div class="card">
-          <h2>Version</h2>
-          <p>My Team v1 · base personnelle offline-first.</p>
+          <small class="muted version-line">My Team v2 · offline-first</small>
         </div>
       </section>
     </main>
@@ -108,40 +139,77 @@
       <button class="active" data-view="home"><span>🏠</span><small>Accueil</small></button>
       <button data-view="team"><span>👥</span><small>Équipe</small></button>
       <button data-view="log"><span>📝</span><small>Main courante</small></button>
+      <button data-view="operations"><span>📅</span><small>Organisation</small></button>
       <button data-view="dashboard"><span>⚖️</span><small>Pilotage</small></button>
-      <button data-view="settings"><span>⚙️</span><small>Réglages</small></button>
     </nav>
   </div>
 
   <dialog id="agentDialog">
-    <form method="dialog" id="agentForm" class="dialog-inner">
-      <button class="close" value="cancel" aria-label="Fermer">×</button>
+    <form id="agentForm" class="dialog-inner">
+      <button type="button" class="close" data-close="agentDialog" aria-label="Fermer">×</button>
       <div class="eyebrow">Fiche agent</div>
-      <h2>Ajouter un agent</h2>
-      <label>Nom / prénom<input id="agentName" required></label>
-      <label>Qualifications / habilitations<textarea id="agentQuals" rows="2" placeholder="Ex. postes autorisés, formations…"></textarea></label>
-      <label>Desiderata / préférences<textarea id="agentPrefs" rows="2" placeholder="Demandes exprimées par l’agent"></textarea></label>
+      <h2 id="agentDialogTitle">Ajouter un agent</h2>
+      <input id="agentEditId" type="hidden">
+      <label>Nom / prénom<input id="agentName" required autocomplete="off"></label>
+      <label>Qualifications / habilitations<textarea id="agentQuals" rows="3" placeholder="Ex. PIF, EDS, airside, fret, cabine…"></textarea></label>
+      <label>Postes autorisés / maîtrisés<textarea id="agentPosts" rows="2" placeholder="Postes sur lesquels l’agent peut être affecté"></textarea></label>
+      <label>Desiderata / préférences exprimées<textarea id="agentPrefs" rows="2" placeholder="Demandes de planning ou de poste exprimées par l’agent"></textarea></label>
       <label>Postes moins appréciés / contraintes professionnelles<textarea id="agentLess" rows="2"></textarea></label>
+      <label>Points positifs / efforts constatés<textarea id="agentPositives" rows="2" placeholder="Uniquement des éléments professionnels observables"></textarea></label>
       <label>Notes factuelles de suivi<textarea id="agentNotes" rows="3"></textarea></label>
-      <button class="primary big" value="default">Enregistrer</button>
+      <button type="submit" class="primary big">Enregistrer</button>
     </form>
   </dialog>
 
   <dialog id="logDialog">
-    <form method="dialog" id="logForm" class="dialog-inner">
-      <button class="close" value="cancel" aria-label="Fermer">×</button>
+    <form id="logForm" class="dialog-inner">
+      <button type="button" class="close" data-close="logDialog" aria-label="Fermer">×</button>
       <div class="eyebrow">Main courante</div>
-      <h2>Nouvelle entrée</h2>
-      <label>Catégorie<select id="logCategory"><option>Planning</option><option>Présence / absence</option><option>Retard / assiduité</option><option>Passage sur poste</option><option>Fonctionnement du poste</option><option>Demande d’agent</option><option>Consigne</option><option>Incident</option><option>Autre</option></select></label>
+      <h2 id="logDialogTitle">Nouvelle entrée</h2>
+      <input id="logEditId" type="hidden">
+      <label>Date / heure<input id="logDateTime" type="datetime-local" required></label>
+      <label>Catégorie<select id="logCategory"><option>Planning</option><option>Présence / absence</option><option>Retard / assiduité</option><option>Passage sur poste</option><option>Fonctionnement du poste</option><option>Demande d’agent</option><option>Consigne</option><option>Formation / qualification</option><option>Incident</option><option>Point positif</option><option>Autre</option></select></label>
       <label>Agent concerné<select id="logAgent"><option value="">— Aucun / général —</option></select></label>
+      <label>Poste / zone<input id="logPost" placeholder="Ex. E32, E84, PIF…"></label>
       <label>Nature<select id="logNature"><option value="fact">Fait constaté</option><option value="declared">Déclaration de l’agent</option><option value="assessment">Appréciation managériale</option></select></label>
       <label>Contenu<textarea id="logText" rows="4" required placeholder="Décrire précisément et factuellement."></textarea></label>
-      <label>Action prise<textarea id="logAction" rows="2"></textarea></label>
+      <label>Action prise / réponse donnée<textarea id="logAction" rows="2"></textarea></label>
       <div class="checks"><label><input id="logFollow" type="checkbox"> À suivre</label><label><input id="logSupervisor" type="checkbox"> À transmettre au superviseur</label></div>
-      <button class="primary big" value="default">Enregistrer</button>
+      <button type="submit" class="primary big">Enregistrer</button>
     </form>
   </dialog>
 
-  <script src="app.js?v=1"></script>
+  <dialog id="assignmentDialog">
+    <form id="assignmentForm" class="dialog-inner">
+      <button type="button" class="close" data-close="assignmentDialog" aria-label="Fermer">×</button>
+      <div class="eyebrow">Organisation</div>
+      <h2 id="assignmentDialogTitle">Nouvelle affectation</h2>
+      <input id="assignmentEditId" type="hidden">
+      <label>Date<input id="assignmentDate" type="date" required></label>
+      <label>Agent<select id="assignmentAgent" required></select></label>
+      <label>Poste / zone<input id="assignmentPost" required placeholder="Ex. E32, E84, PIF…"></label>
+      <div class="row"><label>Début<input id="assignmentStart" type="time"></label><label>Fin<input id="assignmentEnd" type="time"></label></div>
+      <div class="row"><label>Heures prévues<input id="assignmentPlanned" type="number" min="0" max="24" step="0.25" inputmode="decimal"></label><label>Heures réelles<input id="assignmentActual" type="number" min="0" max="24" step="0.25" inputmode="decimal"></label></div>
+      <label>Note<textarea id="assignmentNote" rows="2" placeholder="Ex. remplacement, volontariat, besoin opérationnel…"></textarea></label>
+      <button type="submit" class="primary big">Enregistrer</button>
+    </form>
+  </dialog>
+
+  <dialog id="leaveDialog">
+    <form id="leaveForm" class="dialog-inner">
+      <button type="button" class="close" data-close="leaveDialog" aria-label="Fermer">×</button>
+      <div class="eyebrow">Congés / absences</div>
+      <h2 id="leaveDialogTitle">Nouvelle entrée</h2>
+      <input id="leaveEditId" type="hidden">
+      <label>Agent<select id="leaveAgent" required></select></label>
+      <label>Type<select id="leaveType"><option>Congé</option><option>Repos</option><option>Récupération</option><option>Formation</option><option>Absence</option><option>Maladie</option><option>Autre</option></select></label>
+      <div class="row"><label>Du<input id="leaveStart" type="date" required></label><label>Au<input id="leaveEnd" type="date" required></label></div>
+      <label>Statut<select id="leaveStatus"><option>Prévu</option><option>Demandé</option><option>Validé</option><option>Refusé</option><option>Réalisé</option></select></label>
+      <label>Note<textarea id="leaveNote" rows="2"></textarea></label>
+      <button type="submit" class="primary big">Enregistrer</button>
+    </form>
+  </dialog>
+
+  <script src="app.js?v=2"></script>
 </body>
 </html>
