@@ -1,4 +1,6 @@
 (()=>{
+  const voiceBox=document.querySelector('.voice-box');
+  if(voiceBox)voiceBox.style.display='none';
   const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Chargement impossible : '+src));document.head.appendChild(s)});
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const fmtDate=v=>{if(!v)return '?';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}`:v};
@@ -111,6 +113,7 @@
     try{
       await load('./pwa-install-v1.js?v=20261017-1');
       await load('../team4/app.js?v=20261017-7');
+      document.querySelector('.voice-box')?.remove();
       await load('./hours-v1.js?v=20261017-7');
       await load('./salary-v2.js?v=20261017-1');
       await load('./agents-migration-v3.js?v=5');
@@ -122,6 +125,7 @@
       await load('./planning-pdf-import-v2.js?v=20261017-1');
       renderDirectAgents();
     }catch(err){
+      document.querySelector('.voice-box')?.remove();
       renderDirectAgents();
       const status=document.querySelector('#status');
       if(status)status.textContent='MyTEAM chargé avec fonctions principales. Actualise si un module manque.';
