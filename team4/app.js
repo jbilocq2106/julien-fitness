@@ -58,9 +58,28 @@ renderLeaves();
 const agentKey='myteam_agent_profiles_v1',agentSelect=document.querySelector('#agent-select'),agentDetail=document.querySelector('#agent-detail');
 let agentProfiles={};try{const data=JSON.parse(localStorage.getItem(agentKey)||'{}');if(data&&typeof data==='object'&&!Array.isArray(data))agentProfiles=data}catch{}
 const agentFields={notes:'agent-notes',instructions:'agent-instructions-date',rx:'agent-rx-date',reminders:'agent-reminders',reminderNotes:'agent-reminder-notes',sickLog:'agent-sick-log',lateLog:'agent-late-log',rxLog:'agent-rx-log'};
-function showAgent(){const key=agentSelect.value,p=agentProfiles[key];agentDetail.classList.toggle('hidden',!p);if(!p)return;document.querySelector('#agent-title').textContent=key;for(const [field,id] of Object.entries(agentFields))document.getElementById(id).value=p[field]??'';document.querySelector('#agent-status').textContent=''}
+function showAgent(){const key=agentSelect.value,p=agentProfiles[key];agentDetail.classList.toggle('hidden',!p);if(!p)return;document.querySelector('#agent-title').textContent=key;document.querySelector('#agent-qual-rx').checked=p.rxCertified===true;document.querySelector('#agent-qual-piste').checked=p.pistePermit===true;document.querySelector('#agent-qual-summary').textContent=(p.gender==='F'?'Femme':p.gender==='M'?'Homme':'Genre non renseigné')+' • '+(p.rxCertified?'RX ✓':'RX non indiqué')+' • '+(p.pistePermit?'Permis piste ✓':'Permis non indiqué');for(const [field,id] of Object.entries(agentFields))document.getElementById(id).value=p[field]??'';document.querySelector('#agent-status').textContent=''}
 function renderAgents(selected){agentSelect.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='Sélectionner un agent';agentSelect.append(empty);for(const key of Object.keys(agentProfiles).sort((a,b)=>a.localeCompare(b,'fr'))){const o=document.createElement('option');o.value=key;o.textContent=key;agentSelect.append(o)}agentSelect.value=selected&&agentProfiles[selected]?selected:'';showAgent()}
 agentSelect.addEventListener('change',showAgent);
 document.querySelector('#agent-add').onclick=()=>{const name=document.querySelector('#agent-name').value.trim();if(!name||name.length>100){alert('Saisis un identifiant ou un nom valide.');return}if(!agentProfiles[name])agentProfiles[name]={};try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));renderAgents(name);document.querySelector('#agent-name').value=''}catch{alert('Enregistrement local impossible.')}};
-document.querySelector('#agent-save').onclick=()=>{const name=agentSelect.value;if(!name)return;const p={};for(const [field,id] of Object.entries(agentFields))p[field]=document.getElementById(id).value.trim();const count=Number(p.reminders||0);if(!Number.isInteger(count)||count<0||count>999){document.querySelector('#agent-status').textContent='Nombre de rappels invalide.';return}p.reminders=count;agentProfiles[name]=p;try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));document.querySelector('#agent-status').textContent='Fiche enregistrée sur cet appareil uniquement.'}catch{document.querySelector('#agent-status').textContent='Enregistrement impossible.'}};
+document.querySelector('#agent-save').onclick=()=>{const name=agentSelect.value;if(!name)return;const p={};for(const [field,id] of Object.entries(agentFields))p[field]=document.getElementById(id).value.trim();const count=Number(p.reminders||0);if(!Number.isInteger(count)||count<0||count>999){document.querySelector('#agent-status').textContent='Nombre de rappels invalide.';return}p.reminders=count;p.rxCertified=document.querySelector('#agent-qual-rx').checked;p.pistePermit=document.querySelector('#agent-qual-piste').checked;p.gender=agentProfiles[name]?.gender||'';p.team=agentProfiles[name]?.team||4;agentProfiles[name]=p;try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));document.querySelector('#agent-status').textContent='Fiche enregistrée sur cet appareil uniquement.'}catch{document.querySelector('#agent-status').textContent='Enregistrement impossible.'}};
 renderAgents();
+
+document.querySelector('#agent-import').addEventListener('change',async e=>{
+ const el=document.querySelector('#agent-import-status'),file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>200000)throw Error('Fichier trop volumineux');
+  const data=JSON.parse(await file.text());
+  if(data.schema!=='myteam-agents-v1'||!Array.isArray(data.agents)||!data.agents.length||data.agents.length>150)throw Error('Format de liste non reconnu');
+  const names=new Set();
+  for(const a of data.agents){
+   if(typeof a.name!=='string'||!a.name.trim()||a.name.length>100||names.has(a.name.trim())||!['F','M'].includes(a.gender)||typeof a.rx!=='boolean'||typeof a.piste!=='boolean')throw Error('Ligne agent invalide ou en double');
+   names.add(a.name.trim());
+  }
+  const updated={...agentProfiles};
+  for(const a of data.agents){const key=a.name.trim();updated[key]={...(updated[key]||{}),gender:a.gender,team:4,rxCertified:a.rx,pistePermit:a.piste};}
+  localStorage.setItem(agentKey,JSON.stringify(updated));agentProfiles=updated;renderAgents();
+  el.textContent=data.agents.length+' agents importés localement. Les notes existantes ont été conservées.';
+ }catch(err){el.textContent='Import impossible : '+err.message}
+ e.target.value='';
+});
