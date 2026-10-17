@@ -48,6 +48,7 @@
   ];
 
   const normalizeName=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+  const refreshMainList=()=>{try{window.renderMyTeamAgentList?.()}catch{}};
 
   function seedPrestationAgents(){
     const known=new Map(Object.keys(agentProfiles).map(name=>[normalizeName(name),name]));
@@ -90,6 +91,7 @@
 
     const seeded=seedPrestationAgents();
     if(seeded)renderAgents();
+    refreshMainList();
 
     const createBox=document.createElement('div');
     createBox.id='agent-create-extra';
@@ -100,7 +102,7 @@
       #agent-create-extra label{display:block;font-size:13px}
       #agent-create-extra .ae-checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
       #agent-create-extra input[type=checkbox]{transform:scale(1.2);margin-right:6px}
-      #agent-manual-list{margin:12px 0}.ae-added{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#26354a;border:1px solid #3b4e66;border-radius:12px;padding:10px 12px;margin:7px 0}.ae-added-name{font-weight:800}.ae-tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.ae-tag{padding:4px 7px;border-radius:999px;background:#1f7a4d;font-size:10px;font-weight:800}.ae-team{background:#46566c}.ae-source{background:#7c5a1c}
+      #agent-manual-list{margin:12px 0}.ae-added{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#26354a;border:1px solid #3b4e66;border-radius:12px;padding:10px 12px;margin:7px 0}.ae-added-name{font-weight:800}.ae-added.female .ae-added-name{color:#ff7fbd}.ae-tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.ae-tag{padding:4px 7px;border-radius:999px;background:#1f7a4d;font-size:10px;font-weight:800}.ae-team{background:#46566c}.ae-source{background:#7c5a1c}
       .ae-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:8px 0 12px}.ae-edit-grid select{width:100%;padding:11px;background:#111928;color:#fff;border:1px solid #65758a;border-radius:10px}
       @media(max-width:520px){#agent-create-extra .ae-grid,.ae-edit-grid{grid-template-columns:1fr}}
     </style>
@@ -129,9 +131,9 @@
     function persist(){try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));return true}catch{return false}}
     function resetCreate(){nameInput.value='';document.querySelector('#agent-new-gender').value='';document.querySelector('#agent-new-team').value='4';document.querySelector('#agent-new-rx').checked=false;document.querySelector('#agent-new-piste').checked=false}
     function drawManual(){
-      const rows=Object.entries(agentProfiles).filter(([name,p])=>p?.manualAdded===true||p?.prestationAdded===true||!baseNames.has(name)).sort((a,b)=>a[0].localeCompare(b[0],'fr'));
+      const rows=Object.entries(agentProfiles).filter(([name,p])=>p?.manualAdded===true||p?.prestationAdded===true||!baseNames.has(name)).sort((a,b)=>a[0].localeCompare(b[0],'fr',{sensitivity:'base'}));
       if(!rows.length){manualWrap.innerHTML='';return;}
-      manualWrap.innerHTML='<strong>Agents ajoutés</strong>'+rows.map(([name,p])=>`<button type="button" class="ae-added" data-ae-open="${name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"><span class="ae-added-name">${name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="ae-tags">${p.gender==='F'?'<span class="ae-tag">F</span>':p.gender==='M'?'<span class="ae-tag">H</span>':''}${p.rxCertified===true?'<span class="ae-tag">RX</span>':''}${p.pistePermit===true?'<span class="ae-tag">PISTE</span>':''}${p.prestationAdded?'<span class="ae-tag ae-source">PRESTA</span>':''}<span class="ae-tag ae-team">Éq. ${p.team||'?'}</span></span></button>`).join('');
+      manualWrap.innerHTML='<strong>Agents ajoutés</strong>'+rows.map(([name,p])=>`<button type="button" class="ae-added${p.gender==='F'?' female':''}" data-ae-open="${name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"><span class="ae-added-name">${name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span><span class="ae-tags">${p.gender==='F'?'<span class="ae-tag">F</span>':p.gender==='M'?'<span class="ae-tag">H</span>':''}${p.rxCertified===true?'<span class="ae-tag">RX</span>':''}${p.pistePermit===true?'<span class="ae-tag">PISTE</span>':''}${p.prestationAdded?'<span class="ae-tag ae-source">PRESTA</span>':''}<span class="ae-tag ae-team">Éq. ${p.team||'?'}</span></span></button>`).join('');
       manualWrap.querySelectorAll('[data-ae-open]').forEach(b=>b.onclick=()=>{agentSelect.value=b.dataset.aeOpen;agentSelect.dispatchEvent(new Event('change'));detail.scrollIntoView({behavior:'smooth',block:'start'})});
     }
     function loadEdit(){
@@ -154,7 +156,7 @@
       const team=Number(document.querySelector('#agent-new-team').value);
       agentProfiles[name]={gender:document.querySelector('#agent-new-gender').value,team:team||0,rxCertified:document.querySelector('#agent-new-rx').checked,pistePermit:document.querySelector('#agent-new-piste').checked,manualAdded:true};
       if(!persist()){alert('Enregistrement local impossible.');delete agentProfiles[name];return}
-      renderAgents(name);resetCreate();drawManual();loadEdit();
+      renderAgents(name);resetCreate();drawManual();loadEdit();refreshMainList();
       const s=document.querySelector('#agent-status');if(s)s.textContent='Agent ajouté avec ses qualifications sur cet appareil.';
       detail.classList.remove('hidden');detail.scrollIntoView({behavior:'smooth',block:'start'});
     };
@@ -165,12 +167,12 @@
       p.gender=gEdit.value;
       p.team=Number(tEdit.value)||0;
       p.manualAdded=p.manualAdded===true||(!baseNames.has(name)&&!p.prestationAdded);
-      persist();drawManual();
+      persist();drawManual();refreshMainList();
       const summary=document.querySelector('#agent-qual-summary');
       if(summary)summary.textContent=(p.gender==='F'?'Femme':p.gender==='M'?'Homme':'Genre non renseigné')+' • '+(p.rxCertified?'RX ✓':'RX non indiqué')+' • '+(p.pistePermit?'Permis piste ✓':'Permis non indiqué');
     });
 
-    drawManual();loadEdit();
+    drawManual();loadEdit();refreshMainList();
     const s=document.querySelector('#agent-import-status');
     if(s&&seeded)s.textContent=`${seeded} agents absents ajoutés depuis la fiche de prestation du 20/06/2026. Qualifications non déduites sauf sexe explicitement indiqué par le poste E32.`;
   }
