@@ -1,5 +1,5 @@
-const CACHE='my-training-v85';
-const CORE=['./','index.html','styles.css?v=84','features-v57.css?v=84','app.js?v=84','features-v57.js?v=84','cardio-v59.js?v=84','swap-v60.js?v=84','swap-priority-v61.js?v=84','session-safety-v63.js?v=84','rest-ui-v63.js?v=84','muscles-feedback-v63.js?v=84','feedback-prefs-v64.js?v=84','timed-sets-v65.js?v=73','finish-check-v66.js?v=74','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','feedback-alternatives-v69.js?v=70','session-time-v70.js?v=70','deadbug-recovery-v71.js?v=71','recorded-session-edit-v72.js?v=72','history-order-v75.js?v=77','history-exercise-detail-v78.js?v=78','cardio-reference-v79.js?v=79','history-cardio-edit-v80.js?v=80','program.json','manifest.json','favicon.png?v=84','icon-192.png?v=85','icon-512.png?v=85'];
+const CACHE='my-training-v86';
+const CORE=['./','index.html','styles.css?v=86','features-v57.css?v=86','phone-force-v86.css?v=86','app.js?v=86','features-v57.js?v=86','cardio-v59.js?v=86','swap-v60.js?v=86','swap-priority-v61.js?v=86','session-safety-v63.js?v=86','rest-ui-v63.js?v=86','muscles-feedback-v63.js?v=86','feedback-prefs-v64.js?v=86','timed-sets-v65.js?v=73','finish-check-v66.js?v=74','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','feedback-alternatives-v69.js?v=70','session-time-v70.js?v=70','deadbug-recovery-v71.js?v=71','recorded-session-edit-v72.js?v=72','history-order-v75.js?v=77','history-exercise-detail-v78.js?v=78','cardio-reference-v79.js?v=79','history-cardio-edit-v80.js?v=80','program.json','manifest.json?v=86','favicon.png?v=86','icon-192.png?v=86','icon-512.png?v=86'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -30,7 +30,7 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('feedback-alternatives-v69.js')||url.pathname.endsWith('session-time-v70.js')||url.pathname.endsWith('deadbug-recovery-v71.js')||
     url.pathname.endsWith('recorded-session-edit-v72.js')||url.pathname.endsWith('history-order-v75.js')||url.pathname.endsWith('history-exercise-detail-v78.js')||
     url.pathname.endsWith('cardio-reference-v79.js')||url.pathname.endsWith('history-cardio-edit-v80.js')||url.pathname.endsWith('styles.css')||
-    url.pathname.endsWith('features-v57.css')||url.pathname.endsWith('program.json')||url.pathname.endsWith('manifest.json')
+    url.pathname.endsWith('features-v57.css')||url.pathname.endsWith('phone-force-v86.css')||url.pathname.endsWith('program.json')||url.pathname.endsWith('manifest.json')
   );
   if(dynamic){
     event.respondWith(fetch(req,{cache:'no-store'}).then(resp=>{
