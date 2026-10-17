@@ -1,4 +1,4 @@
-const CACHE='myteam-v3-shell-v14';
+const CACHE='myteam-v3-shell-v15';
 const ASSETS=['./','./index.html','./app.js?v=20261017-9','./pwa-install-v1.js?v=20261017-1','./private-import-v1.js?v=3','./hours-v1.js?v=20261017-7','./salary-v2.js?v=20261017-1','./agents-migration-v3.js?v=4','./roster-v5.js?v=20261017-7','./planning-pdf-import-v2.js?v=20261017-1','./prestation-share-v1.js?v=2','./manifest.webmanifest','./team4-icon-v4.svg?v=5','./myteam-192.png?v=3','./myteam-512.png?v=3'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).catch(()=>{}));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('myteam-v2-')||k.startsWith('myteam-v3-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
