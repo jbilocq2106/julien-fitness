@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "MyTEAM",
+  "short_name": "MyTEAM",
+  "description": "Gestion personnelle de l'équipe 4 : planning, agents, qualifications, prestations et congés.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111928",
+  "theme_color": "#111928",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
