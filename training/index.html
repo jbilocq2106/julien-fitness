@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>My Training</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png?v=58">
+  <link rel="apple-touch-icon" href="icon-192.png?v=58">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css?v=56">
+  <link rel="stylesheet" href="features-v57.css?v=57">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="icon-192.png?v=58" alt="" width="44" height="44">
+      <div class="brand-copy">
+        <div class="eyebrow">PROGRAMME PERSONNEL</div>
+        <h1>My Training</h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="helpBtn" class="ghost help-btn" aria-label="Mode d'emploi">?</button>
+      <button id="wakeBtn" class="ghost">Écran allumé</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <section id="homeView" class="view active">
+      <div class="hero card">
+        <div>
+          <div class="muted">Prochaine séance</div>
+          <h2 id="nextSessionName">Chargement…</h2>
+          <div id="nextSessionFocus" class="muted"></div>
+        </div>
+        <button id="startNextBtn" class="primary big">Démarrer</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="card stat"><span id="statSessions">0</span><small>séances</small></div>
+        <div class="card stat"><span id="statSets">0</span><small>séries</small></div>
+        <div class="card stat"><span id="statVolume">0</span><small>kg volume</small></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <h3>Historique Hevy</h3>
+          <button id="importBtn" class="secondary">Importer CSV</button>
+          <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
+        </div>
+        <p id="importStatus" class="muted">Importe ton export Hevy une seule fois. Les données restent sur ce téléphone.</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><h3>Dernières séances</h3></div>
+        <div id="recentList" class="list"></div>
+      </div>
+    </section>
+
+    <section id="programView" class="view">
+      <div class="section-title"><h2>Programme</h2><button id="refreshProgramBtn" class="ghost">Actualiser</button></div>
+      <div id="programCards"></div>
+    </section>
+
+    <section id="workoutView" class="view">
+      <div id="testModeBanner" class="test-banner hidden">MODE TEST — rien ne sera enregistré</div>
+      <div class="workout-head">
+        <div>
+          <div class="eyebrow">SÉANCE EN COURS</div>
+          <h2 id="workoutTitle"></h2>
+          <div id="workoutElapsed" class="muted">00:00</div>
+          <div class="muted workout-hint">↕ Tu peux changer l'ordre à tout moment • Supersets facultatifs</div>
+          <button id="rirToggleBtn" class="ghost rir-toggle">Afficher RIR</button>
+        </div>
+        <div class="workout-actions">
+          <button id="cancelWorkoutBtn" class="ghost danger-outline">Annuler</button>
+          <button id="finishWorkoutBtn" class="danger">Terminer</button>
+        </div>
+      </div>
+      <div id="exerciseList"></div>
+    </section>
+
+    <section id="historyView" class="view">
+      <div class="section-title"><h2>Historique</h2><button id="exportBtn" class="ghost">Sauvegarder</button></div>
+      <div id="historyList" class="list"></div>
+    </section>
+
+    <section id="statsView" class="view">
+      <h2>Progression</h2>
+      <div class="card">
+        <label for="exerciseSelect">Exercice</label>
+        <select id="exerciseSelect"></select>
+
+        <div class="metric-tabs" aria-label="Mesure affichée">
+          <button class="metric-btn active" data-metric="weight">Charge</button>
+          <button class="metric-btn" data-metric="e1rm">1RM estimé</button>
+          <button class="metric-btn" data-metric="volume">Volume</button>
+        </div>
+
+        <div id="exerciseStats" class="stats-panel"></div>
+        <div id="exerciseSummary" class="progress-summary"></div>
+
+        <div class="chart-title-row">
+          <strong id="chartMetricTitle">Meilleure charge par séance</strong>
+          <span id="chartUnit" class="muted">kg</span>
+        </div>
+        <svg id="progressChart" viewBox="0 0 340 170" role="img" aria-label="Courbe de progression"></svg>
+      </div>
+    </section>
+  </main>
+
+  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-card">
+      <div class="section-title">
+        <div>
+          <div class="eyebrow">MODE D'EMPLOI</div>
+          <h2 id="helpTitle">Utiliser My Training</h2>
+        </div>
+        <button id="closeHelpBtn" class="ghost">Fermer</button>
+      </div>
+
+      <div class="help-steps">
+        <div class="help-step"><span>1</span><div><strong>Démarrer</strong><p>Accueil → Démarrer, ou Programme → séance 1, 2, 3 ou 4.</p></div></div>
+        <div class="help-step"><span>2</span><div><strong>Faire une série</strong><p>Saisis la charge et les répétitions, puis touche <b>OK</b>. La série est enregistrée et le repos conseillé démarre automatiquement.</p></div></div>
+        <div class="help-step"><span>3</span><div><strong>Chrono repos</strong><p>Le chrono de repos se lance automatiquement après validation d’une série. Ajuste si besoin avec −15 / +15.</p></div></div>
+        <div class="help-step"><span>4</span><div><strong>Technique</strong><p>Chaque exercice affiche les muscles ciblés, 2 consignes clés, l'erreur principale à éviter et un bouton Vidéo pour voir une démonstration claire.</p></div></div>
+        <div class="help-step"><span>5</span><div><strong>Fin de séance</strong><p>Touche Terminer. Une séance vide n'est jamais enregistrée. Les charges cibles des prochaines séances sont recalculées automatiquement à partir de tes performances.</p></div></div>
+        <div class="help-step"><span>6</span><div><strong>Progression</strong><p>Stats permet de suivre charge, 1RM estimé et volume. Un badge PR signale un nouveau record.</p></div></div>
+        <div class="help-step"><span>7</span><div><strong>Sauvegarde</strong><p>Historique → Sauvegarder exporte une copie JSON. Garde aussi ton CSV Hevy d'origine.</p></div></div>
+        <div class="help-step"><span>8</span><div><strong>Progression automatique des charges</strong><p>Après chaque séance, l’appli recalcule les objectifs. Une hausse validée sur le même mouvement se répercute partout où ce mouvement apparaît. Les kilos ne sont jamais transférés arbitrairement entre deux machines différentes.</p></div></div>
+        <div class="help-step"><span>9</span><div><strong>Raccourcis Android</strong><p>Depuis l'icône My Training, un appui long propose la prochaine séance et les séances 1 à 4.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sessionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="sessionDetailTitle">
+    <div class="modal-card session-modal-card">
+      <div class="section-title">
+        <div>
+          <div class="eyebrow">DÉTAIL DE LA SÉANCE</div>
+          <h2 id="sessionDetailTitle">Séance</h2>
+          <div id="sessionDetailMeta" class="muted"></div>
+        </div>
+        <button id="closeSessionBtn" class="ghost">Fermer</button>
+      </div>
+      <div id="sessionDetailBody"></div>
+    </div>
+  </div>
+
+  <div id="timerDock" class="timer-dock">
+    <div class="timer-main">
+      <button id="timerToggle" class="timer-time">01:30</button>
+      <div class="timer-actions">
+        <button id="minus15">−15</button>
+        <button id="plus15">+15</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button data-view="homeView" class="active">Accueil</button>
+    <button data-view="programView">Programme</button>
+    <button data-view="historyView">Historique</button>
+    <button data-view="statsView">Stats</button>
+  </nav>
+
+  <script src="app.js?v=56"></script>
+  <script src="features-v57.js?v=57"></script>
+  <script src="cardio-v59.js?v=59"></script>
+  <script src="swap-v60.js?v=60"></script>
+  <script src="swap-priority-v61.js?v=61"></script>
+  <script src="session-safety-v63.js?v=63"></script>
+  <script src="rest-ui-v63.js?v=73"></script>
+  <script src="muscles-feedback-v63.js?v=63"></script>
+  <script src="feedback-prefs-v64.js?v=73"></script>
+</body>
+</html>
