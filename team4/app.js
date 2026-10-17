@@ -57,7 +57,7 @@ renderLeaves();
 
 const agentKey='myteam_agent_profiles_v1',agentSelect=document.querySelector('#agent-select'),agentDetail=document.querySelector('#agent-detail');
 let agentProfiles={};try{const data=JSON.parse(localStorage.getItem(agentKey)||'{}');if(data&&typeof data==='object'&&!Array.isArray(data))agentProfiles=data}catch{}
-const agentFields={notes:'agent-notes',instructions:'agent-instructions-date',rx:'agent-rx-date',reminders:'agent-reminders',reminderNotes:'agent-reminder-notes'};
+const agentFields={notes:'agent-notes',instructions:'agent-instructions-date',rx:'agent-rx-date',reminders:'agent-reminders',reminderNotes:'agent-reminder-notes',sickLog:'agent-sick-log',lateLog:'agent-late-log',rxLog:'agent-rx-log'};
 function showAgent(){const key=agentSelect.value,p=agentProfiles[key];agentDetail.classList.toggle('hidden',!p);if(!p)return;document.querySelector('#agent-title').textContent=key;for(const [field,id] of Object.entries(agentFields))document.getElementById(id).value=p[field]??'';document.querySelector('#agent-status').textContent=''}
 function renderAgents(selected){agentSelect.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='Sélectionner un agent';agentSelect.append(empty);for(const key of Object.keys(agentProfiles).sort((a,b)=>a.localeCompare(b,'fr'))){const o=document.createElement('option');o.value=key;o.textContent=key;agentSelect.append(o)}agentSelect.value=selected&&agentProfiles[selected]?selected:'';showAgent()}
 agentSelect.addEventListener('change',showAgent);
