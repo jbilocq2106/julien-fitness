@@ -4,21 +4,22 @@
     {name:'ADAM Manon',rx:false,piste:false,gender:'F'},{name:'BORGESE Myriam',rx:true,piste:true,gender:'F'},{name:'DAL FARRA Shirley',rx:true,piste:false,gender:'F'},{name:"D'AVERSI Margaux",rx:true,piste:true,gender:'F'},{name:'DIELS Elisa',rx:false,piste:false,gender:'F'},{name:'GAGNANT Deborah',rx:true,piste:true,gender:'F'},{name:'GARCIA Maeva',rx:false,piste:false,gender:'F'},{name:'LUCK Océane',rx:false,piste:false,gender:'F'},{name:'OUINNE Melyse',rx:false,piste:false,gender:'F'},{name:'WILTGEN Ophélie',rx:false,piste:false,gender:'F'},
     {name:'BERAUT Geoffrey',rx:true,piste:true,gender:'M'},{name:'BIGONI-HOUDUSSE Alexandre',rx:true,piste:false,gender:'M'},{name:'BILOCQ Julien',rx:true,piste:true,gender:'M'},{name:'BURG Jeremy',rx:false,piste:true,gender:'M'},{name:'CLESEUR Noah',rx:false,piste:true,gender:'M'},{name:'DORRION Albert',rx:false,piste:false,gender:'M'},{name:'FREZAL Joey',rx:true,piste:false,gender:'M'},{name:'HENRAT Corentin',rx:true,piste:true,gender:'M'},{name:'HUMMEL Aurelien',rx:false,piste:false,gender:'M'},{name:'JACOTEZ Tim',rx:true,piste:true,gender:'M'},{name:'MATEI Vitor',rx:false,piste:false,gender:'M'},{name:'PANATO Joey',rx:false,piste:true,gender:'M'},{name:'SANDSTROM Mike',rx:true,piste:false,gender:'M'},{name:'SCARPINO Loic',rx:false,piste:true,gender:'M'},{name:'STASIAK Valentin',rx:false,piste:false,gender:'M'},{name:'TUMMINELLI Attilio',rx:false,piste:true,gender:'M'},{name:'WILLEMS Jeremy',rx:true,piste:false,gender:'M'}
   ];
+  const team4Names=new Set(roster.map(a=>a.name));
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const fmtDate=v=>{if(!v)return '?';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}`:v};
+  function deletedNames(){try{const d=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');return new Set(Array.isArray(d)?d:[])}catch{return new Set()}}
   function currentRoster(){
-    if(typeof agentProfiles!=='undefined'&&agentProfiles&&Object.keys(agentProfiles).length){
-      return Object.entries(agentProfiles)
-        .filter(([,p])=>Number(p?.team)===4)
-        .map(([name,p])=>({name,rx:p?.rxCertified===true,piste:p?.pistePermit===true,gender:p?.gender||'',team:4,sickActive:p?.sickActive===true,sickEnd:p?.sickEnd||''}))
-        .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
-    }
-    return [...roster].sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
+    const deleted=deletedNames();
+    return roster.filter(a=>!deleted.has(a.name)).map(a=>{
+      const p=(typeof agentProfiles!=='undefined'&&agentProfiles)?agentProfiles[a.name]:null;
+      return {name:a.name,rx:typeof p?.rxCertified==='boolean'?p.rxCertified:a.rx,piste:typeof p?.pistePermit==='boolean'?p.pistePermit:a.piste,gender:p?.gender||a.gender,team:4,sickActive:p?.sickActive===true,sickEnd:p?.sickEnd||''};
+    }).sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
   }
   function limitAgentSelector(){
     const sel=document.querySelector('#agent-select');
-    if(!sel||typeof agentProfiles==='undefined')return;
-    [...sel.options].forEach(o=>{if(o.value&&Number(agentProfiles[o.value]?.team)!==4)o.remove()});
+    if(!sel)return;
+    const deleted=deletedNames();
+    [...sel.options].forEach(o=>{if(o.value&&(!team4Names.has(o.value)||deleted.has(o.value)))o.remove()});
     if(!sel.dataset.team4Only){
       sel.dataset.team4Only='1';
       new MutationObserver(()=>limitAgentSelector()).observe(sel,{childList:true});
@@ -32,5 +33,5 @@
     search.oninput=draw;box.querySelectorAll('[data-ad-filter]').forEach(btn=>btn.onclick=()=>{filter=btn.dataset.adFilter;box.querySelectorAll('[data-ad-filter]').forEach(b=>b.classList.toggle('active',b===btn));draw()});draw();limitAgentSelector();
   }
   window.renderMyTeamAgentList=renderDirectAgents;
-  (async()=>{try{await load('./pwa-install-v1.js?v=20261017-1');await load('../team4/app.js?v=20261017-7');renderDirectAgents();await load('./hours-v1.js?v=20261017-7');await load('./salary-v2.js?v=20261017-1');await load('./agents-migration-v3.js?v=5');await load('./roster-v5.js?v=20261017-7');renderDirectAgents();await load('./prestation-share-v1.js?v=2');await load('./prestation-analysis-demo-v1.js?v=20261017-1');await load('./planning-pdf-import-v2.js?v=20261017-1')}catch(err){renderDirectAgents();const status=document.querySelector('#status');if(status)status.textContent='MyTEAM chargé avec fonctions principales. Actualise si un module manque.';console.error(err)}})();
+  (async()=>{try{await load('./pwa-install-v1.js?v=20261017-1');await load('../team4/app.js?v=20261017-7');renderDirectAgents();await load('./hours-v1.js?v=20261017-7');await load('./salary-v2.js?v=20261017-1');await load('./agents-migration-v3.js?v=5');await load('./roster-v5.js?v=20261017-8');renderDirectAgents();await load('./prestation-share-v1.js?v=2');await load('./prestation-analysis-demo-v1.js?v=20261017-1');await load('./planning-pdf-import-v2.js?v=20261017-1')}catch(err){renderDirectAgents();const status=document.querySelector('#status');if(status)status.textContent='MyTEAM chargé avec fonctions principales. Actualise si un module manque.';console.error(err)}})();
 })();
