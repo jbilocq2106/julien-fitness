@@ -25,3 +25,14 @@ document.querySelector('#clear').onclick=()=>{if(confirm('Effacer le planning lo
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
 let y=0;document.addEventListener('touchstart',e=>{if(scrollY===0)y=e.touches[0].clientY},{passive:true});
 document.addEventListener('touchend',async e=>{if(y&&scrollY===0&&e.changedTouches[0].clientY-y>110){y=0;status.textContent='Recherche de mise à jour…';if(navigator.serviceWorker?.getRegistration){const r=await navigator.serviceWorker.getRegistration();if(r)await r.update()}location.reload()}y=0},{passive:true});
+
+const voiceStart=document.querySelector('#voice-start'),voiceRequest=document.querySelector('#voice-request'),voiceStatus=document.querySelector('#voice-status'),voiceCopy=document.querySelector('#voice-copy');
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SpeechRecognition){
+ const recognition=new SpeechRecognition();recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;
+ recognition.onresult=e=>{const heard=Array.from(e.results).map(r=>r[0].transcript).join(' ');voiceRequest.value=[voiceRequest.value.trim(),heard].filter(Boolean).join(' ');voiceStatus.textContent='Dictée terminée. Vérifie le texte avant de le copier.'};
+ recognition.onerror=e=>{voiceStatus.textContent='Dictée indisponible : '+e.error+'. Tu peux saisir ta demande au clavier.'};
+ recognition.onend=()=>{voiceStart.disabled=false;voiceStart.textContent='🎙️ Dicter'};
+ voiceStart.onclick=()=>{try{recognition.start();voiceStart.disabled=true;voiceStart.textContent='Écoute…';voiceStatus.textContent='Parle maintenant.'}catch{voiceStatus.textContent='Impossible de démarrer le micro. Réessaie ou utilise le clavier.'}};
+}else{voiceStart.disabled=true;voiceStatus.textContent='Reconnaissance vocale non disponible dans ce navigateur. Utilise le micro du clavier ou écris ta demande.'}
+voiceCopy.onclick=async()=>{const value=voiceRequest.value.trim();if(!value){voiceStatus.textContent='Dicte ou écris une demande avant de copier.';return}try{await navigator.clipboard.writeText(value);voiceStatus.textContent='Demande copiée. Colle-la dans ChatGPT pour demander la modification.'}catch{voiceRequest.focus();voiceRequest.select();voiceStatus.textContent='Sélectionne et copie le texte, puis colle-le dans ChatGPT.'}};
