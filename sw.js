@@ -1,4 +1,4 @@
-const CACHE='my-training-v80';
+const CACHE='my-training-v81';
 const CORE=['./','index.html','styles.css?v=56','features-v57.css?v=57','app.js?v=56','features-v57.js?v=57','cardio-v59.js?v=59','swap-v60.js?v=60','swap-priority-v61.js?v=61','session-safety-v63.js?v=63','rest-ui-v63.js?v=73','muscles-feedback-v63.js?v=63','feedback-prefs-v64.js?v=80','timed-sets-v65.js?v=73','finish-check-v66.js?v=74','treadmill-v67.js?v=67','treadmill-alert-v68.js?v=68','feedback-alternatives-v69.js?v=70','session-time-v70.js?v=70','deadbug-recovery-v71.js?v=71','recorded-session-edit-v72.js?v=72','history-order-v75.js?v=77','history-exercise-detail-v78.js?v=78','cardio-reference-v79.js?v=79','history-cardio-edit-v80.js?v=80','program.json','manifest.json','favicon.png?v=58','icon-192.png?v=58','icon-512.png?v=58'];
 
 self.addEventListener('install',event=>{
@@ -22,6 +22,11 @@ self.addEventListener('fetch',event=>{
 
   const url=new URL(req.url);
   const sameOrigin=url.origin===self.location.origin;
+
+  // My Team est une PWA indépendante : My Training ne doit ni l'intercepter ni la mettre en cache.
+  const isMyTeam=sameOrigin&&url.pathname.includes('/my-team/');
+  if(isMyTeam)return;
+
   const dynamic = sameOrigin && (
     url.pathname.endsWith('/') ||
     url.pathname.endsWith('index.html') ||
