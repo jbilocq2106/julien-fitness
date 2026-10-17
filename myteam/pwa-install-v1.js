@@ -43,6 +43,15 @@
     }
   }
 
+  function loadHistory(){
+    if(window.MyTeamRenderHistory||document.querySelector('script[data-myteam-history-v2]'))return;
+    const s=document.createElement('script');
+    s.src='./history-v2.js?v=20261017-1';
+    s.dataset.myteamHistoryV2='1';
+    s.onerror=()=>{delete s.dataset.myteamHistoryV2;s.remove()};
+    document.head.appendChild(s);
+  }
+
   window.addEventListener('beforeinstallprompt',e=>{
     e.preventDefault();
     deferredPrompt=e;
@@ -57,4 +66,6 @@
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(refresh,500));else setTimeout(refresh,500);
+  if(document.readyState==='complete')setTimeout(loadHistory,0);else window.addEventListener('load',()=>setTimeout(loadHistory,0),{once:true});
+  setTimeout(loadHistory,1500);
 })();
