@@ -1,26 +1,15 @@
 {
-  "id": "/julien-fitness/team4/",
+  "id": "/julien-fitness/team4/app-v4",
   "name": "MyTEAM",
-  "short_name": "MyTEAM",
+  "short_name": "TEAM 4",
   "description": "Gestion personnelle de l'équipe 4 : planning, agents, qualifications, prestations et congés.",
-  "start_url": "/julien-fitness/team4/",
-  "scope": "/julien-fitness/team4/",
+  "start_url": "/julien-fitness/myteam/?source=team4-shortcut-v4",
+  "scope": "/julien-fitness/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#111928",
   "theme_color": "#111928",
   "icons": [
-    {
-      "src": "./myteam-192.png?v=1",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./myteam-512.png?v=1",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src":"../myteam/team4-icon-v4.svg?v=4","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
   ]
 }
