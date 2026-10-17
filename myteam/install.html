@@ -1,0 +1,22 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111928"><link rel="manifest" href="./manifest.webmanifest?v=3"><link rel="icon" href="./myteam-192.png?v=3"><title>Installer MyTEAM</title><style>*{box-sizing:border-box}body{margin:0;background:#111928;color:#f5f7fb;font:16px system-ui,Arial;padding:28px 18px}.box{max-width:520px;margin:auto;background:#1d293d;border-radius:18px;padding:22px}h1{margin-top:0}button,a{display:block;width:100%;border:0;border-radius:13px;padding:15px;margin-top:12px;font:inherit;font-weight:700;text-align:center;text-decoration:none}button{background:#e76b24;color:#fff}button:disabled{opacity:.45}a{background:#27364c;color:#fff}.muted{color:#b7c1d0;line-height:1.45}#status{margin-top:16px;padding:12px;border-radius:10px;background:#111928}</style></head><body><div class="box"><h1>MyTEAM</h1><p class="muted">Cette page prépare une installation MyTEAM neuve sans effacer tes données locales et sans toucher à la nouvelle application My Training.</p><button id="install" disabled>Préparation…</button><div id="status">Vérification de l'installation…</div><a href="./">Ouvrir MyTEAM dans Chrome</a></div><script>
+let deferredPrompt=null;
+const btn=document.getElementById('install'),status=document.getElementById('status');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;btn.disabled=false;btn.textContent='Installer MyTEAM';status.textContent='MyTEAM est prête à être installée.';});
+window.addEventListener('appinstalled',()=>{status.textContent='MyTEAM est installée. Tu peux maintenant l’ouvrir depuis son icône.';btn.disabled=true;btn.textContent='MyTEAM installée';});
+btn.addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const choice=await deferredPrompt.userChoice;status.textContent=choice.outcome==='accepted'?'Installation lancée.':'Installation annulée.';deferredPrompt=null;btn.disabled=true;});
+(async()=>{
+ if(window.matchMedia('(display-mode: standalone)').matches){status.textContent='MyTEAM est déjà ouverte comme application.';btn.textContent='Déjà installée';return;}
+ try{
+  if('serviceWorker' in navigator){
+   const regs=await navigator.serviceWorker.getRegistrations();
+   for(const r of regs){
+    const p=new URL(r.scope).pathname;
+    if(p==='/julien-fitness/'||p==='/julien-fitness/team4/')await r.unregister();
+   }
+   await navigator.serviceWorker.register('./sw.js?v=3',{scope:'./',updateViaCache:'none'});
+   await navigator.serviceWorker.ready;
+  }
+  setTimeout(()=>{if(!deferredPrompt){btn.disabled=true;btn.textContent='Installation pas encore proposée';status.textContent='La préparation est terminée. Ferme cet onglet, rouvre cette même page dans Chrome puis attends quelques secondes. Si le bouton Installer MyTEAM apparaît, utilise-le.';}},4000);
+ }catch(e){status.textContent='Préparation impossible : '+(e.message||e);btn.textContent='Erreur de préparation';}
+})();
+</script></body></html>
