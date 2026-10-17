@@ -2,6 +2,23 @@
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
   let deferredPrompt=null;
 
+  function ensureHistoryEntry(){
+    const nav=document.querySelector('.tabs'),main=document.querySelector('main');
+    if(!nav||!main)return;
+    let section=document.querySelector('#history');
+    if(!section){section=document.createElement('section');section.id='history';section.className='hidden card';section.innerHTML='<h2>Historique</h2><p>Chargement de l’historique…</p>';main.append(section)}
+    let tab=document.querySelector('[data-tab="history"]');
+    if(!tab){tab=document.createElement('button');tab.type='button';tab.dataset.tab='history';tab.textContent='📚 Historique';}
+    else tab.textContent='📚 Historique';
+    const planning=document.querySelector('[data-tab="planning"]');
+    if(planning&&planning.nextElementSibling!==tab)planning.after(tab);else if(!planning&&!tab.parentElement)nav.prepend(tab);
+    tab.onclick=()=>{
+      document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===tab));
+      document.querySelectorAll('main section').forEach(s=>s.classList.toggle('hidden',s.id!=='history'));
+      window.MyTeamRenderHistory?.();
+    };
+  }
+
   function ensureCard(){
     let card=document.querySelector('#pwa-install-card');
     if(card)return card;
@@ -12,60 +29,32 @@
     card.innerHTML='<div style="font-weight:850;margin-bottom:5px">📲 MyTEAM en mode application</div><div id="pwa-install-text" style="color:#c4d0de;margin-bottom:9px">Préparation de l’installation…</div><button id="pwa-install-btn" type="button" style="display:none;border:0;border-radius:11px;padding:11px 14px;background:#e76b24;color:#fff;font-weight:850">Installer MyTEAM</button>';
     if(header)header.after(card);else document.body.prepend(card);
     card.querySelector('#pwa-install-btn').onclick=async()=>{
-      if(!deferredPrompt){
-        card.querySelector('#pwa-install-text').textContent='Dans Chrome : menu ⋮ → Installer l’application. Ne choisis pas « créer un raccourci ».';
-        return;
-      }
-      deferredPrompt.prompt();
-      try{await deferredPrompt.userChoice}catch{}
-      deferredPrompt=null;
-      refresh();
+      if(!deferredPrompt){card.querySelector('#pwa-install-text').textContent='Dans Chrome : menu ⋮ → Installer l’application. Ne choisis pas « créer un raccourci ».';return;}
+      deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch{}deferredPrompt=null;refresh();
     };
     return card;
   }
 
   function refresh(){
+    ensureHistoryEntry();
     const card=ensureCard(),text=card.querySelector('#pwa-install-text'),btn=card.querySelector('#pwa-install-btn');
-    if(isStandalone()){
-      text.textContent='Installée comme application autonome.';
-      btn.style.display='none';
-      setTimeout(()=>{card.style.display='none'},2500);
-      return;
-    }
+    if(isStandalone()){text.textContent='Installée comme application autonome.';btn.style.display='none';setTimeout(()=>{card.style.display='none'},2500);return;}
     card.style.display='block';
-    if(deferredPrompt){
-      text.textContent='Prête à être installée comme vraie application sur le téléphone.';
-      btn.style.display='inline-block';
-    }else{
-      text.textContent='Ouvre cette page dans Chrome puis utilise ⋮ → Installer l’application. Si Chrome affiche seulement « Ajouter à l’écran d’accueil », actualise une fois et réessaie.';
-      btn.style.display='inline-block';
-      btn.textContent='Afficher l’aide d’installation';
-    }
+    if(deferredPrompt){text.textContent='Prête à être installée comme vraie application sur le téléphone.';btn.style.display='inline-block';}
+    else{text.textContent='Ouvre cette page dans Chrome puis utilise ⋮ → Installer l’application. Si Chrome affiche seulement « Ajouter à l’écran d’accueil », actualise une fois et réessaie.';btn.style.display='inline-block';btn.textContent='Afficher l’aide d’installation';}
   }
 
   function loadHistory(){
+    ensureHistoryEntry();
     if(window.MyTeamRenderHistory||document.querySelector('script[data-myteam-history-v2]'))return;
-    const s=document.createElement('script');
-    s.src='./history-v2.js?v=20261017-1';
-    s.dataset.myteamHistoryV2='1';
-    s.onerror=()=>{delete s.dataset.myteamHistoryV2;s.remove()};
-    document.head.appendChild(s);
+    const s=document.createElement('script');s.src='./history-v2.js?v=20261017-2';s.dataset.myteamHistoryV2='1';s.onerror=()=>{delete s.dataset.myteamHistoryV2;s.remove()};document.head.appendChild(s);
   }
 
-  window.addEventListener('beforeinstallprompt',e=>{
-    e.preventDefault();
-    deferredPrompt=e;
-    const btn=ensureCard().querySelector('#pwa-install-btn');
-    if(btn)btn.textContent='Installer MyTEAM';
-    refresh();
-  });
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;const btn=ensureCard().querySelector('#pwa-install-btn');if(btn)btn.textContent='Installer MyTEAM';refresh();});
   window.addEventListener('appinstalled',()=>{deferredPrompt=null;refresh();});
-
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(r=>r.update().catch(()=>{})).catch(()=>{});
-  }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(refresh,500));else setTimeout(refresh,500);
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(r=>r.update().catch(()=>{})).catch(()=>{});
+  ensureHistoryEntry();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{ensureHistoryEntry();setTimeout(refresh,300)});else setTimeout(refresh,300);
   if(document.readyState==='complete')setTimeout(loadHistory,0);else window.addEventListener('load',()=>setTimeout(loadHistory,0),{once:true});
-  setTimeout(loadHistory,1500);
+  setTimeout(loadHistory,900);
 })();
