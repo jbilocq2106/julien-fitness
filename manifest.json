@@ -1,7 +1,9 @@
 {
+  "id": "/julien-fitness/my-training",
   "name": "My Training",
   "short_name": "My Training",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#111827",
@@ -23,61 +25,31 @@
       "short_name": "Prochaine",
       "description": "Démarrer directement la prochaine séance",
       "url": "./?start=next",
-      "icons": [
-        {
-          "src": "icon-192.png?v=58",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{"src":"icon-192.png?v=58","sizes":"192x192","type":"image/png"}]
     },
     {
       "name": "Séance 1",
       "short_name": "Séance 1",
       "url": "./?start=S1",
-      "icons": [
-        {
-          "src": "icon-192.png?v=58",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{"src":"icon-192.png?v=58","sizes":"192x192","type":"image/png"}]
     },
     {
       "name": "Séance 2",
       "short_name": "Séance 2",
       "url": "./?start=S2",
-      "icons": [
-        {
-          "src": "icon-192.png?v=58",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{"src":"icon-192.png?v=58","sizes":"192x192","type":"image/png"}]
     },
     {
       "name": "Séance 3",
       "short_name": "Séance 3",
       "url": "./?start=S3",
-      "icons": [
-        {
-          "src": "icon-192.png?v=58",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{"src":"icon-192.png?v=58","sizes":"192x192","type":"image/png"}]
     },
     {
       "name": "Dimanche Full Body",
       "short_name": "Full Body",
       "url": "./?start=S4",
-      "icons": [
-        {
-          "src": "icon-192.png?v=58",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{"src":"icon-192.png?v=58","sizes":"192x192","type":"image/png"}]
     }
   ]
 }
