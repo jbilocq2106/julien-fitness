@@ -36,3 +36,6 @@ if(SpeechRecognition){
  voiceStart.onclick=()=>{try{recognition.start();voiceStart.disabled=true;voiceStart.textContent='Écoute…';voiceStatus.textContent='Parle maintenant.'}catch{voiceStatus.textContent='Impossible de démarrer le micro. Réessaie ou utilise le clavier.'}};
 }else{voiceStart.disabled=true;voiceStatus.textContent='Reconnaissance vocale non disponible dans ce navigateur. Utilise le micro du clavier ou écris ta demande.'}
 voiceCopy.onclick=async()=>{const value=voiceRequest.value.trim();if(!value){voiceStatus.textContent='Dicte ou écris une demande avant de copier.';return}try{await navigator.clipboard.writeText(value);voiceStatus.textContent='Demande copiée. Colle-la dans ChatGPT pour demander la modification.'}catch{voiceRequest.focus();voiceRequest.select();voiceStatus.textContent='Sélectionne et copie le texte, puis colle-le dans ChatGPT.'}};
+
+const prestationNote=document.querySelector('#prestation-note'),prestationStatus=document.querySelector('#prestation-status');
+if(prestationNote){prestationNote.value=localStorage.getItem('myteam_prestation_notes')||'';document.querySelector('#prestation-save').onclick=()=>{localStorage.setItem('myteam_prestation_notes',prestationNote.value);prestationStatus.textContent='Notes enregistrées uniquement sur cet appareil.'};}
