@@ -1,5 +1,5 @@
-const CACHE='myteam-shell-v4';
-const ASSETS=['./','./index.html','./app.js','./agents-migration-v3.js?v=3','./prestation-share-v1.js?v=1','./manifest.webmanifest','./icon.svg'];
+const CACHE='myteam-shell-v5';
+const ASSETS=['./','./index.html','./app.js','./agents-migration-v3.js?v=3','./prestation-share-v1.js?v=1','./manifest.webmanifest','./myteam-192.png?v=1','./myteam-512.png?v=1'];
 
 self.addEventListener('install',e=>{
   self.skipWaiting();
@@ -31,7 +31,9 @@ self.addEventListener('fetch',e=>{
   const req=e.request;
   const url=new URL(req.url);
   const sameOrigin=url.origin===location.origin;
-  const isShell=sameOrigin&&(url.pathname.endsWith('/team4/')||url.pathname.endsWith('/team4/index.html'));
+  const inScope=sameOrigin&&url.pathname.startsWith('/julien-fitness/team4/');
+  if(!inScope)return;
+  const isShell=url.pathname.endsWith('/team4/')||url.pathname.endsWith('/team4/index.html');
 
   if(isShell){
     e.respondWith((async()=>{
@@ -48,7 +50,7 @@ self.addEventListener('fetch',e=>{
 
   e.respondWith(
     fetch(req,{cache:'no-store'}).then(r=>{
-      if(r.ok&&sameOrigin){const copy=r.clone();caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{});}
+      if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{});}
       return r;
     }).catch(()=>caches.match(req))
   );
