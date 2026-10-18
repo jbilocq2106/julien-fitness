@@ -485,6 +485,7 @@ function renderWorkout(){
           <label>Vitesse km/h<input inputmode="decimal" data-cardio="speed" value="${esc(e.cardio?.speed||'')}" placeholder="5,5"></label>
           <label>Durée min<input inputmode="decimal" data-cardio="duration" value="${esc(e.cardio?.duration||'')}" placeholder="40"></label>
           <label>Distance km<input inputmode="decimal" data-cardio="distance" value="${esc(e.cardio?.distance||'')}" placeholder="3,7"></label>
+           <label>FC moyenne (bpm)<input type="number" inputmode="numeric" min="40" max="230" data-cardio="avgHr" value="${esc(e.cardio?.avgHr||'')}" placeholder="facultatif"></label>
         </div>
         <button class="cardio-done ${e.cardio?.done?'primary':'secondary'}" data-cardio-done="${ei}">${e.cardio?.done?'✓ Cardio validé':'Valider le cardio'}</button>
       `:`
@@ -562,7 +563,7 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
         title,start_time:start.toISOString(),end_time:end.toISOString(),description:'My Training',
         exercise_title:e.name,superset_id:'',exercise_notes:e.note,set_index:0,set_type:'cardio',
         weight_kg:0,reps:0,distance_km:distance||'',duration_seconds:durationMin?durationMin*60:'',
-        speed_kmh:speed||'',incline_percent:incline||'',rpe:'',rir:'',exercise_order:exerciseIndex+1
+        speed_kmh:speed||'',incline_percent:incline||'',avg_hr_bpm:(num(e.cardio.avgHr)>=40&&num(e.cardio.avgHr)<=230)?num(e.cardio.avgHr):'',rpe:'',rir:'',exercise_order:exerciseIndex+1
       });
     }
     e.sets.filter(s=>s.done&&num(s.reps)>0).forEach((s,i)=>state.history.unshift({
@@ -605,7 +606,7 @@ document.getElementById('exportBtn').onclick=()=>{
 let statsMetric='weight';
 
 function renderStatsSelect(){
-  const names=[...new Set(state.history.map(r=>r.exercise_title).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+  const names=[...new Set(state.history.filter(r=>num(r.reps)>0).map(r=>r.exercise_title).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
   const sel=document.getElementById('exerciseSelect');
   const prev=sel.value;
   sel.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('');
@@ -641,6 +642,7 @@ function exerciseSessions(name){
     return {
       date:w.date,
       bestWeight:Math.max(0,...sets.map(s=>s.weight)),
+       bestReps:Math.max(0,...sets.map(s=>s.reps)),
       best1rm:Math.max(0,...sets.map(s=>s.e1rm)),
       volume:sets.reduce((a,s)=>a+s.volume,0),
       bestSet
@@ -651,10 +653,11 @@ function exerciseSessions(name){
 function metricValue(s){
   if(statsMetric==='e1rm')return s.best1rm;
   if(statsMetric==='volume')return s.volume;
+   if(statsMetric==='reps')return s.bestReps;
   return s.bestWeight;
 }
-function metricUnit(){return statsMetric==='volume'?'kg':statsMetric==='e1rm'?'kg':'kg'}
-function metricLabel(){return statsMetric==='volume'?'Volume par séance':statsMetric==='e1rm'?'Meilleur 1RM estimé par séance':'Meilleure charge par séance'}
+function metricUnit(){return statsMetric==='reps'?'reps':'kg'}
+function metricLabel(){return statsMetric==='reps'?'Plus grand nombre de répétitions par séance':statsMetric==='volume'?'Volume par séance':statsMetric==='e1rm'?'Meilleur 1RM estimé par séance':'Meilleure charge par séance'}
 function fmtMetric(v){return statsMetric==='volume'?fmt(v):Number(v||0).toFixed(statsMetric==='e1rm'?1:0)}
 function shortDate(s){
   const d=new Date(s);if(Number.isNaN(d.getTime()))return '';
