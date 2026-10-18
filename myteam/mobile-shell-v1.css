@@ -6,6 +6,8 @@
 #today .mt-today-date{color:#cbd6e4;margin:0 0 8px}
 #today .mt-status-chip{display:inline-flex;align-items:center;gap:7px;border-radius:100px;padding:8px 11px;background:#163d31;color:#d4ffec;font-weight:800;font-size:12px}
 #today .mt-status-chip.warn{background:#59391b;color:#ffe2b3}
+#today .mt-attach-parif-photo{display:block;width:100%;min-height:58px;margin:0 0 12px;padding:13px 14px;background:#e76b24;color:#fff;border:1px solid #ffb476;border-radius:15px;font-size:16px;line-height:1.3;font-weight:850;text-align:center;box-shadow:0 5px 15px #0b142840}
+#today .mt-attach-parif-photo:focus-visible{outline:3px solid #ffd9aa;outline-offset:3px}
 #today .mt-line{padding:12px 0;border-top:1px solid #3b4c62}
 #today .mt-line:first-child{border-top:0;padding-top:0}
 #today .mt-line strong{display:block;font-size:16px}

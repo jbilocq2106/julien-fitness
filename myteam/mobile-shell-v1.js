@@ -15,6 +15,7 @@
   todaySection.innerHTML=`
     <div class="card mt-hero"><div class="mt-eyebrow">Mon tableau de bord</div><h2>☀️ Aujourd’hui</h2>
       <p class="mt-today-date" id="mt-date"></p><span class="mt-status-chip warn" id="mt-summary">Chargement des informations locales…</span></div>
+    <button type="button" id="mt-attach-parif-photo" class="mt-attach-parif-photo">📎 Joindre la photo du plan PARIF</button>
     <div class="mt-columns"><div>
       <div class="card"><h3>🕒 Mon poste du jour</h3><div id="mt-my-shifts" role="status"></div>
         <p class="mt-section-caption">Issu de ton planning personnel enregistré sur cet appareil.</p></div>
@@ -40,7 +41,7 @@
   const todayTab=document.createElement('button');
   todayTab.type='button';todayTab.dataset.tab='today';todayTab.textContent='☀️ Aujourd’hui';topNav.prepend(todayTab);
   let current='today',formOpen=false;
-  const navItems=[['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents'],['parif','📋','Postes']];
+  const navItems=[['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents'],['parif','📷','Plan PARIF']];
   const mobileNav=document.createElement('nav');
   mobileNav.id='mt-mobile-nav';mobileNav.setAttribute('aria-label','Navigation principale');
   mobileNav.innerHTML=navItems.map(([id,icon,label])=>`<button type="button" data-mt-open="${id}" aria-label="${label}"><span class="mt-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`).join('')+
@@ -91,6 +92,17 @@
     const b=event.target.closest('[data-mt-open]');if(!b)return;
     b.dataset.mtOpen==='more'?openMore():activate(b.dataset.mtOpen);
   });
+  $('mt-attach-parif-photo').onclick=()=>{
+    const picker=$('mt-parif-date'),targetDate=isoDay(new Date());
+    if(picker&&picker.value!==targetDate){
+      picker.value=targetDate;
+      picker.dispatchEvent(new Event('change',{bubbles:true}));
+      if(picker.value!==targetDate)return;
+    }
+    activate('parif');
+    const file=$('mt-parif-import-file');
+    if(file)file.click();
+  };
   more.addEventListener('click',event=>{
     const b=event.target.closest('[data-mt-other]');if(b)activate(b.dataset.mtOther);
   });
@@ -164,5 +176,5 @@
   });
   window.addEventListener('focus',()=>{if(current==='today')renderToday()});
   window.addEventListener('storage',event=>{if(event.key?.startsWith('myteam')&&current==='today')renderToday()});
-  activate(document.querySelector('nav.tabs button[data-tab="parif"]')?'parif':'today');
+  activate('today');
 })();

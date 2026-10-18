@@ -47,14 +47,14 @@
     return data;
   }
   function storedPlans(){const x=read(STORE,{});return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}
-  let date=today(),active='morning',mode='overview',saved=blankDay(),working=blankDay(),baseRaw='',previewSnapshot='',importIssues=[];
+  let date=today(),active='morning',mode='photo',saved=blankDay(),working=blankDay(),baseRaw='',previewSnapshot='',importIssues=[];
   const PHOTO_DB='myteam_parif_photo_plans_v1',PHOTO_TABLE='photos';
-  let photoForDate=null,photoUrls=[],photoLoadVersion=0,photoLayout='shifts',photoZoom=1;
+  let photoForDate=null,photoUrls=[],photoLoadVersion=0,photoLayout='full',photoZoom=1;
 
-  const section=document.createElement('section');section.id='parif';section.className='hidden';section.dataset.parifMode='overview';
+  const section=document.createElement('section');section.id='parif';section.className='hidden';section.dataset.parifMode='photo';section.dataset.parifSurface='photo';
   section.innerHTML=`<div class="card mt-parif-header">
     <div class="mt-parif-eyebrow">Planification du personnel · PARIF</div>
-    <h2>📋 Plan PARIF</h2>
+    <h2>📷 Plan PARIF</h2>
     <p class="mt-parif-sub">Le plan photographié, sans les cadres du bas. Tu peux aussi ouvrir le tableau modifiable.</p>
     <label class="mt-parif-date">Date du plan <input type="date" id="mt-parif-date"></label>
     <div class="mt-parif-view-modes" role="group" aria-label="Affichage du Plan PARIF">
@@ -114,7 +114,8 @@
   <button type="button" id="mt-parif-back">← Retour à la vue journalière</button>`;
   prestation.after(section);
 
-  const nav=document.createElement('button');nav.type='button';nav.dataset.tab='parif';nav.textContent='📋 Plan PARIF';topNav.append(nav);
+  const nav=document.createElement('button');nav.type='button';nav.dataset.tab='parif';nav.textContent='📷 Plan PARIF';topNav.append(nav);
+  const toolsNav=document.createElement('button');toolsNav.type='button';toolsNav.dataset.tab='pariftools';toolsNav.textContent='✏️ Édition PARIF';topNav.append(toolsNav);
   const access=document.createElement('div');access.className='card mt-parif-entry';
   access.innerHTML='<h3>📋 Plan PARIF</h3><p>Les trois vacations réunies sur une seule page, avec modification tactile par poste.</p><button type="button" class="mt-primary">Ouvrir le plan PARIF</button>';
   prestation.insertBefore(access,prestation.firstChild.nextSibling);
@@ -183,7 +184,11 @@
   async function photoRender(version){
     const board=el('mt-parif-photo-board'),record=photoForDate;
     photoReleaseUrls();board.replaceChildren();
-    if(!record||record.date!==date){board.classList.add('hidden');return;}
+    if(!record||record.date!==date){
+      const empty=document.createElement('div');empty.className='mt-parif-photo-empty';
+      empty.innerHTML='<strong>📷 Aucune photo du plan pour cette date</strong><p>Depuis l’accueil « Aujourd’hui », touche « Joindre la photo du plan PARIF » pour afficher le document ici.</p>';
+      board.append(empty);board.classList.remove('hidden');return;
+    }
     const heading=document.createElement('div');heading.className='mt-parif-photo-heading';
     const title=document.createElement('h3');title.textContent='📷 Plan photographié · '+new Date(date+'T12:00:00').toLocaleDateString('fr-LU',{day:'numeric',month:'long',year:'numeric'});
     const caption=document.createElement('p');caption.textContent=record.template
@@ -216,6 +221,7 @@
         if(slice.session){const h=document.createElement('h4');h.textContent=`${slice.session.label} · ${slice.session.hours}`;frame.append(h);}
         const scroller=document.createElement('div');scroller.className='mt-parif-photo-scroller';
         const image=document.createElement('img');image.className='mt-parif-photo-image';image.alt=slice.session?`Photo de la vacation ${slice.session.label}, postes et agents`:'Photo du plan PARIF recadrée avant les remarques et les commandes';
+        if(section.dataset.parifSurface==='photo'){image.tabIndex=0;image.setAttribute('role','button');image.setAttribute('aria-label','Toucher pour agrandir ou réduire la photo du plan');}
         const sliceBlob=await pngBlob(canvas);
         if(version!==photoLoadVersion||record!==photoForDate)return;
         image.src=photoUrl(sliceBlob);image.style.width=Math.round(photoZoom*100)+'%';
@@ -231,10 +237,10 @@
     try{
       const record=await photoRead(day);
       if(version!==photoLoadVersion||day!==date)return;
-      if(!record?.blob)return;
-      photoForDate={...record,date:day};photoLayout='shifts';photoZoom=1;
+      if(!record?.blob){await photoRender(version);return;}
+      photoForDate={...record,date:day};photoLayout=section.dataset.parifSurface==='photo'?'full':'shifts';photoZoom=1;
       await photoRender(version);
-      if(version===photoLoadVersion&&preferPhoto&&mode!=='edit')setMode('photo',false);
+      if(version===photoLoadVersion&&preferPhoto&&section.dataset.parifSurface==='photo')setMode('photo',false);
     }catch(error){console.warn('Photo privée non accessible sur cet appareil',error);}
   }
   function textInput(path,value,placeholder='Nom / identifiant'){
@@ -248,7 +254,7 @@
   }
   const currentPosts=session=>POST_TEMPLATE.map(([key,count])=>[key==='MIDDLE'?session.middle:key==='SECOND'?session.second:key,count]);
   function setMode(next,scroll=true){
-    mode=next==='edit'?'edit':next==='photo'&&photoForDate?.date===date?'photo':'overview';section.dataset.parifMode=mode;
+    mode=next==='edit'?'edit':next==='photo'?'photo':'overview';section.dataset.parifMode=mode;
     for(const [id,on]of [['mt-parif-photo-btn',mode==='photo'],['mt-parif-overview-btn',mode==='overview'],['mt-parif-edit-btn',mode==='edit']]){
       const button=el(id);button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));
     }
@@ -257,15 +263,21 @@
     else if(mode==='overview')el('mt-parif-overview').scrollIntoView({block:'start',behavior:'smooth'});
     else el('mt-parif-content').scrollIntoView({block:'start',behavior:'smooth'});
   }
-  el('mt-parif-photo-btn').onclick=()=>{
-    if(photoForDate?.date===date)setMode('photo');else el('mt-parif-import-shortcut').click();
-  };
+  el('mt-parif-photo-btn').onclick=()=>setMode('photo');
   el('mt-parif-overview-btn').onclick=()=>setMode('overview');
   el('mt-parif-edit-btn').onclick=()=>setMode('edit');
   el('mt-parif-photo-board').addEventListener('click',event=>{
     const layout=event.target.closest('[data-photo-layout]'),zoom=event.target.closest('[data-photo-zoom]');
     if(layout){if(photoLayout===layout.dataset.photoLayout)return;photoLayout=layout.dataset.photoLayout;photoRender(++photoLoadVersion);}
     if(zoom){const value=Number(zoom.dataset.photoZoom);if(photoZoom===value)return;photoZoom=value;photoRender(++photoLoadVersion);}
+    if(event.target.matches('.mt-parif-photo-image')&&section.dataset.parifSurface==='photo'){
+      photoZoom=photoZoom===1?2:1;photoRender(++photoLoadVersion);
+    }
+  });
+  el('mt-parif-photo-board').addEventListener('keydown',event=>{
+    if(section.dataset.parifSurface==='photo'&&event.target.matches('.mt-parif-photo-image')&&(event.key==='Enter'||event.key===' ')){
+      event.preventDefault();photoZoom=photoZoom===1?2:1;photoRender(++photoLoadVersion);
+    }
   });
   el('mt-parif-import-shortcut').onclick=()=>{
     const details=el('mt-parif-import-details');details.open=true;details.scrollIntoView({block:'center',behavior:'smooth'});
@@ -590,7 +602,7 @@
         const record={...cropped,savedAt:new Date().toISOString()};
         let persisted=true;
         try{await photoSave(selectedDate,record);}catch{persisted=false;}
-        photoForDate={...record,date:selectedDate};photoLayout='shifts';photoZoom=1;
+        photoForDate={...record,date:selectedDate};photoLayout=section.dataset.parifSurface==='photo'?'full':'shifts';photoZoom=1;
         await photoRender(++photoLoadVersion);
         el('mt-parif-import-details').open=false;
         setMode('photo');
@@ -624,7 +636,7 @@
     const next=event.target.value;
     if(!validDate(next)){event.target.value=date;return;}
     if(isDirty()&&!confirm('Tu as des changements non enregistrés. Changer de date et les abandonner ?')){event.target.value=date;return;}
-    clearSource();date=next;getDay();render();setMode('overview',false);photoLoad(date);
+    clearSource();date=next;getDay();render();setMode(section.dataset.parifSurface==='photo'?'photo':'overview',false);photoLoad(date);
   };
   el('mt-parif-revert').onclick=()=>{
     if(isDirty()&&!confirm('Annuler les corrections non enregistrées pour cette date ?'))return;
@@ -654,13 +666,18 @@
     try{localStorage.setItem(STORE,JSON.stringify(plans));saved=clone(working);baseRaw=localStorage.getItem(STORE)||'';dropPreview();renderOverview();el('mt-parif-status').textContent='Brouillon PARIF enregistré localement pour le '+date+'. Aucun changement officiel.';setMode('overview');}
     catch{el('mt-parif-status').textContent='Stockage indisponible. Aucune donnée n’a été enregistrée.';}
   };
-  function showParif(){
-    topNav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===nav));
+  function showParif(advanced=false){
+    section.dataset.parifSurface=advanced?'advanced':'photo';
+    topNav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===(advanced?toolsNav:nav)));
     main.querySelectorAll('section').forEach(s=>s.classList.toggle('hidden',s!==section));
-    setMode(photoForDate?.date===date?'photo':'overview',false);
+    if(!advanced&&photoForDate?.date===date&&photoLayout!=='full'){
+      photoLayout='full';photoZoom=1;photoRender(++photoLoadVersion);
+    }
+    setMode(advanced?'overview':'photo',false);
     render();window.scrollTo(0,0);
   }
-  nav.onclick=showParif;
+  nav.onclick=()=>showParif(false);
+  toolsNav.onclick=()=>showParif(true);
 
   // Propositions tactiles sous la cellule active. Aucun nom ajouté automatiquement.
   const suggestions=document.createElement('div');suggestions.className='mt-parif-suggestions';suggestions.setAttribute('role','group');suggestions.setAttribute('aria-label','Noms proposés');

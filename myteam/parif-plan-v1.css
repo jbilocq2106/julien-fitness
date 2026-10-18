@@ -99,6 +99,21 @@
 #parif .mt-parif-extra-details>.card{margin:10px 0}
 #parif .mt-parif-photo-board{border:1px solid #587d9c;background:#1b2c42;scroll-margin-top:100px;padding:13px}
 #parif .mt-parif-photo-board.hidden{display:none}
+#parif[data-parif-surface=photo] > :not(.mt-parif-header):not(#mt-parif-photo-board){display:none!important}
+#parif[data-parif-surface=photo] .mt-parif-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:9px;background:transparent;border:0;box-shadow:none}
+#parif[data-parif-surface=photo] .mt-parif-header > :not(h2):not(.mt-parif-date){display:none!important}
+#parif[data-parif-surface=photo] .mt-parif-header h2{margin:0;font-size:21px;white-space:nowrap}
+#parif[data-parif-surface=photo] .mt-parif-header .mt-parif-date{display:grid;gap:3px;margin:0;max-width:190px;min-width:0;font-size:11px}
+#parif[data-parif-surface=photo] .mt-parif-header input[type=date]{font-size:14px;min-height:43px;padding:6px 7px}
+#parif[data-parif-surface=photo] .mt-parif-photo-board{padding:7px;margin-bottom:0;border:0;border-radius:11px;background:#1b2c42}
+#parif[data-parif-surface=photo] .mt-parif-photo-heading,#parif[data-parif-surface=photo] .mt-parif-photo-controls,#parif[data-parif-surface=photo] .mt-parif-photo-private{display:none!important}
+#parif[data-parif-surface=photo] .mt-parif-photo-grid{grid-template-columns:minmax(0,1fr);gap:0}
+#parif[data-parif-surface=photo] .mt-parif-photo-panel{border:0;border-radius:7px}
+#parif[data-parif-surface=photo] .mt-parif-photo-image{cursor:zoom-in;outline-offset:-3px}
+#parif[data-parif-surface=photo] .mt-parif-photo-image[style*="200%"]{cursor:zoom-out}
+#parif .mt-parif-photo-empty{text-align:center;padding:27px 12px;color:#f8f9ff;line-height:1.55}
+#parif .mt-parif-photo-empty strong{display:block;font-size:18px}
+#parif .mt-parif-photo-empty p{margin:9px 0 0;color:#c9d8e9;font-size:13px}
 #parif .mt-parif-photo-heading h3{margin:0 0 6px;font-size:19px}
 #parif .mt-parif-photo-heading p{font-size:12px;color:#cbdbee;line-height:1.45;margin:0 0 12px}
 #parif .mt-parif-photo-controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:0 0 12px}
