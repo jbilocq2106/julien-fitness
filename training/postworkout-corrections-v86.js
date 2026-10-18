@@ -145,14 +145,23 @@
         else draft[index][name]=value;
       }
 
+      const newTechniqueWarnings=draft.filter((row,i)=>
+        row.technique_quality==='less_clean'&&rows[i].technique_quality!=='less_clean'
+      );
       // Aucune modification tant que l'ensemble des valeurs n'a pas été validé.
       draft.forEach((row,i)=>Object.assign(rows[i],row));
       // Une correction rétroactive « moins propre » doit aussi empêcher une
       // progression automatique trop ambitieuse aux prochaines séances.
       const affected=new Map();
-      rows.filter(r=>r.technique_quality==='less_clean').forEach(row=>{
+      newTechniqueWarnings.forEach(row=>{
+        // Une vieille séance ne doit pas annuler les progrès effectués depuis.
+        const newer=(state.history||[]).some(other=>
+          other.exercise_title===row.exercise_title&&
+          Date.parse(other.start_time)>Date.parse(row.start_time)
+        );
+        if(newer)return;
         const family=typeof exerciseFamily==='function'?exerciseFamily(row.exercise_title):null;
-        if(!family||!rows.some(r=>r.exercise_title===row.exercise_title))return;
+        if(!family)return;
         const top=Math.max(0,...rows.filter(r=>r.exercise_title===row.exercise_title)
           .map(r=>Number(r.weight_kg)||0));
         if(top>0)affected.set(family,Math.max(affected.get(family)||0,top));
