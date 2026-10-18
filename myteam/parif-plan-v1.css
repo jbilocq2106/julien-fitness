@@ -74,6 +74,7 @@
 #parif .mt-parif-classification>button{width:100%;min-height:48px}
 #parif .mt-parif-categories-count{margin:8px 0 0}
 #parif .mt-parif-categories-note{font-size:12px;color:#f7dbb8;line-height:1.4}
+#parif #mt-parif-categories-proposal{width:100%;min-height:48px;background:#365675;border:1px solid #819ab5;text-align:center}
 #parif #mt-parif-categories-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
 #parif #mt-parif-categories-rows fieldset{border:1px solid #5d7893;background:#1e2c41;border-radius:11px;padding:10px;min-width:0}
 #parif #mt-parif-categories-rows legend{font-weight:850;padding:0 5px}
