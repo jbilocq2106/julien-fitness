@@ -3,27 +3,31 @@
   if(document.querySelector('#composition'))return;
   const KEY='myteam_composition_drafts_v1';
   const HIST_DATE='2026-07-16'; // date du nom de fichier, pas date d'effet garantie
-  const groups=['En-tête (à préciser)','RX + P','RX','Permis','Agent','Autre'];
+  const groups=['En-tête (à préciser)','RX + P','RX','Permis','Agent','CMA (à confirmer)','Autre'];
   const photo={
     1:[
       [['EL GAMAH','LALLOZ'],0],[['MIGNOT','HILT','VALENTIN','WEISSE'],1],[['MARIE','BERNARD','DA SILVA MARTINS'],2],
       [['KARASU','RODRIGUEZ','MALICK','SCHMID'],3],
-      [['DACHOUFFE','MARIE Su.','ANTONIOL','GARRABI','KERGOAT','VIEL','COLLELA','DIELS','GIANOLI','MUNIER','MOURER','MOLTER Certif'],4]
+      [['DACHOUFFE','MARIE Su.','ANTONIOL','GARRABI','KERGOAT','VIEL','COLLELA','DIELS','GIANOLI','MUNIER','MOURER','MOLTER Certif'],4],
+      [['MAURICE'],5]
     ],
     2:[
       [['BILOCQ','BORGESE'],0],[['GAGNANT','BERAUT','JACOTEZ','LONGLY'],1],[['SANDSTROM','BIGONI','WILLEMS'],2],
       [['BURG','PANATO','TUMMINELLI','HENRAT','CLESEUR'],3],
-      [['KRIEG','HUMMEL','JACQUET','MATEI','DORRION','STATISIAK','LECLERC','LUCK','FROSIO','ADAM Manon','GARCIA certif'],4]
+      [['KRIEG','HUMMEL','JACQUET','MATEI','DORRION','STATISIAK','LECLERC','LUCK','FROSIO','ADAM Manon','GARCIA certif'],4],
+      [['OUINNE'],5]
     ],
     3:[
       [['PILLA','TRIPODI'],0],[['CAIROLI','SAUTEZ'],1],[['HAUDIQUET','MOURON','THIBAUD','MOUDEBER','NETO'],2],
       [['FELTEN','MAILLOT','KIRSCHTETTER','DOS SANTOS','LEBRUN'],3],
-      [['VILLI','BRIDELANCE','REHAMNIA','SCARPINO','DURLI','GUFFROY','KESSLER','BEHARI','FINCK','HANCE','HOFFART','LECLERE'],4]
+      [['VILLI','BRIDELANCE','REHAMNIA','SCARPINO','DURLI','GUFFROY','KESSLER','BEHARI','FINCK','HANCE','HOFFART','LECLERE'],4],
+      [['DURET'],5]
     ],
     4:[
       [['SEBRIER','RIBU'],0],[['FRANCESCHINI','DOSIL','MALAINHO'],1],[['TERRIEN','JULIA','MIANO','CLAREN','DA ROCHA'],2],
       [['BODEVING','FRANGIAMORE','FROUSSART','DURAND'],3],
-      [['YOVE','ALI VELOU','FRIESS','GUGLIETTI','KOUAHO','VERDIN','SERJANTU','KIZILDAG','MARINI','WILTGEN','CHOUMAKER'],4]
+      [['YOVE','ALI VELOU','FRIESS','GUGLIETTI','KOUAHO','VERDIN','SERJANTU','KIZILDAG','MARINI','WILTGEN','CHOUMAKER'],4],
+      [['CHAOUACHI'],5]
     ]
   };
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -40,8 +44,8 @@
       const name=raw.replace(/ certif$/i,'');
       const matches=profiles.filter(([key])=>norm(key)===norm(name)||norm(key.split(' ')[0])===norm(name));
       const gender=matches.length===1&&['F','M'].includes(matches[0][1]?.gender)?matches[0][1].gender:'';
-      const note='Transcription photo : vérifier nom, position et habilitations'+(/ certif$/i.test(raw)?' ; mention « certif » sur la photo':'');
-      rows.push(normalizeRow({...blank,name,team:Number(team),group:groups[gi],rx:gi===1||gi===2?'oui':'',piste:gi===1||gi===3?'oui':'',gender,note}));
+      const note='Transcription photo : vérifier nom, position et habilitations'+(/ certif$/i.test(raw)?' ; mention « certif » sur la photo':'')+(gi===5?' ; CMA indiqué en pied de colonne':'');
+      rows.push(normalizeRow({...blank,name,team:Number(team),group:groups[gi],rx:gi===1||gi===2?'oui':gi===4?'non':'',piste:gi===1||gi===3?'oui':gi===4?'non':'',gender,note}));
     }
     return rows;
   }
@@ -64,9 +68,19 @@
   let state;
   try{
     const parsed=JSON.parse(localStorage.getItem(KEY)||'null');
-    state={current:Array.isArray(parsed?.current)?parsed.current.map(normalizeRow):defaults.current,
+    state={version:2,current:Array.isArray(parsed?.current)?parsed.current.map(normalizeRow):defaults.current,
       photo:Array.isArray(parsed?.photo)?parsed.photo.map(normalizeRow):defaults.photo};
-  }catch{state={...defaults}}
+    if(parsed&&parsed.version!==2){
+      // Migration non destructive des premiers brouillons : compléter les 4 CMA.
+      for(const base of defaults.photo.filter(r=>r.group==='CMA (à confirmer)')){
+        if(!state.photo.some(r=>r.team===base.team&&norm(r.name)===norm(base.name)))state.photo.push(base);
+      }
+      for(const r of state.photo.filter(r=>r.group==='Agent')){
+        if(r.rx==='')r.rx='non';if(r.piste==='')r.piste='non';
+      }
+      localStorage.setItem(KEY,JSON.stringify(state));
+    }
+  }catch{state={version:2,...defaults}}
   let mode='current',team=4,search='',snapshot=null;
 
   const section=document.createElement('section');section.id='composition';section.className='hidden';
@@ -107,7 +121,7 @@
       <button id="cmp-restore" type="button">Restaurer cette base</button></div>
     <input id="cmp-file" type="file" accept=".csv,text/csv" hidden>
     <p class="cmp-status" id="cmp-status" role="status"></p>
-    <p class="cmp-hint">Les titres et couleurs viennent de la photo ; ils ne prouvent pas une qualification à jour. La première ligne de chaque équipe apparaît au-dessus de « RX + P » : elle est classée « En-tête (à préciser) ». Les mentions « CMA » en bas de photo restent à vérifier. Rien ici ne modifie automatiquement les fiches agents ni les affectations officielles.</p>
+    <p class="cmp-hint">Les titres et couleurs viennent de la photo ; ils ne prouvent pas une qualification à jour. Les noms sous « Agent » sont sans qualification RX ni permis piste selon ta précision. La première ligne de chaque équipe apparaît au-dessus de « RX + P » : elle est classée « En-tête (à préciser) ». Les mentions « CMA » en bas de photo restent à vérifier. Rien ici ne modifie automatiquement les fiches agents ni les affectations officielles.</p>
   </div><div class="card"><h3>Équilibrage des équipes</h3><p class="muted">Les compteurs sont indicatifs et reposent sur les cases du tableau, sans validation des habilitations.</p><div id="cmp-overview"></div></div>`;
   document.querySelector('main').append(section);
   const nav=document.querySelector('.tabs');
