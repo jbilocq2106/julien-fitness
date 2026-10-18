@@ -1,0 +1,28 @@
+.mt-name-field{display:flex;align-items:stretch;gap:7px;width:100%;margin:6px 0 0}
+.mt-name-field>input{flex:1 1 auto;min-width:0;width:100%;margin:0!important}
+.mt-name-field>.mt-name-mic{flex:0 0 51px;min-height:50px;border:1px solid #647891;border-radius:12px;background:#344d69;color:#fff;font-size:22px;padding:4px}
+.mt-name-field>.mt-name-mic:disabled{opacity:.65}
+.mt-name-status{margin:5px 0 0;font-size:12px;line-height:1.45;color:#ffe0b6}
+.mt-name-status:empty{display:none}
+.mt-name-suggestions{display:grid;gap:5px;margin:5px 0 9px}
+.mt-name-suggestions:empty{display:none}
+.mt-name-option{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;min-height:49px;width:100%;border:1px solid #697e98;border-radius:11px;padding:11px 12px;background:#334760;color:#fff}
+.mt-name-option>span{font-weight:800;overflow-wrap:anywhere}
+.mt-name-option>small{flex-shrink:0;color:#d5dfea;font-size:11px}
+.mt-name-option:focus-visible,.mt-name-mic:focus-visible{outline:3px solid #ffb06f;outline-offset:2px}
+#today .mt-post-editor{margin-top:13px}
+#today .mt-post-editor>.mt-primary{width:100%;min-height:49px}
+#today #mt-post-edit-panel{margin-top:10px;border-top:1px solid #43566e;padding-top:11px}
+#today .mt-post-disclaimer{margin:0 0 12px;color:#cad9e9;font-size:12px;line-height:1.5}
+#today #mt-post-edit-form{display:grid;gap:12px}
+#today #mt-post-edit-form>label,#today .mt-post-times>label{display:grid;gap:6px;font-weight:750}
+#today #mt-post-edit-form input,#today #mt-post-edit-form select{width:100%;min-width:0;min-height:49px;border:1px solid #71849b;border-radius:11px;padding:10px 12px;background:#121e2e;color:#fff;font:inherit}
+#today .mt-post-times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#today .mt-post-preview{border:1px solid #f8b97e;background:#443421;border-radius:13px;padding:13px;color:#fff}
+#today .mt-post-preview p{margin:0 0 8px;line-height:1.5;overflow-wrap:anywhere}
+#today .mt-post-preview p:last-child{margin-bottom:0;font-size:12px;color:#ffdea6}
+#today #mt-post-edit-form .actions>button{flex:1 1 135px}
+@media(max-width:780px){
+  .mt-name-option{min-height:53px}
+  #today #mt-post-edit-form .actions>button{min-height:50px}
+}
