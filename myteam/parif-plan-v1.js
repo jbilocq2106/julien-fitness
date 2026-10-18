@@ -1,0 +1,219 @@
+(()=>{
+  'use strict';
+  if(document.getElementById('parif'))return;
+  const main=document.querySelector('main'),topNav=document.querySelector('nav.tabs'),prestation=document.getElementById('prestation');
+  if(!main||!topNav||!prestation)return;
+  const STORE='myteam_parif_drafts_v1';
+  const CATEGORIES='myteam_parif_post_categories_drafts_v1';
+  const SESSIONS=[
+    {id:'morning',label:'Matin',hours:'06 h–14 h',start:'06:00',end:'14:00',middle:'E43'},
+    {id:'afternoon',label:'Après-midi',hours:'14 h–22 h',start:'14:00',end:'22:00',middle:'E80'},
+    {id:'night',label:'Nuit',hours:'22 h–06 h',start:'22:00',end:'06:00',middle:'E80'}
+  ];
+  const POST_TEMPLATE=[['E20',2],['E14',2],['E40',2],['E30',2],['E50',2],['MIDDLE',2],['E51',3],['E84',3],['E52',2],['E85',2],['E111',3],['E112',3],['E121',3]];
+  const el=id=>document.getElementById(id);
+  const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const normalize=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const today=()=>{const d=new Date();return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+  const read=(key,fallback)=>{try{const parsed=JSON.parse(localStorage.getItem(key)||'null');return parsed??fallback}catch{return fallback}};
+  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&new Date(value+'T12:00:00').toString()!=='Invalid Date';
+  const clone=value=>JSON.parse(JSON.stringify(value));
+
+  function blankSession(session){
+    const posts={};
+    for(const [p,count]of POST_TEMPLATE)posts[p==='MIDDLE'?session.middle:p]=Array(count).fill('');
+    return{supervisor:'',patrol:['',''],posts,notesLxp:'',notesG4s:'',commande:'',extrasPlus:'',extrasMinus:'',effectifReel:'',escortHoraire:'',escortEffectif:'',escortLieu:'',escortSociete:''};
+  }
+  function blankDay(){return{shifts:Object.fromEntries(SESSIONS.map(session=>[session.id,blankSession(session)]))};}
+  function hydrateDay(stored){
+    const data=blankDay();
+    if(!stored||typeof stored!=='object')return data;
+    for(const session of SESSIONS){
+      const source=stored.shifts?.[session.id];if(!source||typeof source!=='object')continue;
+      const target=data.shifts[session.id];
+      for(const name of ['supervisor','notesLxp','notesG4s','commande','extrasPlus','extrasMinus','effectifReel','escortHoraire','escortEffectif','escortLieu','escortSociete']){
+        if(typeof source[name]==='string')target[name]=source[name].slice(0,name.startsWith('notes')?1200:160);
+      }
+      if(Array.isArray(source.patrol))target.patrol=target.patrol.map((_,i)=>typeof source.patrol[i]==='string'?source.patrol[i].slice(0,120):'');
+      for(const [post,fields]of Object.entries(target.posts)){
+        if(Array.isArray(source.posts?.[post]))target.posts[post]=fields.map((_,i)=>typeof source.posts[post][i]==='string'?source.posts[post][i].slice(0,120):'');
+      }
+    }
+    return data;
+  }
+  function storedPlans(){const x=read(STORE,{});return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}
+  let date=today(),active='morning',saved=blankDay(),working=blankDay(),baseRaw='',previewSnapshot='';
+
+  const section=document.createElement('section');section.id='parif';section.className='hidden';
+  section.innerHTML=`<div class="card mt-parif-header">
+    <div class="mt-parif-eyebrow">Planification du personnel · PARIF</div>
+    <h2>📋 Plan PARIF</h2>
+    <p class="mt-parif-sub">Reproduction mobile de la structure fournie. Les noms de la photo ne sont pas importés.</p>
+    <label class="mt-parif-date">Date du plan <input type="date" id="mt-parif-date"></label>
+    <div class="mt-parif-tabs" role="group" aria-label="Choisir une vacation">
+      ${SESSIONS.map(s=>`<button type="button" data-parif-shift="${s.id}"><strong>${s.label}</strong><small>${s.hours}</small></button>`).join('')}
+    </div>
+    <div class="mt-parif-banner">🔒 Brouillon privé. Ce plan ne modifie ni les équipes officielles ni les fiches de prestation.</div>
+  </div>
+  <div id="mt-parif-content"></div>
+  <div class="card mt-parif-actions">
+    <h3>Vérifier avant d’enregistrer</h3>
+    <p class="mt-parif-sub">Tu peux tout compléter ou corriger. Les cellules vides restent vides : aucune présence n’est supposée.</p>
+    <button id="mt-parif-preview-action" type="button" class="mt-primary">👁 Prévisualiser les changements</button>
+    <div id="mt-parif-preview" class="hidden" role="status"></div>
+    <div class="actions"><button id="mt-parif-save" type="button" class="mt-primary hidden">💾 Enregistrer le brouillon</button><button id="mt-parif-revert" type="button">Annuler les changements</button></div>
+    <p id="mt-parif-status" role="status" class="mt-note"></p>
+    <p class="mt-parif-disclaimer">Les effectifs et qualifications doivent être contrôlés avec les règles confirmées avant toute validation opérationnelle. Aucune transmission n’est effectuée.</p>
+  </div>
+  <button type="button" id="mt-parif-back">← Retour aux postes</button>`;
+  prestation.after(section);
+
+  const nav=document.createElement('button');nav.type='button';nav.dataset.tab='parif';nav.textContent='📋 Plan PARIF';topNav.append(nav);
+  const access=document.createElement('div');access.className='card mt-parif-entry';
+  access.innerHTML='<h3>📋 Plan PARIF</h3><p>Répartition du personnel : matin, après-midi et nuit. Version mobile modifiable en brouillon.</p><button type="button" class="mt-primary">Ouvrir le plan PARIF</button>';
+  prestation.insertBefore(access,prestation.firstChild.nextSibling);
+  access.querySelector('button').onclick=()=>nav.click();
+  el('mt-parif-back').onclick=()=>{const button=topNav.querySelector('[data-tab="prestation"]');button?.click()};
+
+  function isDirty(){return JSON.stringify(working)!==JSON.stringify(saved)}
+  function dropPreview(){previewSnapshot='';el('mt-parif-preview').classList.add('hidden');el('mt-parif-preview').replaceChildren();el('mt-parif-save').classList.add('hidden')}
+  function getDay(){
+    baseRaw=localStorage.getItem(STORE)||'';
+    saved=hydrateDay(storedPlans()[date]);working=clone(saved);dropPreview();
+    el('mt-parif-status').textContent='';
+  }
+  function textInput(path,value,placeholder='Nom / identifiant'){
+    return`<input type="text" data-parif-name="1" data-parif-path="${esc(path)}" value="${esc(value)}" maxlength="120" autocomplete="off" placeholder="${esc(placeholder)}" aria-label="${esc(path.replaceAll('.',' '))}"><small class="mt-parif-employer">${esc(affiliation(value))}</small>`;
+  }
+  function affiliation(value){
+    const v=String(value||'').trim();if(!v)return'';
+    if(/\bG4S$/i.test(v))return'G4S';
+    if(/\bDUSS$/i.test(v))return'DUSS';
+    return'LXP (sans suffixe G4S, à vérifier)';
+  }
+  function postCategory(post){
+    const choices=read(CATEGORIES,{}),type=choices&&typeof choices==='object'?choices[post]:'';
+    return type==='g4s'?'G4S exclusif':type==='lxp'?'PARIF / LXP':'Type à confirmer';
+  }
+  function numberInput(key,label,value){return`<label>${esc(label)}<input type="number" min="0" max="300" step="1" inputmode="numeric" data-parif-path="${key}" value="${esc(value)}" placeholder="—"></label>`;}
+  function render(){
+    el('mt-parif-date').value=date;
+    section.querySelectorAll('[data-parif-shift]').forEach(button=>{button.classList.toggle('active',button.dataset.parifShift===active);button.setAttribute('aria-pressed',String(button.dataset.parifShift===active))});
+    const session=SESSIONS.find(x=>x.id===active),data=working.shifts[active];
+    const postCards=POST_TEMPLATE.map(([key,count])=>{
+      const post=key==='MIDDLE'?session.middle:key;
+      return`<div class="mt-parif-post ${active==='night'&&post==='E112'?'mt-parif-closed':''}">
+        <h4>POSTE ${esc(post)} <span class="mt-parif-kind">${esc(postCategory(post))}</span> ${active==='night'&&post==='E112'?'<span>Fermeture nocturne à vérifier</span>':''}</h4>
+        <div class="mt-parif-slot-list">${Array.from({length:count},(_,i)=>`<label><small>Agent ${i+1}</small>${textInput(`posts.${post}.${i}`,data.posts[post]?.[i]||'')}</label>`).join('')}</div>
+      </div>`;
+    }).join('');
+    el('mt-parif-content').innerHTML=`
+      <div class="card mt-parif-session" data-session="${active}">
+        <div class="mt-parif-session-title"><h3>${esc(session.label)} · ${esc(session.hours)}</h3><span>Brouillon</span></div>
+        <div class="mt-parif-leaders"><label><strong>Superviseur</strong>${textInput('supervisor',data.supervisor)}</label>
+          <div><strong>Patrouilleur(s)</strong>${data.patrol.map((v,i)=>`<label><small>Patrouilleur ${i+1}</small>${textInput(`patrol.${i}`,v)}</label>`).join('')}</div></div>
+        <h3 class="mt-parif-subtitle">Affectations par poste</h3><div class="mt-parif-post-grid">${postCards}</div>
+      </div>
+      <div class="card mt-parif-remarks"><h3>Remarques / absences</h3>
+        <label>LXP<textarea rows="3" maxlength="1200" data-parif-path="notesLxp" placeholder="Remarques ou absences LXP">${esc(data.notesLxp)}</textarea></label>
+        <label>G4S<textarea rows="3" maxlength="1200" data-parif-path="notesG4s" placeholder="Remarques ou absences G4S">${esc(data.notesG4s)}</textarea></label>
+      </div>
+      <div class="card mt-parif-effectifs"><h3>Effectifs G4S · ${esc(session.label)}</h3>
+        <div class="mt-parif-count-grid">${numberInput('commande','Commande initiale',data.commande)}${numberInput('extrasPlus','Extra +',data.extrasPlus)}${numberInput('extrasMinus','Extra −',data.extrasMinus)}${numberInput('effectifReel','Effectif réel',data.effectifReel)}</div>
+        <p id="mt-parif-total" class="mt-parif-total"></p>
+        <p class="mt-parif-disclaimer">Effectif prévu = commande + extras − retraits. Un champ vide signifie « inconnu », pas zéro.</p>
+      </div>
+      <div class="card mt-parif-escort"><h3>Mission E121 / escorte chantier</h3>
+        <div class="mt-parif-escort-fields">
+          <label>Horaire<input data-parif-path="escortHoraire" maxlength="80" value="${esc(data.escortHoraire)}" placeholder="Ex. 08 h–16 h"></label>
+          <label>Effectif<input data-parif-path="escortEffectif" maxlength="80" value="${esc(data.escortEffectif)}" placeholder="Nombre"></label>
+          <label>Lieu<input data-parif-path="escortLieu" maxlength="120" value="${esc(data.escortLieu)}" placeholder="Lieu"></label>
+          <label>Société<input data-parif-path="escortSociete" maxlength="120" value="${esc(data.escortSociete)}" placeholder="Société"></label>
+        </div>
+      </div>`;
+    renderTotals();
+  }
+  function renderTotals(){
+    const data=working.shifts[active],c=Number(data.commande),plus=data.extrasPlus===''?0:Number(data.extrasPlus),minus=data.extrasMinus===''?0:Number(data.extrasMinus);
+    const hasBase=data.commande!==''&&[c,plus,minus].every(Number.isFinite),planned=hasBase?c+plus-minus:null;
+    const hasReal=data.effectifReel!==''&&Number.isFinite(Number(data.effectifReel));
+    el('mt-parif-total').textContent=`Effectif prévu : ${planned===null?'à renseigner':planned} · Réel : ${hasReal?data.effectifReel:'à renseigner'} · Écart : ${planned===null||!hasReal?'non calculable':Number(data.effectifReel)-planned}`;
+  }
+  function applyInput(event){
+    const target=event.target,path=target.dataset.parifPath;if(!path)return;
+    const parts=path.split('.'),shift=working.shifts[active];
+    if(parts[0]==='posts'&&Array.isArray(shift.posts[parts[1]]))shift.posts[parts[1]][Number(parts[2])]=target.value;
+    else if(parts[0]==='patrol')shift.patrol[Number(parts[1])]=target.value;
+    else if(Object.prototype.hasOwnProperty.call(shift,parts[0]))shift[parts[0]]=target.value;
+    if(target.matches('[data-parif-name]')){const employer=target.nextElementSibling;if(employer?.classList.contains('mt-parif-employer'))employer.textContent=affiliation(target.value);}
+    dropPreview();
+    if(['commande','extrasPlus','extrasMinus','effectifReel'].includes(parts[0]))renderTotals();
+    el('mt-parif-status').textContent=isDirty()?'Modifications en cours, non enregistrées.':'Aucune modification en attente.';
+  }
+  el('mt-parif-content').addEventListener('input',applyInput);
+  section.querySelectorAll('[data-parif-shift]').forEach(button=>button.onclick=()=>{if(button.dataset.parifShift===active)return;active=button.dataset.parifShift;dropPreview();render()});
+  el('mt-parif-date').onchange=event=>{
+    const next=event.target.value;
+    if(!validDate(next)){event.target.value=date;return;}
+    if(isDirty()&&!confirm('Tu as des changements non enregistrés. Changer de date et les abandonner ?')){event.target.value=date;return;}
+    date=next;getDay();render();
+  };
+  el('mt-parif-revert').onclick=()=>{
+    if(isDirty()&&!confirm('Annuler les corrections non enregistrées pour cette date ?'))return;
+    working=clone(saved);dropPreview();render();el('mt-parif-status').textContent='Brouillon revenu à sa dernière version enregistrée.';
+  };
+  el('mt-parif-preview-action').onclick=()=>{
+    dropPreview();
+    const changed=SESSIONS.map(s=>({session:s,fields:Object.keys(working.shifts[s.id]).filter(key=>JSON.stringify(working.shifts[s.id][key])!==JSON.stringify(saved.shifts[s.id][key])).length}));
+    const touched=changed.filter(x=>x.fields>0);
+    const preview=el('mt-parif-preview');
+    if(!touched.length){el('mt-parif-status').textContent='Aucune modification à enregistrer.';return;}
+    const heading=document.createElement('strong');heading.textContent='Avant enregistrement · '+date;
+    const detail=document.createElement('p');detail.textContent=touched.map(x=>x.session.label+' : '+x.fields+' rubrique(s) modifiée(s)').join(' · ');
+    const note=document.createElement('p');note.textContent='Seul ce brouillon privé sera enregistré sur cet appareil. Aucune validation officielle, aucun envoi aux agents.';
+    preview.append(heading,detail,note);preview.classList.remove('hidden');
+    previewSnapshot=JSON.stringify(working);el('mt-parif-save').classList.remove('hidden');
+    el('mt-parif-status').textContent='Relis le plan et confirme l’enregistrement du brouillon.';
+  };
+  el('mt-parif-save').onclick=()=>{
+    if(!previewSnapshot||previewSnapshot!==JSON.stringify(working)){dropPreview();el('mt-parif-status').textContent='Le plan a changé depuis la prévisualisation. Prévisualise à nouveau.';return;}
+    if((localStorage.getItem(STORE)||'')!==baseRaw){dropPreview();el('mt-parif-status').textContent='Les brouillons ont été modifiés ailleurs. Recharge le plan pour éviter un écrasement.';return;}
+    const plans=storedPlans();plans[date]={...clone(working),updatedAt:new Date().toISOString(),kind:'brouillon-personnel'};
+    try{localStorage.setItem(STORE,JSON.stringify(plans));saved=clone(working);baseRaw=localStorage.getItem(STORE)||'';dropPreview();el('mt-parif-status').textContent='Brouillon PARIF enregistré localement pour le '+date+'. Aucun changement officiel.';}
+    catch{el('mt-parif-status').textContent='Stockage indisponible. Aucune donnée n’a été enregistrée.';}
+  };
+  function showParif(){
+    topNav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===nav));
+    main.querySelectorAll('section').forEach(s=>s.classList.toggle('hidden',s!==section));
+    render();window.scrollTo(0,0);
+  }
+  nav.onclick=showParif;
+
+  // Propositions tactiles sous la cellule active. Aucun nom ajouté automatiquement.
+  const suggestions=document.createElement('div');suggestions.className='mt-parif-suggestions';suggestions.setAttribute('role','group');suggestions.setAttribute('aria-label','Noms proposés');
+  let focusedInput=null;
+  const names=()=>{
+    const profiles=read('myteam_agent_profiles_v1',{}),deleted=new Set(read('myteam_deleted_agents_v1',[]));
+    return Object.keys(profiles&&typeof profiles==='object'&&!Array.isArray(profiles)?profiles:{}).filter(x=>!deleted.has(x));
+  };
+  function propose(input){
+    suggestions.replaceChildren();focusedInput=input;
+    const q=normalize(input.value.trim());if(!q||q.length<2)return;
+    const results=names().filter(name=>{const n=normalize(name);return n.includes(q)||n.split(/[\s'-]+/).some(part=>part.startsWith(q))}).sort((a,b)=>a.localeCompare(b,'fr')).slice(0,5);
+    if(!results.length)return;
+    input.after(suggestions);
+    for(const name of results){
+      const button=document.createElement('button');button.type='button';button.className='mt-parif-suggestion';button.textContent=name;
+      button.onclick=()=>{if(focusedInput!==input)return;input.value=/\bG4S$/i.test(name)?name:name+' G4S';input.dispatchEvent(new Event('input',{bubbles:true}));suggestions.replaceChildren();input.focus()};
+      suggestions.append(button);
+    }
+  }
+  el('mt-parif-content').addEventListener('input',event=>{if(event.target.matches('input[data-parif-name]'))propose(event.target)});
+  el('mt-parif-content').addEventListener('focusin',event=>{if(event.target.matches('input[data-parif-name]'))propose(event.target)});
+  el('mt-parif-content').addEventListener('focusout',event=>{if(event.target.matches('input[data-parif-name]'))setTimeout(()=>{if(!suggestions.contains(document.activeElement))suggestions.replaceChildren()},160)});
+
+  // Conserver les saisies non enregistrées si l’utilisateur tente de quitter la page.
+  window.addEventListener('beforeunload',event=>{if(!isDirty())return;event.preventDefault();event.returnValue=''});
+  window.addEventListener('myteam:parif-types-changed',render);
+  getDay();render();
+})();
