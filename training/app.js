@@ -584,26 +584,6 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
   }
 };
 
-function parseCSV(text){
-  const rows=[];let row=[],cell='',q=false;
-  for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
-    if(c==='"'){if(q&&n==='"'){cell+='"';i++;}else q=!q;}
-    else if(c===','&&!q){row.push(cell);cell='';}
-    else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&n==='\n')i++;row.push(cell);cell='';if(row.some(x=>x!==''))rows.push(row);row=[];}
-    else cell+=c;
-  }
-  if(cell||row.length){row.push(cell);rows.push(row);}
-  const headers=rows.shift().map(h=>h.trim());
-  return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
-}
-document.getElementById('importBtn').onclick=()=>document.getElementById('csvInput').click();
-document.getElementById('csvInput').onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
-  const rows=parseCSV(await f.text());
-  const needed=['title','start_time','exercise_title','weight_kg','reps'];
-  if(!needed.every(k=>rows[0]&&k in rows[0])){document.getElementById('importStatus').textContent='CSV Hevy non reconnu.';return;}
-  state.history=rows;state.nextSessionId=deriveNextSessionFromHistory();save();document.getElementById('importStatus').textContent=`${rows.length} lignes importées. Données enregistrées uniquement sur ce téléphone.`;renderHome();
-};
 function uniqueWorkouts(rows){
   const m=new Map();
   rows.forEach(r=>{
