@@ -141,13 +141,14 @@
       await load('./prestation-analysis-demo-v1.js?v=20261017-3');
       await load('./planning-pdf-import-v2.js?v=20261017-2');
       renderDirectAgents();
-      await load('./mobile-shell-v1.js?v=20261018-1');
     }catch(err){
       document.querySelector('.voice-box')?.remove();
       renderDirectAgents();
       const status=document.querySelector('#status');
       if(status)status.textContent='MyTEAM chargé avec fonctions principales. Actualise si un module manque.';
       console.error(err)
+    }finally{
+      try{await load('./mobile-shell-v1.js?v=20261018-1')}catch(error){console.error('Navigation mobile indisponible :',error)}
     }
   })();
 })();
