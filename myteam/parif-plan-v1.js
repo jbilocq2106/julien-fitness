@@ -80,12 +80,19 @@
     <div id="mt-parif-lookup-result" role="status" class="mt-parif-lookup-result"></div>
   </div>
   <details class="card mt-parif-import" id="mt-parif-import-details">
-    <summary>📥 Actualiser depuis la photo</summary>
-    <p class="mt-parif-sub">Après m’avoir envoyé la photo du jour, télécharge le fichier du plan que je te donne, puis sélectionne-le ici. Rien n’est enregistré automatiquement.</p>
-    <label class="mt-parif-file-label">Choisir le fichier du plan (.json)
-      <input id="mt-parif-import-file" type="file" accept=".json,application/json">
+    <summary>📥 Importer un plan (PDF, JPEG, PNG ou JSON)</summary>
+    <p class="mt-parif-sub">Choisis directement une photo, un PDF ou un brouillon JSON. Le fichier reste sur ton appareil : la prévisualisation ne modifie aucun poste.</p>
+    <label class="mt-parif-file-label">Choisir le fichier du plan
+      <input id="mt-parif-import-file" type="file" accept=".json,.pdf,.jpg,.jpeg,.png,application/json,application/pdf,image/jpeg,image/png">
     </label>
     <p id="mt-parif-import-status" role="status" class="mt-parif-import-status"></p>
+    <div id="mt-parif-source-preview" class="mt-parif-source-preview hidden"></div>
+    <div id="mt-parif-source-tools" class="mt-parif-source-tools hidden">
+      <button id="mt-parif-read-source" type="button">🔎 Lire le texte sur cet appareil</button>
+      <p class="mt-parif-disclaimer">Lecture assistée : un moteur de reconnaissance peut devoir se télécharger. Le fichier n’est pas envoyé par MyTEAM à un service d’analyse. Relis chaque nom et chaque poste : aucune affectation issue de l’OCR n’est validée automatiquement.</p>
+      <textarea id="mt-parif-source-text" rows="7" readonly class="hidden" aria-label="Texte relevé sur le document"></textarea>
+      <button id="mt-parif-source-edit" type="button">✏️ Compléter le plan en regardant le document</button>
+    </div>
     <div id="mt-parif-import-issues" class="mt-parif-import-issues hidden"></div>
   </details>
   <div id="mt-parif-content"></div>
@@ -296,11 +303,90 @@
   }
   el('mt-parif-content').addEventListener('input',applyInput);
   const importInput=el('mt-parif-import-file');
+  let sourceFile=null,sourceObjectUrl=null;
+  const sourcePreview=el('mt-parif-source-preview'),sourceTools=el('mt-parif-source-tools'),sourceText=el('mt-parif-source-text');
+  function clearSource(){
+    if(sourceObjectUrl){URL.revokeObjectURL(sourceObjectUrl);sourceObjectUrl=null;}
+    sourceFile=null;sourcePreview.replaceChildren();sourcePreview.classList.add('hidden');
+    sourceTools.classList.add('hidden');sourceText.value='';sourceText.classList.add('hidden');
+  }
+  function prepareSource(file,kind){
+    clearSource();sourceFile=file;sourceObjectUrl=URL.createObjectURL(file);
+    const title=document.createElement('strong');title.textContent=`Document sélectionné : ${file.name}`;sourcePreview.append(title);
+    if(kind==='image'){
+      const img=document.createElement('img');img.src=sourceObjectUrl;img.alt='Photo du plan PARIF à contrôler';img.className='mt-parif-source-image';sourcePreview.append(img);
+    }else{
+      const pdf=document.createElement('object');pdf.type='application/pdf';pdf.data=sourceObjectUrl;pdf.className='mt-parif-source-pdf';pdf.setAttribute('aria-label','Aperçu du PDF PARIF');
+      pdf.textContent='Le PDF ne peut pas être affiché ici.';sourcePreview.append(pdf);
+      const link=document.createElement('a');link.href=sourceObjectUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Ouvrir le PDF si l’aperçu ne s’affiche pas';sourcePreview.append(link);
+    }
+    sourcePreview.classList.remove('hidden');sourceTools.classList.remove('hidden');
+    el('mt-parif-import-status').textContent=`${kind==='pdf'?'PDF':'Image'} chargé(e) en aperçu privé · aucune affectation créée. Tu peux examiner le document et compléter le brouillon.`;
+  }
+  const loadLibrary=(globalName,url)=>new Promise((resolve,reject)=>{
+    if(window[globalName])return resolve(window[globalName]);
+    const script=document.createElement('script');script.src=url;script.async=true;
+    script.onload=()=>window[globalName]?resolve(window[globalName]):reject(new Error('Module non chargé'));
+    script.onerror=()=>reject(new Error('Module indisponible'));document.head.append(script);
+  });
+  async function pdfLibrary(){
+    const lib=await loadLibrary('pdfjsLib','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';return lib;
+  }
+  async function ocrCanvasOrImage(image){
+    const api=await loadLibrary('Tesseract','https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+    const worker=await api.createWorker('eng',1,{logger:message=>{
+      if(message?.status==='recognizing text')el('mt-parif-import-status').textContent=`Reconnaissance locale en cours : ${Math.round((message.progress||0)*100)} %`;
+    }});
+    try{const {data}=await worker.recognize(image);return String(data?.text||'');}
+    finally{await worker.terminate();}
+  }
+  async function readPdf(file){
+    const lib=await pdfLibrary(),pdf=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+    try{
+      let text='',isScanned=true;
+      for(let index=1;index<=Math.min(4,pdf.numPages);index++){
+        const page=await pdf.getPage(index),layer=await page.getTextContent();
+        const pageText=(layer.items||[]).map(item=>String(item.str||'')).filter(Boolean).join(' ');
+        text+=`\n[Page ${index}]\n${pageText}\n`;
+        if(pageText.trim().length>80)isScanned=false;
+      }
+      if(!isScanned)return text.trim();
+      // Sur un PDF scanné, le texte du document est une image : lire la première page en local.
+      const page=await pdf.getPage(1),viewport=page.getViewport({scale:1.8});
+      const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+      return await ocrCanvasOrImage(canvas);
+    }finally{await pdf.destroy();}
+  }
+  let readingSource=false;
+  el('mt-parif-read-source').onclick=async()=>{
+    if(readingSource||!sourceFile)return;
+    const status=el('mt-parif-import-status'),button=el('mt-parif-read-source'),file=sourceFile;
+    readingSource=true;button.disabled=true;status.textContent='Lecture locale du document… cela peut prendre un moment.';
+    try{
+      const text=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?await readPdf(file):await ocrCanvasOrImage(file);
+      if(sourceFile!==file){return;}
+      sourceText.value=text.trim()||'Aucun texte lisible reconnu.';sourceText.classList.remove('hidden');
+      status.textContent='Lecture terminée. Le texte peut contenir des erreurs : compare-le au document avant de saisir ou corriger les agents. Aucun poste modifié automatiquement.';
+    }catch(error){
+      if(sourceFile===file)status.textContent=`Lecture automatique indisponible (${error.message}). Le fichier reste visible pour la saisie manuelle.`;
+    }finally{readingSource=false;button.disabled=false;}
+  };
+  el('mt-parif-source-edit').onclick=()=>setMode('edit');
+  window.addEventListener('pagehide',()=>{if(sourceObjectUrl)URL.revokeObjectURL(sourceObjectUrl)});
   importInput.onchange=async event=>{
     const file=event.target.files?.[0];if(!file)return;
     const status=el('mt-parif-import-status');
     importInput.value='';
-    if(file.size>1000000){status.textContent='Fichier trop volumineux : maximum 1 Mo.';return;}
+    const lower=file.name.toLowerCase();
+    const kind=/\.(jpg|jpeg|png)$/.test(lower)||['image/jpeg','image/png'].includes(file.type)?'image':/\.pdf$/.test(lower)||file.type==='application/pdf'?'pdf':/\.json$/.test(lower)||file.type==='application/json'?'json':null;
+    if(!kind){status.textContent='Format non pris en charge. Choisis PDF, JPEG, PNG ou JSON.';return;}
+    if(kind!=='json'){
+      if(file.size>(kind==='pdf'?20000000:15000000)){status.textContent='Document trop volumineux (PDF : 20 Mo ; image : 15 Mo maximum).';return;}
+      prepareSource(file,kind);return;
+    }
+    if(file.size>1000000){status.textContent='Brouillon JSON trop volumineux : maximum 1 Mo.';return;}
     if(isDirty()&&!confirm('Les modifications non enregistrées seront remplacées par les données du fichier. Continuer ?'))return;
     let data;
     try{data=JSON.parse(await file.text());}
@@ -309,6 +395,7 @@
       status.textContent='Ce fichier ne correspond pas au format Plan PARIF MyTEAM.';return;
     }
     if(data.date!==date&&storedPlans()[data.date]&&!confirm(`Un brouillon existe déjà pour le ${data.date}. Préparer son remplacement pour prévisualisation ?`))return;
+    clearSource();
     date=data.date;
     baseRaw=localStorage.getItem(STORE)||'';
     saved=hydrateDay(storedPlans()[date]);working=hydrateDay(data);
