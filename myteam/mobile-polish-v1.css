@@ -1,0 +1,48 @@
+/* Deuxième passe : lisibilité, grands contrôles et fiches condensées, sans toucher aux données. */
+@media(max-width:780px){
+  main{line-height:1.5}
+  main h2,main h3,main h4{line-height:1.25}
+  main label{line-height:1.45}
+  main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  main textarea,main select{background:#111c2b;color:#f5f7fb;border:1px solid #71859e;border-radius:11px;padding:11px 12px;min-height:48px;width:100%;font-size:16px}
+  main input[type="checkbox"]{width:20px;height:20px;accent-color:#e76b24;vertical-align:middle}
+  main :is(input,select,textarea,button,summary):focus-visible{outline:3px solid #f8ad69;outline-offset:2px}
+  main textarea{resize:vertical;min-height:88px}
+  main button{min-height:48px;font-size:14px}
+  main section{overflow-wrap:anywhere}
+  main section p{line-height:1.5}
+  main section :is(.card,.pa-card,.ph-card,.mh-card){max-width:100%;min-width:0}
+  main section:not(#composition) table{display:block;max-width:100%;overflow-x:auto;scrollbar-width:thin}
+  main details{border-radius:13px}
+  main summary{cursor:pointer;min-height:46px;display:flex;align-items:center;padding:11px 12px;font-weight:800;line-height:1.3}
+  main details[open]>summary{border-bottom:1px solid #46566e}
+  #mt-agent-edit-toggle{display:block;width:100%;margin:13px 0;background:#e76b24;text-align:center;font-size:15px}
+  #mt-agent-fields.mt-agent-closed{display:none}
+  #mt-agent-fields{padding:13px 0 0;border-top:1px solid #3a4d66}
+  #mt-agent-fields>label{display:block;margin:8px 0 13px}
+  #mt-agent-fields>h4{background:#263b53;border-left:4px solid #f08b45;padding:12px;border-radius:9px;margin:20px 0 10px}
+  #mt-agent-fields #agent-save{width:100%;background:#287448;font-size:16px;margin:8px 0}
+  #agent-detail{background:#223249;border:1px solid #405874;border-radius:15px;padding:14px;margin:14px 0;scroll-margin-top:12px}
+  #agent-detail #agent-title{font-size:20px;margin:0 0 8px}
+  #agent-qual-summary{border-radius:11px;background:#152c36;padding:12px;line-height:1.4}
+  #agents-direct .ad-row{min-height:64px;padding:14px 12px}
+  #agents-direct #ad-search{min-height:50px;font-size:16px}
+  #agents-direct .ad-team-tab{min-height:45px}
+  #agents-direct .ad-filter{min-height:44px}
+  #prestation #mt-prestation-rules{background:#253750;border:1px solid #4a6080;margin:12px 0}
+  #prestation #mt-prestation-rules p{padding:4px 14px 14px;margin:0}
+  #prestation label[for="prestation-pdf"],
+  #prestation label[for="prestation-photo"],
+  #planning label[for="planning-pdf"]{display:flex!important;justify-content:center;align-items:center;width:100%;font-size:15px;min-height:52px;margin:8px 0}
+  #prestation #prestation-note{min-height:110px}
+  #prestation .pa-row-btn{min-height:56px}
+  #prestation .pa-review-actions button{flex:1}
+  #hours>.card p{background:#293b53;border:1px solid #3d5571;border-radius:12px;padding:12px 14px;margin:8px 0;line-height:1.5}
+  #hours>.card>p:first-child{background:#1b4839;border-color:#3b8a68}
+  #history .mh-day,#planning .ph-day{padding:12px}
+  #planning .ph-tabs button{min-height:50px}
+  #leave-list p{padding:12px;border:1px solid #485b73;border-radius:12px;background:#293a51}
+  #leave-list p button{display:block;width:100%;margin-top:9px;background:#783d47}
+}
+@media(min-width:781px){#mt-agent-edit-toggle{display:none!important}#mt-agent-fields{display:block!important}}
+@media print{#mt-mobile-nav,#mt-more-panel,#mt-more-shade,#mt-agent-edit-toggle{display:none!important}#mt-agent-fields{display:block!important}}
