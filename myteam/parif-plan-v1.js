@@ -58,6 +58,15 @@
     </div>
     <div class="mt-parif-banner">🔒 Brouillon privé. Ce plan ne modifie ni les équipes officielles ni les fiches de prestation.</div>
   </div>
+  <div class="card mt-parif-lookup">
+    <h3>🔎 Où est un agent ?</h3>
+    <p class="mt-parif-sub">Recherche l’affectation prévue dans le plan de la date sélectionnée. Le poste réel sur le terrain exige une confirmation opérationnelle.</p>
+    <label class="mt-parif-lookup-label">Nom de l’agent
+      <input id="mt-parif-lookup-input" autocomplete="off" placeholder="Tape un nom…" aria-label="Chercher une affectation par nom">
+    </label>
+    <div id="mt-parif-lookup-suggestions" class="mt-parif-lookup-suggestions"></div>
+    <div id="mt-parif-lookup-result" role="status" class="mt-parif-lookup-result"></div>
+  </div>
   <div class="card mt-parif-import">
     <h3>📥 Actualiser depuis la photo</h3>
     <p class="mt-parif-sub">Après m’avoir envoyé la photo du jour, télécharge le fichier du plan que je te donne, puis sélectionne-le ici. Rien n’est enregistré automatiquement.</p>
@@ -89,10 +98,22 @@
 
   function isDirty(){return JSON.stringify(working)!==JSON.stringify(saved)}
   function dropPreview(){previewSnapshot='';el('mt-parif-preview').classList.add('hidden');el('mt-parif-preview').replaceChildren();el('mt-parif-save').classList.add('hidden')}
+  function showIssues(){
+    const issues=el('mt-parif-import-issues');issues.replaceChildren();
+    if(importIssues.length){
+      const heading=document.createElement('strong');heading.textContent='À vérifier sur la photo :';issues.append(heading);
+      const list=document.createElement('ul');
+      importIssues.forEach(x=>{const item=document.createElement('li');item.textContent=x;list.append(item)});
+      issues.append(list);issues.classList.remove('hidden');
+    }else issues.classList.add('hidden');
+  }
   function getDay(){
     baseRaw=localStorage.getItem(STORE)||'';
-    saved=hydrateDay(storedPlans()[date]);working=clone(saved);importIssues=[];dropPreview();
-    el('mt-parif-import-issues').replaceChildren();el('mt-parif-import-issues').classList.add('hidden');
+    const item=storedPlans()[date];
+    saved=hydrateDay(item);working=clone(saved);
+    importIssues=Array.isArray(item?.pointsAVerifier)?item.pointsAVerifier.filter(x=>typeof x==='string').slice(0,30):[];
+    dropPreview();showIssues();
+    el('mt-parif-import-status').textContent='';
     el('mt-parif-status').textContent='';
   }
   function textInput(path,value,placeholder='Nom / identifiant'){
@@ -145,7 +166,45 @@
         </div>
       </div>`;
     renderTotals();
+    renderLookup();
   }
+  const lookupName=name=>normalize(String(name||'').trim().replace(/\s+(G4S|DUSS)$/i,'')).replace(/\s+/g,' ');
+  function allAssignments(){
+    const result=[];
+    for(const session of SESSIONS){
+      const data=working.shifts[session.id],push=(name,post)=>{if(String(name||'').trim())result.push({name:String(name).trim(),session,post})};
+      push(data.supervisor,'Superviseur');
+      data.patrol.forEach((name,i)=>push(name,`Patrouilleur ${i+1}`));
+      Object.entries(data.posts).forEach(([post,names])=>names.forEach(name=>push(name,`Poste ${post}`)));
+    }
+    return result;
+  }
+  function renderLookup(){
+    const input=el('mt-parif-lookup-input');if(!input)return;
+    const query=input.value.trim(),suggestions=el('mt-parif-lookup-suggestions'),result=el('mt-parif-lookup-result');
+    suggestions.replaceChildren();result.replaceChildren();
+    if(!query){result.textContent='Renseigne un nom pour retrouver la vacation et le poste.';return;}
+    const assignments=allAssignments(),q=lookupName(query);
+    const exact=assignments.filter(x=>lookupName(x.name)===q);
+    if(!exact.length){
+      const matches=[...new Set(assignments.map(x=>x.name))].filter(name=>lookupName(name).includes(q)).slice(0,8);
+      for(const name of matches){const button=document.createElement('button');button.type='button';button.textContent=name;
+        button.onclick=()=>{input.value=name;renderLookup()};suggestions.append(button)}
+      result.textContent=matches.length?'Sélectionne le nom exact dans les propositions.':'Nom introuvable dans ce brouillon. Cela ne prouve pas que l’agent est absent du site.';
+      return;
+    }
+    const title=document.createElement('strong');title.textContent=exact[0].name+' · '+date;result.append(title);
+    const list=document.createElement('ul');
+    exact.forEach(x=>{const item=document.createElement('li');item.textContent=`${x.session.label} (${x.session.hours}) : ${x.post}`;list.append(item)});
+    result.append(list);
+    const disclaimer=document.createElement('p');disclaimer.textContent=`Source : ${isDirty()?'brouillon modifié non enregistré':'brouillon PARIF local'} · Affectation prévue, présence physique non vérifiée.${importIssues.length?' '+importIssues.length+' point(s) à contrôler sur la photo.':''}`;
+    result.append(disclaimer);
+    const bySession={};for(const x of exact){bySession[x.session.id]=(bySession[x.session.id]||0)+1;}
+    if(Object.values(bySession).some(count=>count>1)){
+      const alert=document.createElement('p');alert.className='mt-parif-lookup-warning';alert.textContent='⚠ Plusieurs affectations sur la même vacation : vérification nécessaire.';result.append(alert);
+    }
+  }
+  el('mt-parif-lookup-input').addEventListener('input',renderLookup);
   function renderTotals(){
     const data=working.shifts[active],c=Number(data.commande),plus=data.extrasPlus===''?0:Number(data.extrasPlus),minus=data.extrasMinus===''?0:Number(data.extrasMinus);
     const hasBase=data.commande!==''&&[c,plus,minus].every(Number.isFinite),planned=hasBase?c+plus-minus:null;
@@ -161,6 +220,7 @@
     if(target.matches('[data-parif-name]')){const employer=target.nextElementSibling;if(employer?.classList.contains('mt-parif-employer'))employer.textContent=affiliation(target.value);}
     dropPreview();
     if(['commande','extrasPlus','extrasMinus','effectifReel'].includes(parts[0]))renderTotals();
+    renderLookup();
     el('mt-parif-status').textContent=isDirty()?'Modifications en cours, non enregistrées.':'Aucune modification en attente.';
   }
   el('mt-parif-content').addEventListener('input',applyInput);
@@ -182,12 +242,7 @@
     baseRaw=localStorage.getItem(STORE)||'';
     saved=hydrateDay(storedPlans()[date]);working=hydrateDay(data);
     importIssues=Array.isArray(data.pointsAVerifier)?data.pointsAVerifier.filter(x=>typeof x==='string').slice(0,30).map(x=>x.slice(0,240)):[];
-    const issues=el('mt-parif-import-issues');issues.replaceChildren();
-    if(importIssues.length){
-      const title=document.createElement('strong');title.textContent='À vérifier sur la photo :';issues.append(title);
-      const list=document.createElement('ul');
-      importIssues.forEach(x=>{const item=document.createElement('li');item.textContent=x;list.append(item)});issues.append(list);issues.classList.remove('hidden');
-    }else issues.classList.add('hidden');
+    showIssues();
     active='morning';dropPreview();render();
     const occupied=Object.values(working.shifts).reduce((total,shift)=>total+Object.values(shift.posts).flat().filter(Boolean).length+shift.patrol.filter(Boolean).length+(shift.supervisor?1:0),0);
     status.textContent=`Plan du ${date} chargé en prévisualisation · ${occupied} cellules nominatives ou indications de prestataire. Aucun enregistrement effectué.`;
@@ -202,7 +257,9 @@
   };
   el('mt-parif-revert').onclick=()=>{
     if(isDirty()&&!confirm('Annuler les corrections non enregistrées pour cette date ?'))return;
-    working=clone(saved);dropPreview();render();el('mt-parif-status').textContent='Brouillon revenu à sa dernière version enregistrée.';
+    working=clone(saved);
+    const last=storedPlans()[date];importIssues=Array.isArray(last?.pointsAVerifier)?last.pointsAVerifier.filter(x=>typeof x==='string').slice(0,30):[];
+    showIssues();dropPreview();render();el('mt-parif-status').textContent='Brouillon revenu à sa dernière version enregistrée.';
   };
   el('mt-parif-preview-action').onclick=()=>{
     dropPreview();
@@ -222,7 +279,7 @@
   el('mt-parif-save').onclick=()=>{
     if(!previewSnapshot||previewSnapshot!==JSON.stringify(working)){dropPreview();el('mt-parif-status').textContent='Le plan a changé depuis la prévisualisation. Prévisualise à nouveau.';return;}
     if((localStorage.getItem(STORE)||'')!==baseRaw){dropPreview();el('mt-parif-status').textContent='Les brouillons ont été modifiés ailleurs. Recharge le plan pour éviter un écrasement.';return;}
-    const plans=storedPlans();plans[date]={...clone(working),updatedAt:new Date().toISOString(),kind:'brouillon-personnel'};
+    const plans=storedPlans();plans[date]={...clone(working),pointsAVerifier:importIssues,updatedAt:new Date().toISOString(),kind:'brouillon-personnel'};
     try{localStorage.setItem(STORE,JSON.stringify(plans));saved=clone(working);baseRaw=localStorage.getItem(STORE)||'';dropPreview();el('mt-parif-status').textContent='Brouillon PARIF enregistré localement pour le '+date+'. Aucun changement officiel.';}
     catch{el('mt-parif-status').textContent='Stockage indisponible. Aucune donnée n’a été enregistrée.';}
   };
