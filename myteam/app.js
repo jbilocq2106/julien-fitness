@@ -133,8 +133,8 @@
       await load('./hours-v1.js?v=20261017-8');
       await load('./salary-v2.js?v=20261017-1');
       await load('./agents-migration-v3.js?v=5');
-      await load('./roster-v6.js?v=20261017-2');
-      await load('./composition-v1.js?v=20261018-2');
+      await load('./roster-v6.js?v=20261018-3');
+      await load('./composition-v1.js?v=20261018-3');
       renderDirectAgents();
       await load('./prestation-share-v1.js?v=2');
       await load('./prestation-rules-v1.js?v=20261017-1');
