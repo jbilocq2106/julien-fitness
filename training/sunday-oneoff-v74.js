@@ -18,7 +18,8 @@
       note: 'Remplace le leg curl uniquement aujourd’hui. Pas d’élan.'
     }
   };
-  const treadmillNote = 'Aujourd’hui seulement : 15–20 min à 4,5–5,0 km/h, pente 0–1 %, uniquement si la marche est indolore. Arrêter si le mollet fait mal.';
+  const previousTreadmillNote = 'Aujourd’hui seulement : 15–20 min à 4,5–5,0 km/h, pente 0–1 %, uniquement si la marche est indolore. Arrêter si le mollet fait mal.';
+  const normalTreadmillNote = '5,5 km/h • 10–12 % • renseigner inclinaison, vitesse, durée et km';
 
   function parisDate(dateLike) {
     const parts = new Intl.DateTimeFormat('en-GB', {
@@ -40,9 +41,6 @@
     sunday.exercises = sunday.exercises.map(e => {
       const replacement = exerciseChanges[e.name];
       if (replacement) return { ...replacement, sets: replacement.sets.map(s => ({ ...s })) };
-      if (e.name === 'Tapis incliné') {
-        return { ...e, sets: [{ reps: '15–20 min', weight: 0 }], note: treadmillNote };
-      }
       return e;
     });
     sunday.focus = 'Exception du 18 octobre : pecs et biceps à la place des jambes • tapis doux';
@@ -53,7 +51,7 @@
 
   function adaptWorkoutAlreadyStarted() {
     const workout = state.activeWorkout;
-    if (!workout || workout.id !== 'S4' || parisDate(workout.started) !== specialDate || workout.oneOffCalves20261018) return;
+    if (!workout || workout.id !== 'S4' || parisDate(workout.started) !== specialDate) return;
     let changed = false;
 
     workout.exercises = workout.exercises.map(e => {
@@ -69,11 +67,11 @@
           }))
         };
       }
-      if (e.name === 'Tapis incliné' && e.cardio && !e.cardio.done) {
-        e.note = treadmillNote;
-        if (String(e.cardio.incline || '') === '10') e.cardio.incline = '0';
-        if (String(e.cardio.speed || '') === '5.5') e.cardio.speed = '4.8';
-        if (!e.cardio.duration) e.cardio.duration = '15';
+      if (e.name === 'Tapis incliné' && e.cardio && !e.cardio.done && e.note === previousTreadmillNote) {
+        e.note = normalTreadmillNote;
+        if (String(e.cardio.incline || '') === '0') e.cardio.incline = '10';
+        if (String(e.cardio.speed || '') === '4.8') e.cardio.speed = '5.5';
+        if (String(e.cardio.duration || '') === '15') e.cardio.duration = '';
         changed = true;
       }
       return e;
