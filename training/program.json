@@ -1,7 +1,7 @@
 {
-  "version": 5,
-  "updated": "2026-10-15",
-  "weekly_note": "4 séances / semaine • Séance 4 = Full Body du dimanche • aucun soulevé de terre",
+  "version": 6,
+  "updated": "2026-10-18",
+  "weekly_note": "4 séances de musculation flexibles • tapis modéré 75–95 min au total + 1 à 2 cardio dédiés selon la récupération, vers 150–210 min/semaine progressivement • pas de soulevé de terre",
   "sessions": [
     {
       "id": "S1",
@@ -181,12 +181,12 @@
           "name": "Tapis incliné",
           "sets": [
             {
-              "reps": "25–35 min",
+              "reps": "20–25 min",
               "weight": 0
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 12 % • renseigner inclinaison, vitesse, durée et km"
+          "note": "5,2 km/h • 3 % • 20–25 min • effort modéré RPE 4–5/10, parler par phrases. Mollets sensibles : 0–2 %."
         }
       ]
     },
@@ -376,12 +376,12 @@
           "name": "Tapis incliné",
           "sets": [
             {
-              "reps": "30–40 min",
+              "reps": "25–30 min",
               "weight": 0
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 12 % • renseigner inclinaison, vitesse, durée et km"
+          "note": "5,2 km/h • 3 % • 25–30 min • effort modéré RPE 4–5/10, parler par phrases. Mollets sensibles : 0–2 %."
         }
       ]
     },
@@ -598,12 +598,12 @@
           "name": "Tapis incliné",
           "sets": [
             {
-              "reps": "15–25 min",
+              "reps": "10–15 min",
               "weight": 0
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 10–12 % • renseigner inclinaison, vitesse, durée et km"
+          "note": "4,8 km/h • 1 % • 10–15 min • récupération après jambes, RPE 3–4/10 ; ne pas forcer si douleur aux mollets."
         }
       ]
     },
@@ -775,12 +775,12 @@
           "name": "Tapis incliné",
           "sets": [
             {
-              "reps": "20–30 min",
+              "reps": "20–25 min",
               "weight": 0
             }
           ],
           "rest": 0,
-          "note": "5,5 km/h • 10–12 % • renseigner inclinaison, vitesse, durée et km"
+          "note": "5,1 km/h • 2 % • 20–25 min • effort modéré RPE 4–5/10 ; garder une récupération suffisante."
         }
       ]
     }
