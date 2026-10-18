@@ -6,11 +6,11 @@
   const STORE='myteam_parif_drafts_v1';
   const CATEGORIES='myteam_parif_post_categories_drafts_v1';
   const SESSIONS=[
-    {id:'morning',label:'Matin',hours:'06 h–14 h',start:'06:00',end:'14:00',middle:'E43'},
-    {id:'afternoon',label:'Après-midi',hours:'14 h–22 h',start:'14:00',end:'22:00',middle:'E80'},
-    {id:'night',label:'Nuit',hours:'22 h–06 h',start:'22:00',end:'06:00',middle:'E80'}
+    {id:'morning',label:'Matin',hours:'06 h–14 h',start:'06:00',end:'14:00',middle:'E43',second:'E32'},
+    {id:'afternoon',label:'Après-midi',hours:'14 h–22 h',start:'14:00',end:'22:00',middle:'E80',second:'E32'},
+    {id:'night',label:'Nuit',hours:'22 h–06 h',start:'22:00',end:'06:00',middle:'E80',second:'E30'}
   ];
-  const POST_TEMPLATE=[['E20',2],['E14',2],['E40',2],['E30',2],['E50',2],['MIDDLE',2],['E51',3],['E84',3],['E52',2],['E85',2],['E111',3],['E112',3],['E121',3]];
+  const POST_TEMPLATE=[['E20',2],['E14',2],['E40',2],['SECOND',2],['E50',2],['MIDDLE',2],['E51',3],['E84',3],['E52',2],['E85',2],['E111',3],['E112',3],['E121',3]];
   const el=id=>document.getElementById(id);
   const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const normalize=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -21,7 +21,10 @@
 
   function blankSession(session){
     const posts={};
-    for(const [p,count]of POST_TEMPLATE)posts[p==='MIDDLE'?session.middle:p]=Array(count).fill('');
+    for(const [p,count]of POST_TEMPLATE)posts[p==='MIDDLE'?session.middle:p==='SECOND'?session.second:p]=Array(count).fill('');
+    // Préserver les brouillons historiques où E30 pouvait être saisi le matin.
+    if(!posts.E30)posts.E30=['',''];
+    if(!posts.E32)posts.E32=['',''];
     return{supervisor:'',patrol:['',''],posts,notesLxp:'',notesG4s:'',commande:'',extrasPlus:'',extrasMinus:'',effectifReel:'',escortHoraire:'',escortEffectif:'',escortLieu:'',escortSociete:''};
   }
   function blankDay(){return{shifts:Object.fromEntries(SESSIONS.map(session=>[session.id,blankSession(session)]))};}
@@ -42,23 +45,32 @@
     return data;
   }
   function storedPlans(){const x=read(STORE,{});return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}
-  let date=today(),active='morning',saved=blankDay(),working=blankDay(),baseRaw='',previewSnapshot='';
+  let date=today(),active='morning',saved=blankDay(),working=blankDay(),baseRaw='',previewSnapshot='',importIssues=[];
 
   const section=document.createElement('section');section.id='parif';section.className='hidden';
   section.innerHTML=`<div class="card mt-parif-header">
     <div class="mt-parif-eyebrow">Planification du personnel · PARIF</div>
     <h2>📋 Plan PARIF</h2>
-    <p class="mt-parif-sub">Reproduction mobile de la structure fournie. Les noms de la photo ne sont pas importés.</p>
+    <p class="mt-parif-sub">Plan quotidien éditable. Importe un brouillon reçu après lecture de ta photo, puis corrige les noms incertains.</p>
     <label class="mt-parif-date">Date du plan <input type="date" id="mt-parif-date"></label>
     <div class="mt-parif-tabs" role="group" aria-label="Choisir une vacation">
       ${SESSIONS.map(s=>`<button type="button" data-parif-shift="${s.id}"><strong>${s.label}</strong><small>${s.hours}</small></button>`).join('')}
     </div>
     <div class="mt-parif-banner">🔒 Brouillon privé. Ce plan ne modifie ni les équipes officielles ni les fiches de prestation.</div>
   </div>
+  <div class="card mt-parif-import">
+    <h3>📥 Actualiser depuis la photo</h3>
+    <p class="mt-parif-sub">Après m’avoir envoyé la photo du jour, télécharge le fichier du plan que je te donne, puis sélectionne-le ici. Rien n’est enregistré automatiquement.</p>
+    <label class="mt-parif-file-label">Choisir le fichier du plan (.json)
+      <input id="mt-parif-import-file" type="file" accept=".json,application/json">
+    </label>
+    <p id="mt-parif-import-status" role="status" class="mt-parif-import-status"></p>
+    <div id="mt-parif-import-issues" class="mt-parif-import-issues hidden"></div>
+  </div>
   <div id="mt-parif-content"></div>
   <div class="card mt-parif-actions">
     <h3>Vérifier avant d’enregistrer</h3>
-    <p class="mt-parif-sub">Tu peux tout compléter ou corriger. Les cellules vides restent vides : aucune présence n’est supposée.</p>
+    <p class="mt-parif-sub">Tu peux tout compléter ou corriger. Les cellules vides restent vides : aucune présence n’est supposée. La fiche de prestations sera rapprochée du plan dès qu’elle sera disponible.</p>
     <button id="mt-parif-preview-action" type="button" class="mt-primary">👁 Prévisualiser les changements</button>
     <div id="mt-parif-preview" class="hidden" role="status"></div>
     <div class="actions"><button id="mt-parif-save" type="button" class="mt-primary hidden">💾 Enregistrer le brouillon</button><button id="mt-parif-revert" type="button">Annuler les changements</button></div>
@@ -79,7 +91,8 @@
   function dropPreview(){previewSnapshot='';el('mt-parif-preview').classList.add('hidden');el('mt-parif-preview').replaceChildren();el('mt-parif-save').classList.add('hidden')}
   function getDay(){
     baseRaw=localStorage.getItem(STORE)||'';
-    saved=hydrateDay(storedPlans()[date]);working=clone(saved);dropPreview();
+    saved=hydrateDay(storedPlans()[date]);working=clone(saved);importIssues=[];dropPreview();
+    el('mt-parif-import-issues').replaceChildren();el('mt-parif-import-issues').classList.add('hidden');
     el('mt-parif-status').textContent='';
   }
   function textInput(path,value,placeholder='Nom / identifiant'){
@@ -101,7 +114,7 @@
     section.querySelectorAll('[data-parif-shift]').forEach(button=>{button.classList.toggle('active',button.dataset.parifShift===active);button.setAttribute('aria-pressed',String(button.dataset.parifShift===active))});
     const session=SESSIONS.find(x=>x.id===active),data=working.shifts[active];
     const postCards=POST_TEMPLATE.map(([key,count])=>{
-      const post=key==='MIDDLE'?session.middle:key;
+      const post=key==='MIDDLE'?session.middle:key==='SECOND'?session.second:key;
       return`<div class="mt-parif-post ${active==='night'&&post==='E112'?'mt-parif-closed':''}">
         <h4>POSTE ${esc(post)} <span class="mt-parif-kind">${esc(postCategory(post))}</span> ${active==='night'&&post==='E112'?'<span>Fermeture nocturne à vérifier</span>':''}</h4>
         <div class="mt-parif-slot-list">${Array.from({length:count},(_,i)=>`<label><small>Agent ${i+1}</small>${textInput(`posts.${post}.${i}`,data.posts[post]?.[i]||'')}</label>`).join('')}</div>
@@ -151,6 +164,35 @@
     el('mt-parif-status').textContent=isDirty()?'Modifications en cours, non enregistrées.':'Aucune modification en attente.';
   }
   el('mt-parif-content').addEventListener('input',applyInput);
+  const importInput=el('mt-parif-import-file');
+  importInput.onchange=async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    const status=el('mt-parif-import-status');
+    importInput.value='';
+    if(file.size>1000000){status.textContent='Fichier trop volumineux : maximum 1 Mo.';return;}
+    if(isDirty()&&!confirm('Les modifications non enregistrées seront remplacées par les données du fichier. Continuer ?'))return;
+    let data;
+    try{data=JSON.parse(await file.text());}
+    catch{status.textContent='Le fichier choisi ne contient pas un plan JSON lisible.';return;}
+    if(!data||data.myteamFormat!=='parif-draft-v1'||!validDate(data.date)||!data.shifts||typeof data.shifts!=='object'||SESSIONS.some(s=>!data.shifts[s.id]||typeof data.shifts[s.id]!=='object')){
+      status.textContent='Ce fichier ne correspond pas au format Plan PARIF MyTEAM.';return;
+    }
+    if(data.date!==date&&storedPlans()[data.date]&&!confirm(`Un brouillon existe déjà pour le ${data.date}. Préparer son remplacement pour prévisualisation ?`))return;
+    date=data.date;
+    baseRaw=localStorage.getItem(STORE)||'';
+    saved=hydrateDay(storedPlans()[date]);working=hydrateDay(data);
+    importIssues=Array.isArray(data.pointsAVerifier)?data.pointsAVerifier.filter(x=>typeof x==='string').slice(0,30).map(x=>x.slice(0,240)):[];
+    const issues=el('mt-parif-import-issues');issues.replaceChildren();
+    if(importIssues.length){
+      const title=document.createElement('strong');title.textContent='À vérifier sur la photo :';issues.append(title);
+      const list=document.createElement('ul');
+      importIssues.forEach(x=>{const item=document.createElement('li');item.textContent=x;list.append(item)});issues.append(list);issues.classList.remove('hidden');
+    }else issues.classList.add('hidden');
+    active='morning';dropPreview();render();
+    const occupied=Object.values(working.shifts).reduce((total,shift)=>total+Object.values(shift.posts).flat().filter(Boolean).length+shift.patrol.filter(Boolean).length+(shift.supervisor?1:0),0);
+    status.textContent=`Plan du ${date} chargé en prévisualisation · ${occupied} cellules nominatives ou indications de prestataire. Aucun enregistrement effectué.`;
+    el('mt-parif-status').textContent='Parcours les 3 vacations, corrige les points incertains, puis clique sur « Prévisualiser les changements ».';
+  };
   section.querySelectorAll('[data-parif-shift]').forEach(button=>button.onclick=()=>{if(button.dataset.parifShift===active)return;active=button.dataset.parifShift;dropPreview();render()});
   el('mt-parif-date').onchange=event=>{
     const next=event.target.value;
@@ -171,7 +213,9 @@
     const heading=document.createElement('strong');heading.textContent='Avant enregistrement · '+date;
     const detail=document.createElement('p');detail.textContent=touched.map(x=>x.session.label+' : '+x.fields+' rubrique(s) modifiée(s)').join(' · ');
     const note=document.createElement('p');note.textContent='Seul ce brouillon privé sera enregistré sur cet appareil. Aucune validation officielle, aucun envoi aux agents.';
-    preview.append(heading,detail,note);preview.classList.remove('hidden');
+    preview.append(heading,detail,note);
+    if(importIssues.length){const warning=document.createElement('p');warning.textContent=`⚠ ${importIssues.length} point(s) issu(s) de la photo restent à vérifier. L’enregistrement du brouillon ne vaut pas validation officielle.`;preview.append(warning);}
+    preview.classList.remove('hidden');
     previewSnapshot=JSON.stringify(working);el('mt-parif-save').classList.remove('hidden');
     el('mt-parif-status').textContent='Relis le plan et confirme l’enregistrement du brouillon.';
   };
