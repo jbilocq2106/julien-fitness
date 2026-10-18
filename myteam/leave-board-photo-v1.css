@@ -1,0 +1,17 @@
+#leave #mt-leave-photo{margin:14px 0 17px;padding:13px;border:1px solid #56728c;border-radius:15px;background:#20364e}
+#leave.mt-leave-photo-only > :not(h2):not(#mt-leave-photo){display:none!important}
+#leave.mt-leave-photo-only #mt-leave-photo .mt-leave-photo-note{display:none}
+#mt-leave-photo .mt-leave-photo-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#mt-leave-photo .mt-leave-photo-head h3{margin:0;font-size:18px}
+#mt-leave-photo #mt-leave-photo-attach{background:#e76b24;color:#fff;font-weight:850;min-height:49px;padding:11px 16px}
+#mt-leave-photo #mt-leave-photo-attach:disabled{opacity:.6}
+#mt-leave-photo .mt-leave-photo-status{font-size:12px;line-height:1.5;color:#e5f1c9;margin:8px 0}
+#mt-leave-photo .mt-leave-photo-status:empty{display:none}
+#mt-leave-photo .mt-leave-photo-view{display:grid;gap:12px}
+#mt-leave-photo .mt-leave-photo-empty{font-size:13px;line-height:1.5;color:#cedcec;background:#17283c;border:1px dashed #6d829d;border-radius:11px;padding:16px;margin:5px 0}
+#mt-leave-photo .mt-leave-photo-filename{font-size:12px;font-weight:750;line-height:1.4;color:#d9e4f2;margin:5px 0 0;overflow-wrap:anywhere}
+#mt-leave-photo .mt-leave-photo-scroller{max-width:100%;overflow:auto;border-radius:9px;border:1px solid #607c97;background:#fff;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom}
+#mt-leave-photo .mt-leave-photo-image{display:block;width:100%;max-width:none;height:auto;cursor:zoom-in;outline-offset:-3px}
+#mt-leave-photo .mt-leave-photo-image.is-zoomed{width:200%;cursor:zoom-out}
+#mt-leave-photo .mt-leave-photo-note{margin:11px 0 0;color:#c5d2e1;line-height:1.5;font-size:11px}
+@media(max-width:780px){#mt-leave-photo .mt-leave-photo-head{display:grid}#mt-leave-photo #mt-leave-photo-attach{width:100%;font-size:15px}}

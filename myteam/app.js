@@ -153,6 +153,7 @@
       try{await load('./mobile-polish-v1.js?v=20261018-1')}catch(error){console.error('Fiches mobiles indisponibles :',error)}
       try{await load('./secure-backup-v1.js?v=20261018-1')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}
+      try{await load('./leave-board-photo-v1.js?v=20261018-1')}catch(error){console.error('Tableau des congés indisponible :',error)}
     }
   })();
 })();
