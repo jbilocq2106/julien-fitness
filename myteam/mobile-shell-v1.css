@@ -23,6 +23,7 @@
 #today .mt-replace-item small{display:block;margin-top:4px}
 #today .mt-replace-item button{margin-top:10px;background:#62404a}
 #today .mt-replace-form{display:grid;gap:11px;padding:13px 0}
+#today .mt-replace-form.hidden{display:none}
 #today .mt-replace-form label{display:grid;gap:5px;font-weight:700}
 #today .mt-replace-form input{min-height:48px;width:100%;font:inherit;border:1px solid #71849b;border-radius:11px;padding:11px 12px;background:#121e2e;color:#fff}
 #today .mt-replace-form .actions button{flex:1}
