@@ -137,6 +137,9 @@
       if(m?.status==='recognizing text')onProgress(`Reconnaissance locale : ${Math.round((m.progress||0)*100)} %`);
     }});
     try{
+      // Le plan présente des noms dispersés dans des cases espacées.
+      // Le mode texte dispersé conserve les cases que le mode bloc ignore.
+      await worker.setParameters({tessedit_pageseg_mode:tesseract.PSM.SPARSE_TEXT});
       const tsv=[];
       for(let shift=0;shift<3;shift++){
         onProgress(`Lecture des affectations : ${['matin','après-midi','nuit'][shift]}…`);

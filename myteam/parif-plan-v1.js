@@ -444,7 +444,7 @@
     try{
       let result=null;
       try{
-        const reader=await loadLibrary('MyTeamParifPhotoReader','./parif-photo-reader-v1.js?v=20261018-1');
+        const reader=await loadLibrary('MyTeamParifPhotoReader','./parif-photo-reader-v1.js?v=20261018-2');
         const api=await loadLibrary('Tesseract','https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
         const image=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?await firstPdfPage(file):file;
         result=await reader.scan(image,api,message=>{if(sourceFile===file)status.textContent=message;});
