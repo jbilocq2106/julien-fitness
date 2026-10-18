@@ -93,7 +93,7 @@
   }
   function postCategory(post){
     const choices=read(CATEGORIES,{}),type=choices&&typeof choices==='object'?choices[post]:'';
-    return type==='g4s'?'G4S exclusif':type==='lxp'?'PARIF / LXP':'Type à confirmer';
+    return type==='g4s'?'G4S exclusivement':type==='duss'?'Dussmann exclusivement':type==='lxp'?'PARIF / LXP · G4S possibles':'Type à confirmer';
   }
   function numberInput(key,label,value){return`<label>${esc(label)}<input type="number" min="0" max="300" step="1" inputmode="numeric" data-parif-path="${key}" value="${esc(value)}" placeholder="—"></label>`;}
   function render(){
