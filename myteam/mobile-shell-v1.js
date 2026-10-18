@@ -40,8 +40,10 @@
 
   const todayTab=document.createElement('button');
   todayTab.type='button';todayTab.dataset.tab='today';todayTab.textContent='☀️ Aujourd’hui';topNav.prepend(todayTab);
+  const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
+  if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents'],['parif','📷','Plan PARIF']];
+  const navItems=[['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents']];
   const mobileNav=document.createElement('nav');
   mobileNav.id='mt-mobile-nav';mobileNav.setAttribute('aria-label','Navigation principale');
   mobileNav.innerHTML=navItems.map(([id,icon,label])=>`<button type="button" data-mt-open="${id}" aria-label="${label}"><span class="mt-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`).join('')+
@@ -176,5 +178,5 @@
   });
   window.addEventListener('focus',()=>{if(current==='today')renderToday()});
   window.addEventListener('storage',event=>{if(event.key?.startsWith('myteam')&&current==='today')renderToday()});
-  activate('today');
+  activate('parif');
 })();
