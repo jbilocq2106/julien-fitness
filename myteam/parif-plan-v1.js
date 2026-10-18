@@ -403,6 +403,8 @@
     const m=String(raw||'').match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})\b/);
     if(!m)return false;
     const a=String(m[1]).padStart(2,'0'),b=String(m[2]).padStart(2,'0');
+    // 08/11 peut signifier 8 novembre ou 11 août : confirmation manuelle obligatoire.
+    if(a!==b&&Number(a)<=12&&Number(b)<=12)return false;
     return `${m[3]}-${b}-${a}`===selected||`${m[3]}-${a}-${b}`===selected;
   }
   autoApply.onclick=()=>{
