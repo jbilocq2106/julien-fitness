@@ -48,15 +48,18 @@
   }
   function storedPlans(){const x=read(STORE,{});return x&&typeof x==='object'&&!Array.isArray(x)?x:{}}
   let date=today(),active='morning',mode='overview',saved=blankDay(),working=blankDay(),baseRaw='',previewSnapshot='',importIssues=[];
+  const PHOTO_DB='myteam_parif_photo_plans_v1',PHOTO_TABLE='photos';
+  let photoForDate=null,photoUrls=[],photoLoadVersion=0,photoLayout='shifts',photoZoom=1;
 
   const section=document.createElement('section');section.id='parif';section.className='hidden';section.dataset.parifMode='overview';
   section.innerHTML=`<div class="card mt-parif-header">
     <div class="mt-parif-eyebrow">Planification du personnel · PARIF</div>
     <h2>📋 Plan PARIF</h2>
-    <p class="mt-parif-sub">Les trois vacations sur la même page. Touche un poste pour le modifier.</p>
+    <p class="mt-parif-sub">Le plan photographié, sans les cadres du bas. Tu peux aussi ouvrir le tableau modifiable.</p>
     <label class="mt-parif-date">Date du plan <input type="date" id="mt-parif-date"></label>
     <div class="mt-parif-view-modes" role="group" aria-label="Affichage du Plan PARIF">
-      <button id="mt-parif-overview-btn" type="button" class="active" aria-pressed="true">📋 Vue de la journée</button>
+      <button id="mt-parif-photo-btn" type="button" aria-pressed="false">📷 Photo du plan</button>
+      <button id="mt-parif-overview-btn" type="button" class="active" aria-pressed="true">📋 Tableau</button>
       <button id="mt-parif-edit-btn" type="button" aria-pressed="false">✏️ Modifier</button>
       <button id="mt-parif-import-shortcut" type="button">📥 Importer</button>
     </div>
@@ -65,6 +68,7 @@
     </div>
     <div class="mt-parif-banner">🔒 Brouillon privé. Ce plan ne modifie ni les équipes officielles ni les fiches de prestation.</div>
   </div>
+  <div id="mt-parif-photo-board" class="card mt-parif-photo-board hidden" aria-label="Plan PARIF photographié"></div>
   <div id="mt-parif-overview" aria-label="Vue complète des trois vacations"></div>
   <div class="card mt-parif-overview-actions">
     <button id="mt-parif-overview-review" type="button" class="mt-primary">👁 Vérifier et enregistrer le brouillon</button>
@@ -80,8 +84,8 @@
     <div id="mt-parif-lookup-result" role="status" class="mt-parif-lookup-result"></div>
   </div>
   <details class="card mt-parif-import" id="mt-parif-import-details">
-    <summary>📥 Importer un plan (PDF, JPEG, PNG ou JSON)</summary>
-    <p class="mt-parif-sub">Choisis directement une photo, un PDF ou un brouillon JSON. Le fichier reste sur ton appareil : la prévisualisation ne modifie aucun poste.</p>
+    <summary>📥 Choisir une photo ou un PDF du plan</summary>
+    <p class="mt-parif-sub">La photo s’affiche directement, recadrée sur les trois vacations, sans analyser automatiquement les noms. La lecture des noms reste facultative. Les photos sont conservées uniquement sur cet appareil.</p>
     <label class="mt-parif-file-label">Choisir le fichier du plan
       <input id="mt-parif-import-file" type="file" accept=".json,.pdf,.jpg,.jpeg,.png,application/json,application/pdf,image/jpeg,image/png">
     </label>
@@ -89,7 +93,7 @@
     <div id="mt-parif-source-preview" class="mt-parif-source-preview hidden"></div>
     <div id="mt-parif-source-tools" class="mt-parif-source-tools hidden">
       <button id="mt-parif-read-source" type="button">🤖 Analyser et proposer le préremplissage</button>
-      <p class="mt-parif-disclaimer">Reconnaissance sur cet appareil : le moteur peut devoir se télécharger. Le fichier n’est pas envoyé par MyTEAM à un service d’analyse. Les noms sont proposés avec leur fiabilité ; aucun poste n’est modifié ni enregistré sans ton contrôle.</p>
+      <p class="mt-parif-disclaimer">Facultatif : la lecture des noms se lance seulement si tu appuies sur ce bouton. Le fichier n’est pas envoyé par MyTEAM à un service d’analyse. Aucun poste n’est modifié sans ton contrôle.</p>
       <textarea id="mt-parif-source-text" rows="7" readonly class="hidden" aria-label="Texte relevé sur le document"></textarea>
       <div id="mt-parif-auto-preview" class="mt-parif-auto-preview hidden" aria-label="Propositions de préremplissage"></div>
       <button id="mt-parif-auto-apply" type="button" class="mt-primary hidden">✅ Préremplir le brouillon avec les propositions cochées</button>
@@ -137,6 +141,102 @@
     el('mt-parif-import-status').textContent='';
     el('mt-parif-status').textContent='';
   }
+  function photoDb(){
+    return new Promise((resolve,reject)=>{
+      if(!window.indexedDB)return reject(new Error('Stockage photo indisponible'));
+      const request=indexedDB.open(PHOTO_DB,1);
+      request.onupgradeneeded=()=>request.result.createObjectStore(PHOTO_TABLE);
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error('Stockage photo indisponible'));
+    });
+  }
+  async function photoRead(day){
+    const db=await photoDb();
+    try{return await new Promise((resolve,reject)=>{
+      const req=db.transaction(PHOTO_TABLE,'readonly').objectStore(PHOTO_TABLE).get(day);
+      req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);
+    });}finally{db.close();}
+  }
+  async function photoSave(day,record){
+    const db=await photoDb();
+    try{await new Promise((resolve,reject)=>{
+      const tx=db.transaction(PHOTO_TABLE,'readwrite');tx.objectStore(PHOTO_TABLE).put(record,day);
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+    });}finally{db.close();}
+  }
+  function pngBlob(canvas){return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Image illisible')),'image/png'));}
+  async function croppedPhoto(file,kind){
+    const source=kind==='pdf'?await firstPdfPage(file):await createImageBitmap(file);
+    try{
+      const width=source.width,height=source.height;
+      if(!width||!height)throw new Error('Dimensions du document inconnues');
+      const template=Math.abs(width/height-1536/1045)<.15;
+      const sourceHeight=template?Math.round(height*815/1045):height;
+      const canvas=document.createElement('canvas');canvas.width=1536;canvas.height=Math.round(sourceHeight*1536/width);
+      const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);
+      context.drawImage(source,0,0,width,sourceHeight,0,0,canvas.width,canvas.height);
+      return {blob:await pngBlob(canvas),template};
+    }finally{if(source!==file&&typeof source.close==='function')source.close();}
+  }
+  function photoReleaseUrls(){for(const url of photoUrls)URL.revokeObjectURL(url);photoUrls=[];}
+  function photoUrl(blob){const url=URL.createObjectURL(blob);photoUrls.push(url);return url;}
+  async function photoRender(version){
+    const board=el('mt-parif-photo-board'),record=photoForDate;
+    photoReleaseUrls();board.replaceChildren();
+    if(!record||record.date!==date){board.classList.add('hidden');return;}
+    const heading=document.createElement('div');heading.className='mt-parif-photo-heading';
+    const title=document.createElement('h3');title.textContent='📷 Plan photographié · '+new Date(date+'T12:00:00').toLocaleDateString('fr-LU',{day:'numeric',month:'long',year:'numeric'});
+    const caption=document.createElement('p');caption.textContent=record.template
+      ?'Trois vacations photographiées, sans lecture automatique des noms. Les remarques et commandes du bas sont masquées.'
+      :'Format différent du modèle PARIF : la photo entière reste visible pour éviter de couper un poste. Recadre ta prochaine photo sur les trois vacations.';
+    heading.append(title,caption);board.append(heading);
+    const controls=document.createElement('div');controls.className='mt-parif-photo-controls';
+    for(const [value,label]of [['shifts','3 vacations'],['full','Plan complet']]){
+      const button=document.createElement('button');button.type='button';button.dataset.photoLayout=value;button.textContent=label;
+      button.classList.toggle('active',photoLayout===value);button.setAttribute('aria-pressed',String(photoLayout===value));controls.append(button);
+    }
+    const zoom=document.createElement('div');zoom.className='mt-parif-photo-zoom';
+    for(const scale of [1,1.5,2]){
+      const button=document.createElement('button');button.type='button';button.dataset.photoZoom=String(scale);
+      button.textContent=Math.round(scale*100)+' %';button.classList.toggle('active',photoZoom===scale);button.setAttribute('aria-pressed',String(photoZoom===scale));zoom.append(button);
+    }
+    controls.append(zoom);board.append(controls);
+    const grid=document.createElement('div');grid.className='mt-parif-photo-grid';grid.dataset.photoLayout=photoLayout;
+    board.append(grid);
+    const img=await createImageBitmap(record.blob);
+    try{
+      if(version!==photoLoadVersion||record!==photoForDate)return;
+      const slices=photoLayout==='shifts'&&record.template
+        ?SESSIONS.map((session,i)=>({session,x:[40,530,1020][i],y:153,w:478,h:660}))
+        :[{session:null,x:0,y:0,w:1536,h:img.height}];
+      for(const slice of slices){
+        const canvas=document.createElement('canvas');canvas.width=slice.w;canvas.height=Math.min(slice.h,img.height-slice.y);
+        canvas.getContext('2d').drawImage(img,slice.x,slice.y,canvas.width,canvas.height,0,0,canvas.width,canvas.height);
+        const frame=document.createElement('div');frame.className='mt-parif-photo-panel';
+        if(slice.session){const h=document.createElement('h4');h.textContent=`${slice.session.label} · ${slice.session.hours}`;frame.append(h);}
+        const scroller=document.createElement('div');scroller.className='mt-parif-photo-scroller';
+        const image=document.createElement('img');image.className='mt-parif-photo-image';image.alt=slice.session?`Photo de la vacation ${slice.session.label}, postes et agents`:'Photo du plan PARIF recadrée avant les remarques et les commandes';
+        const sliceBlob=await pngBlob(canvas);
+        if(version!==photoLoadVersion||record!==photoForDate)return;
+        image.src=photoUrl(sliceBlob);image.style.width=Math.round(photoZoom*100)+'%';
+        scroller.append(image);frame.append(scroller);grid.append(frame);
+      }
+    }finally{img.close();}
+    const footer=document.createElement('p');footer.className='mt-parif-photo-private';
+    footer.textContent='🔒 Photo privée sur cet appareil seulement. Sans transcription des noms, la recherche d’un agent dans le tableau reste indépendante de cette photo.';
+    board.append(footer);board.classList.remove('hidden');
+  }
+  async function photoLoad(day,preferPhoto=true){
+    const version=++photoLoadVersion;photoForDate=null;photoReleaseUrls();el('mt-parif-photo-board').classList.add('hidden');
+    try{
+      const record=await photoRead(day);
+      if(version!==photoLoadVersion||day!==date)return;
+      if(!record?.blob)return;
+      photoForDate={...record,date:day};photoLayout='shifts';photoZoom=1;
+      await photoRender(version);
+      if(version===photoLoadVersion&&preferPhoto&&mode!=='edit')setMode('photo',false);
+    }catch(error){console.warn('Photo privée non accessible sur cet appareil',error);}
+  }
   function textInput(path,value,placeholder='Nom / identifiant'){
     return`<input type="text" data-parif-name="1" data-parif-path="${esc(path)}" value="${esc(value)}" maxlength="120" autocomplete="off" placeholder="${esc(placeholder)}" aria-label="${esc(path.replaceAll('.',' '))}"><small class="mt-parif-employer">${esc(affiliation(value))}</small>`;
   }
@@ -147,16 +247,26 @@
     return'LXP (sans suffixe G4S, à vérifier)';
   }
   const currentPosts=session=>POST_TEMPLATE.map(([key,count])=>[key==='MIDDLE'?session.middle:key==='SECOND'?session.second:key,count]);
-  function setMode(next){
-    mode=next==='edit'?'edit':'overview';section.dataset.parifMode=mode;
-    for(const [id,on]of [['mt-parif-overview-btn',mode==='overview'],['mt-parif-edit-btn',mode==='edit']]){
+  function setMode(next,scroll=true){
+    mode=next==='edit'?'edit':next==='photo'&&photoForDate?.date===date?'photo':'overview';section.dataset.parifMode=mode;
+    for(const [id,on]of [['mt-parif-photo-btn',mode==='photo'],['mt-parif-overview-btn',mode==='overview'],['mt-parif-edit-btn',mode==='edit']]){
       const button=el(id);button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));
     }
-    if(mode==='overview')el('mt-parif-overview').scrollIntoView({block:'start',behavior:'smooth'});
+    if(!scroll)return;
+    if(mode==='photo')el('mt-parif-photo-board').scrollIntoView({block:'start',behavior:'smooth'});
+    else if(mode==='overview')el('mt-parif-overview').scrollIntoView({block:'start',behavior:'smooth'});
     else el('mt-parif-content').scrollIntoView({block:'start',behavior:'smooth'});
   }
+  el('mt-parif-photo-btn').onclick=()=>{
+    if(photoForDate?.date===date)setMode('photo');else el('mt-parif-import-shortcut').click();
+  };
   el('mt-parif-overview-btn').onclick=()=>setMode('overview');
   el('mt-parif-edit-btn').onclick=()=>setMode('edit');
+  el('mt-parif-photo-board').addEventListener('click',event=>{
+    const layout=event.target.closest('[data-photo-layout]'),zoom=event.target.closest('[data-photo-zoom]');
+    if(layout){if(photoLayout===layout.dataset.photoLayout)return;photoLayout=layout.dataset.photoLayout;photoRender(++photoLoadVersion);}
+    if(zoom){const value=Number(zoom.dataset.photoZoom);if(photoZoom===value)return;photoZoom=value;photoRender(++photoLoadVersion);}
+  });
   el('mt-parif-import-shortcut').onclick=()=>{
     const details=el('mt-parif-import-details');details.open=true;details.scrollIntoView({block:'center',behavior:'smooth'});
   };
@@ -177,15 +287,10 @@
         </button>`;
       }).join('');
       const patrol=data.patrol.filter(Boolean).join(' · ')||'—';
-      const hasBase=data.commande!=='';
-      const predicted=hasBase?Number(data.commande)+Number(data.extrasPlus||0)-Number(data.extrasMinus||0):null;
-      const summary=hasBase?`G4S prévu : ${predicted} · réel : ${data.effectifReel||'à vérifier'}`:'Effectif G4S : non renseigné';
-      const notes=[data.notesLxp?`<div><b>LXP :</b> ${esc(data.notesLxp)}</div>`:'',data.notesG4s?`<div><b>G4S :</b> ${esc(data.notesG4s)}</div>`:''].filter(Boolean).join('');
       return`<article class="mt-parif-overview-shift" data-session="${session.id}">
         <div class="mt-parif-overview-shift-title"><div><h3>${esc(session.label)}</h3><small>${esc(session.hours)}</small></div><button type="button" data-parif-open="${session.id}" aria-label="Modifier la vacation ${esc(session.label)}">✏ Modifier</button></div>
         <div class="mt-parif-overview-leaders"><div><b>Superviseur</b><span>${esc(data.supervisor||'—')}</span></div><div><b>Patrouille</b><span>${esc(patrol)}</span></div></div>
         <div class="mt-parif-overview-rows">${postRows}</div>
-        <div class="mt-parif-overview-foot"><b>${esc(summary)}</b>${notes?`<div class="mt-parif-overview-notes">${notes}</div>`:''}</div>
         <div class="mt-parif-overview-count">${namesCount} cellule(s) d’agents renseignée(s) · Brouillon</div>
       </article>`;
     }).join('');
@@ -193,7 +298,7 @@
     const filled=allAssignments().length;
     el('mt-parif-overview').innerHTML=`<div class="mt-parif-overview-heading"><div><h3>Plan du ${esc(fmt)}</h3><p>Matin · Après-midi · Nuit ${isDirty()?'· Non enregistré':''}</p></div><span>${filled} affectation(s)</span></div>
       ${importIssues.length?`<button type="button" class="mt-parif-overview-warning" data-parif-show-issues="1">⚠ ${importIssues.length} points à vérifier sur la photo · Voir les remarques</button>`:''}
-      ${!filled?'<div class="mt-parif-overview-empty">Aucun nom chargé pour cette date. Utilise « 📥 Importer » pour reprendre le plan photographié.</div>':''}
+      ${!filled?'<div class="mt-parif-overview-empty">Aucun nom transcrit dans ce tableau. La photo est consultable séparément, sans reconnaissance automatique des noms.</div>':''}
       <div class="mt-parif-overview-grid">${shiftCards}</div>
       <p class="mt-parif-overview-legend">G4S après le nom = agent G4S. Sans suffixe G4S = agent Luxairport (LXP). DUSS = Dussmann. Les cases « — » ne sont pas une preuve de poste non couvert.</p>
       ${legacy?'<p class="mt-parif-overview-legend">Anciennes valeurs E20 conservées dans le brouillon local, mais ce poste supprimé n’apparaît plus dans le plan courant.</p>':''}`;
@@ -226,6 +331,7 @@
           <div><strong>Patrouilleur(s)</strong>${data.patrol.map((v,i)=>`<label><small>Patrouilleur ${i+1}</small>${textInput(`patrol.${i}`,v)}</label>`).join('')}</div></div>
         <h3 class="mt-parif-subtitle">Affectations par poste</h3><div class="mt-parif-post-grid">${postCards}</div>
       </div>
+      <details class="mt-parif-extra-details"><summary>Informations complémentaires (remarques, effectifs et escorte)</summary>
       <div class="card mt-parif-remarks"><h3>Remarques / absences</h3>
         <label>LXP<textarea rows="3" maxlength="1200" data-parif-path="notesLxp" placeholder="Remarques ou absences LXP">${esc(data.notesLxp)}</textarea></label>
         <label>G4S<textarea rows="3" maxlength="1200" data-parif-path="notesG4s" placeholder="Remarques ou absences G4S">${esc(data.notesG4s)}</textarea></label>
@@ -242,7 +348,7 @@
           <label>Lieu<input data-parif-path="escortLieu" maxlength="120" value="${esc(data.escortLieu)}" placeholder="Lieu"></label>
           <label>Société<input data-parif-path="escortSociete" maxlength="120" value="${esc(data.escortSociete)}" placeholder="Société"></label>
         </div>
-      </div>`;
+      </div></details>`;
     renderTotals();
     renderLookup();
     renderOverview();
@@ -317,15 +423,9 @@
   function prepareSource(file,kind){
     clearSource();sourceFile=file;sourceObjectUrl=URL.createObjectURL(file);
     const title=document.createElement('strong');title.textContent=`Document sélectionné : ${file.name}`;sourcePreview.append(title);
-    if(kind==='image'){
-      const img=document.createElement('img');img.src=sourceObjectUrl;img.alt='Photo du plan PARIF à contrôler';img.className='mt-parif-source-image';sourcePreview.append(img);
-    }else{
-      const pdf=document.createElement('object');pdf.type='application/pdf';pdf.data=sourceObjectUrl;pdf.className='mt-parif-source-pdf';pdf.setAttribute('aria-label','Aperçu du PDF PARIF');
-      pdf.textContent='Le PDF ne peut pas être affiché ici.';sourcePreview.append(pdf);
-      const link=document.createElement('a');link.href=sourceObjectUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Ouvrir le PDF si l’aperçu ne s’affiche pas';sourcePreview.append(link);
-    }
+    const note=document.createElement('p');note.textContent='Aperçu épuré disponible dans « Photo du plan ». Les cadres Remarques/Absences et Commandes ne sont pas affichés.';sourcePreview.append(note);
     sourcePreview.classList.remove('hidden');sourceTools.classList.remove('hidden');
-    el('mt-parif-import-status').textContent=`${kind==='pdf'?'PDF':'Image'} chargé(e) en aperçu privé · aucune affectation créée. Tu peux examiner le document et compléter le brouillon.`;
+    el('mt-parif-import-status').textContent=`${kind==='pdf'?'PDF':'Image'} prêt(e) pour la vue photo privée. Aucune lecture automatique des noms.`;
   }
   const loadLibrary=(globalName,url)=>new Promise((resolve,reject)=>{
     if(window[globalName])return resolve(window[globalName]);
@@ -466,7 +566,7 @@
     }finally{readingSource=false;button.disabled=false;if(sourceFile&&sourceFile!==file)button.click();}
   };
   el('mt-parif-source-edit').onclick=()=>setMode('edit');
-  window.addEventListener('pagehide',()=>{if(sourceObjectUrl)URL.revokeObjectURL(sourceObjectUrl)});
+  window.addEventListener('pagehide',()=>{if(sourceObjectUrl)URL.revokeObjectURL(sourceObjectUrl);photoReleaseUrls()});
   importInput.onchange=async event=>{
     const file=event.target.files?.[0];if(!file)return;
     const status=el('mt-parif-import-status');
@@ -477,8 +577,27 @@
     if(kind!=='json'){
       if(file.size>(kind==='pdf'?20000000:15000000)){status.textContent='Document trop volumineux (PDF : 20 Mo ; image : 15 Mo maximum).';return;}
       prepareSource(file,kind);
-      // Un premier passage est proposé immédiatement, sans toucher au brouillon.
-      el('mt-parif-read-source').click();return;
+      const selectedDate=date;
+      status.textContent='Préparation de la vue photo du '+selectedDate+'…';
+      try{
+        const previous=await photoRead(selectedDate).catch(()=>null);
+        if(selectedDate!==date||sourceFile!==file)return;
+        if(previous?.blob&&!confirm(`Une photo du plan existe déjà pour le ${selectedDate} sur cet appareil. La remplacer par ce fichier ? Le tableau saisi restera intact.`)){
+          status.textContent='Ancienne photo conservée. Aucune modification effectuée.';return;
+        }
+        const cropped=await croppedPhoto(file,kind);
+        if(selectedDate!==date||sourceFile!==file)return;
+        const record={...cropped,savedAt:new Date().toISOString()};
+        let persisted=true;
+        try{await photoSave(selectedDate,record);}catch{persisted=false;}
+        photoForDate={...record,date:selectedDate};photoLayout='shifts';photoZoom=1;
+        await photoRender(++photoLoadVersion);
+        el('mt-parif-import-details').open=false;
+        setMode('photo');
+        status.textContent=persisted?`Photo du ${selectedDate} affichée et conservée localement. Aucune lecture automatique ni modification des équipes.`:
+          `Photo du ${selectedDate} affichée pour cette session. Stockage local indisponible : réimporte-la après actualisation.`;
+      }catch(error){status.textContent=`Impossible d’afficher la photo (${error.message}). Le tableau existant est conservé.`;}
+      return;
     }
     if(file.size>1000000){status.textContent='Brouillon JSON trop volumineux : maximum 1 Mo.';return;}
     if(isDirty()&&!confirm('Les modifications non enregistrées seront remplacées par les données du fichier. Continuer ?'))return;
@@ -495,7 +614,7 @@
     saved=hydrateDay(storedPlans()[date]);working=hydrateDay(data);
     importIssues=Array.isArray(data.pointsAVerifier)?data.pointsAVerifier.filter(x=>typeof x==='string').slice(0,30).map(x=>x.slice(0,240)):[];
     showIssues();
-    active='morning';dropPreview();render();setMode('overview');
+    active='morning';dropPreview();render();setMode('overview');photoLoad(date,false);
     const occupied=allAssignments().length;
     status.textContent=`Plan du ${date} chargé en prévisualisation · ${occupied} cellules nominatives ou indications de prestataire. Aucun enregistrement effectué.`;
     el('mt-parif-status').textContent='Parcours les 3 vacations, corrige les points incertains, puis clique sur « Prévisualiser les changements ».';
@@ -505,7 +624,7 @@
     const next=event.target.value;
     if(!validDate(next)){event.target.value=date;return;}
     if(isDirty()&&!confirm('Tu as des changements non enregistrés. Changer de date et les abandonner ?')){event.target.value=date;return;}
-    date=next;getDay();render();
+    clearSource();date=next;getDay();render();setMode('overview',false);photoLoad(date);
   };
   el('mt-parif-revert').onclick=()=>{
     if(isDirty()&&!confirm('Annuler les corrections non enregistrées pour cette date ?'))return;
@@ -538,9 +657,7 @@
   function showParif(){
     topNav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===nav));
     main.querySelectorAll('section').forEach(s=>s.classList.toggle('hidden',s!==section));
-    mode='overview';section.dataset.parifMode='overview';
-    el('mt-parif-overview-btn').classList.add('active');el('mt-parif-overview-btn').setAttribute('aria-pressed','true');
-    el('mt-parif-edit-btn').classList.remove('active');el('mt-parif-edit-btn').setAttribute('aria-pressed','false');
+    setMode(photoForDate?.date===date?'photo':'overview',false);
     render();window.scrollTo(0,0);
   }
   nav.onclick=showParif;
@@ -570,5 +687,5 @@
 
   // Conserver les saisies non enregistrées si l’utilisateur tente de quitter la page.
   window.addEventListener('beforeunload',event=>{if(!isDirty())return;event.preventDefault();event.returnValue=''});
-  getDay();render();
+  getDay();render();photoLoad(date);
 })();
