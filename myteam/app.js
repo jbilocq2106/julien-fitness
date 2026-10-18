@@ -141,6 +141,7 @@
       await load('./prestation-analysis-demo-v1.js?v=20261017-3');
       await load('./planning-pdf-import-v2.js?v=20261017-2');
       renderDirectAgents();
+      await load('./mobile-shell-v1.js?v=20261018-1');
     }catch(err){
       document.querySelector('.voice-box')?.remove();
       renderDirectAgents();
