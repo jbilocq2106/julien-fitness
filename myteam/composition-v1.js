@@ -3,49 +3,52 @@
   if(document.querySelector('#composition'))return;
   const KEY='myteam_composition_drafts_v1';
   const HIST_DATE='2026-07-16'; // date du nom de fichier, pas date d'effet garantie
-  const groups=['En-tête (à préciser)','RX + P','RX','Permis','Agent','CMA (à confirmer)','Autre'];
+  const groups=['Chef d’équipe','RX + P','RX','Permis','Agent','CMA (à confirmer)','Autre','Backup chef d’équipe'];
   const photo={
     1:[
-      [['EL GAMAH','LALLOZ'],0],[['MIGNOT','HILT','VALENTIN','WEISSE'],1],[['MARIE','BERNARD','DA SILVA MARTINS'],2],
+      [['EL GAMAH'],0],[['LALLOZ'],7],[['MIGNOT','HILT','VALENTIN','WEISSE'],1],[['MARIE','BERNARD','DA SILVA MARTINS'],2],
       [['KARASU','RODRIGUEZ','MALICK','SCHMID'],3],
       [['DACHOUFFE','MARIE Su.','ANTONIOL','GARRABI','KERGOAT','VIEL','COLLELA','DIELS','GIANOLI','MUNIER','MOURER','MOLTER Certif'],4],
       [['MAURICE'],5]
     ],
     2:[
-      [['BILOCQ','BORGESE'],0],[['GAGNANT','BERAUT','JACOTEZ','LONGLY'],1],[['SANDSTROM','BIGONI','WILLEMS'],2],
+      [['BILOCQ'],0],[['BORGESE'],7],[['GAGNANT','BERAUT','JACOTEZ','LONGLY'],1],[['SANDSTROM','BIGONI','WILLEMS'],2],
       [['BURG','PANATO','TUMMINELLI','HENRAT','CLESEUR'],3],
       [['KRIEG','HUMMEL','JACQUET','MATEI','DORRION','STATISIAK','LECLERC','LUCK','FROSIO','ADAM Manon','GARCIA certif'],4],
       [['OUINNE'],5]
     ],
     3:[
-      [['PILLA','TRIPODI'],0],[['CAIROLI','SAUTEZ'],1],[['HAUDIQUET','MOURON','THIBAUD','MOUDEBER','NETO'],2],
+      [['PILLA'],0],[['TRIPODI'],7],[['CAIROLI','SAUTEZ'],1],[['HAUDIQUET','MOURON','THIBAUD','MOUDEBER','NETO'],2],
       [['FELTEN','MAILLOT','KIRSCHTETTER','DOS SANTOS','LEBRUN'],3],
       [['VILLI','BRIDELANCE','REHAMNIA','SCARPINO','DURLI','GUFFROY','KESSLER','BEHARI','FINCK','HANCE','HOFFART','LECLERE'],4],
       [['DURET'],5]
     ],
     4:[
-      [['SEBRIER','RIBU'],0],[['FRANCESCHINI','DOSIL','MALAINHO'],1],[['TERRIEN','JULIA','MIANO','CLAREN','DA ROCHA'],2],
+      [['SEBRIER'],0],[['RIBU'],7],[['FRANCESCHINI','DOSIL','MALAINHO'],1],[['TERRIEN','JULIA','MIANO','CLAREN','DA ROCHA'],2],
       [['BODEVING','FRANGIAMORE','FROUSSART','DURAND'],3],
       [['YOVE','ALI VELOU','FRIESS','GUGLIETTI','KOUAHO','VERDIN','SERJANTU','KIZILDAG','MARINI','WILTGEN','CHOUMAKER'],4],
       [['CHAOUACHI'],5]
     ]
   };
+  const oldToCurrent={1:1,2:4,3:3,4:2};
+  const currentToOld={1:1,2:4,3:3,4:2};
+  const photoTeamLabel=n=>`Équipe ${n} (sur la photo : équipe ${currentToOld[n]})`;
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
   const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   const blank={name:'',team:4,group:'Agent',gender:'',rx:'',piste:'',note:''};
   const normalizeRow=r=>({id:String(r.id||makeId()),name:String(r.name||'').slice(0,100),team:[1,2,3,4].includes(Number(r.team))?Number(r.team):4,
-    group:groups.includes(r.group)?r.group:'Autre',gender:['F','M'].includes(r.gender)?r.gender:'',rx:['oui','non'].includes(r.rx)?r.rx:'',
+    group:groups.includes(r.group)||r.group==='En-tête (à préciser)'?r.group:'Autre',gender:['F','M'].includes(r.gender)?r.gender:'',rx:['oui','non'].includes(r.rx)?r.rx:'',
     piste:['oui','non'].includes(r.piste)?r.piste:'',note:String(r.note||'').slice(0,250)});
   function photoRows(){
     const known=(()=>{try{return JSON.parse(localStorage.getItem('myteam_agent_profiles_v1')||'{}')}catch{return {}}})();
     const profiles=Object.entries(known);
-    const rows=[];for(const [team,sections] of Object.entries(photo))for(const [names,gi] of sections)for(const raw of names){
+    const rows=[];for(const [oldTeam,sections] of Object.entries(photo))for(const [names,gi] of sections)for(const raw of names){
       const name=raw.replace(/ certif$/i,'');
       const matches=profiles.filter(([key])=>norm(key)===norm(name)||norm(key.split(' ')[0])===norm(name));
       const gender=matches.length===1&&['F','M'].includes(matches[0][1]?.gender)?matches[0][1].gender:'';
-      const note='Transcription photo : vérifier nom, position et habilitations'+(/ certif$/i.test(raw)?' ; mention « certif » sur la photo':'')+(gi===5?' ; CMA indiqué en pied de colonne':'');
-      rows.push(normalizeRow({...blank,name,team:Number(team),group:groups[gi],rx:gi===1||gi===2?'oui':gi===4?'non':'',piste:gi===1||gi===3?'oui':gi===4?'non':'',gender,note}));
+      const note=`Photo ancienne équipe ${oldTeam} : vérifier nom et habilitations`+(/ certif$/i.test(raw)?' ; mention « certif » sur la photo':'')+(gi===5?' ; CMA indiqué en pied de colonne':'');
+      rows.push(normalizeRow({...blank,name,team:oldToCurrent[oldTeam],group:groups[gi],rx:gi===1||gi===2?'oui':gi===4?'non':'',piste:gi===1||gi===3?'oui':gi===4?'non':'',gender,note}));
     }
     return rows;
   }
@@ -68,10 +71,27 @@
   let state;
   try{
     const parsed=JSON.parse(localStorage.getItem(KEY)||'null');
-    state={version:2,current:Array.isArray(parsed?.current)?parsed.current.map(normalizeRow):defaults.current,
+    state={version:4,current:Array.isArray(parsed?.current)?parsed.current.map(normalizeRow):defaults.current,
       photo:Array.isArray(parsed?.photo)?parsed.photo.map(normalizeRow):defaults.photo};
-    if(parsed&&parsed.version!==2){
-      // Migration non destructive des premiers brouillons : compléter les 4 CMA.
+    if(parsed&&parsed.version!==4){
+      // Mettre les anciennes colonnes en correspondance avec les numéros actuels.
+      for(const r of state.photo)r.team=oldToCurrent[r.team]||r.team;
+      // Corriger aussi les deux équipes inversées dans le premier brouillon actuel,
+      // sans modifier les lignes déjà enrichies manuellement.
+      const wanted=new Map();
+      for(const key of [1,3])for(const [name] of (window.myteamTeamSeed?.[key]||[]))wanted.set(norm(name),key);
+      for(const r of state.current){
+        const target=wanted.get(norm(r.name));
+        if(target&&(r.team===1||r.team===3)&&r.team!==target&&!r.note&&r.group==='Agent'&&r.rx===''&&r.piste==='')r.team=target;
+      }
+      const oldHeads={1:['EL GAMAH','LALLOZ'],4:['BILOCQ','BORGESE'],3:['PILLA','TRIPODI'],2:['SEBRIER','RIBU']};
+      for(const r of state.photo){
+        if(r.group!=='En-tête (à préciser)')continue;
+        const [chief,backup]=oldHeads[r.team]||[];
+        if(norm(r.name)===norm(chief))r.group='Chef d’équipe';
+        else if(norm(r.name)===norm(backup))r.group='Backup chef d’équipe';
+        else r.group='Autre';
+      }
       for(const base of defaults.photo.filter(r=>r.group==='CMA (à confirmer)')){
         if(!state.photo.some(r=>r.team===base.team&&norm(r.name)===norm(base.name)))state.photo.push(base);
       }
@@ -80,8 +100,9 @@
       }
       localStorage.setItem(KEY,JSON.stringify(state));
     }
-  }catch{state={version:2,...defaults}}
+  }catch{state={version:4,...defaults}}
   let mode='current',team=4,search='',snapshot=null;
+  const expanded=new Set();
 
   const section=document.createElement('section');section.id='composition';section.className='hidden';
   section.innerHTML=`<style>
@@ -101,8 +122,31 @@
     #composition .cmp-stat b{display:block;font-size:23px}
     #composition .cmp-hint{padding:10px 12px;border-radius:11px;background:#302e22;color:#ffdda4;font-size:12px;line-height:1.5}
     #composition .cmp-del{background:#913b42;padding:9px}
+    #composition .cmp-expand{display:none;background:#2766bf;padding:9px}
+    #composition .cmp-brief{display:none}
     #composition .cmp-status{font-size:12px;color:#b9dcff;min-height:20px}
     #composition .cmp-preview{background:#132a30;padding:11px;border-radius:11px;margin-top:8px;font-size:12px;line-height:1.5}
+    @media(max-width:660px){
+      #composition .cmp-wrap{overflow:visible;border:0}
+      #composition table{display:block;min-width:0;width:100%}
+      #composition thead{display:none}
+      #composition tbody{display:grid;gap:9px}
+      #composition tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;background:#24344b;
+        border:1px solid #465c76;border-radius:13px;padding:11px;align-items:start}
+      #composition tbody td{border:0;padding:0;min-width:0}
+      #composition tbody td:first-child{grid-column:1;position:static;background:transparent}
+      #composition tbody td:last-child{grid-column:2;grid-row:1;display:flex;gap:5px;align-items:center}
+      #composition tbody tr:not(.cmp-open) td:nth-child(n+2):nth-child(-n+7){display:none}
+      #composition tbody tr.cmp-open td:nth-child(n+2):nth-child(-n+7){grid-column:1 / -1;display:block}
+      #composition tbody tr.cmp-open td:nth-child(n+2):nth-child(-n+7)::before{content:attr(data-label);
+        color:#aebacc;display:block;font-size:12px;font-weight:750;margin:3px 0 5px}
+      #composition tbody td input,#composition tbody td select{min-height:45px;font-size:15px}
+      #composition .cmp-brief{display:block;margin:5px 2px 0;color:#b9cde0;font-size:12px}
+      #composition .cmp-expand{display:inline-block;white-space:nowrap;font-size:12px}
+      #composition .cmp-del{font-size:13px}
+      #composition .cmp-stats{gap:5px}
+      #composition .cmp-stat{padding:9px 5px}
+    }
   </style>
   <div class="card"><h2>🧩 Composition des équipes</h2>
     <p class="muted">Tableau modifiable comme dans Excel : touche une cellule pour corriger le nom, l'équipe, le groupe ou les qualifications. Les modifications sont privées et enregistrées <strong>sur ce téléphone</strong>.</p>
@@ -121,7 +165,7 @@
       <button id="cmp-restore" type="button">Restaurer cette base</button></div>
     <input id="cmp-file" type="file" accept=".csv,text/csv" hidden>
     <p class="cmp-status" id="cmp-status" role="status"></p>
-    <p class="cmp-hint">Les titres et couleurs viennent de la photo ; ils ne prouvent pas une qualification à jour. Les noms sous « Agent » sont sans qualification RX ni permis piste selon ta précision. La première ligne de chaque équipe apparaît au-dessus de « RX + P » : elle est classée « En-tête (à préciser) ». Les mentions « CMA » en bas de photo restent à vérifier. Rien ici ne modifie automatiquement les fiches agents ni les affectations officielles.</p>
+    <p class="cmp-hint">Correspondance confirmée : ancienne 1 → actuelle 1 ; ancienne 2 → actuelle 4 ; ancienne 3 → actuelle 3 ; ancienne 4 → actuelle 2. Les qualifications de la photo doivent être revérifiées. Les noms sous « Agent » sont sans qualification RX ni permis piste. Le premier nom est le chef d’équipe et le deuxième son backup. Les mentions « CMA » restent à vérifier. Rien ici ne modifie automatiquement les fiches agents ni les affectations officielles.</p>
   </div><div class="card"><h3>Équilibrage des équipes</h3><p class="muted">Les compteurs sont indicatifs et reposent sur les cases du tableau, sans validation des habilitations.</p><div id="cmp-overview"></div></div>`;
   document.querySelector('main').append(section);
   const nav=document.querySelector('.tabs');
@@ -140,20 +184,20 @@
   function remember(){snapshot=JSON.stringify(state)}
   function draw(){
     $('cmp-mode').value=mode;
-    $('cmp-teams').innerHTML=[4,1,2,3].map(n=>`<button type="button" data-team="${n}" aria-pressed="${n===team}">Équipe ${n} (${rows().filter(r=>r.team===n).length})</button>`).join('');
+    $('cmp-teams').innerHTML=[4,1,2,3].map(n=>`<button type="button" data-team="${n}" aria-pressed="${n===team}">${esc(mode==='photo'?photoTeamLabel(n):'Équipe '+n)} (${rows().filter(r=>r.team===n).length})</button>`).join('');
     $('cmp-teams').querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{team=Number(b.dataset.team);search='';$('cmp-search').value='';draw()});
     const all=rows().filter(r=>r.team===team),s=stats(all);
     $('cmp-stats').innerHTML=`<div class="cmp-stat"><b>${s.total}</b>Agents</div><div class="cmp-stat"><b>${s.rx}</b>RX indiqués</div><div class="cmp-stat"><b>${s.piste}</b>Permis indiqués</div>`;
     const subset=all.filter(r=>norm(r.name).includes(norm(search)));
-    $('cmp-body').innerHTML=subset.map(r=>`<tr data-id="${esc(r.id)}" class="${r.gender==='F'?'cmp-female':''}">
-      <td><input data-field="name" aria-label="Nom" maxlength="100" value="${esc(r.name)}"></td>
-      <td><select data-field="team" aria-label="Équipe">${select([1,2,3,4].map(n=>[String(n),'Équipe '+n]),String(r.team))}</select></td>
-      <td><select data-field="group" aria-label="Groupe">${select(groups.map(x=>[x,x]),r.group)}</select></td>
-      <td><select data-field="gender" aria-label="Femme ou homme">${select([['','—'],['F','F'],['M','H']],r.gender)}</select></td>
-      <td><select data-field="rx" aria-label="RX">${select([['','?'],['oui','Oui'],['non','Non']],r.rx)}</select></td>
-      <td><select data-field="piste" aria-label="Permis piste">${select([['','?'],['oui','Oui'],['non','Non']],r.piste)}</select></td>
-      <td><input data-field="note" aria-label="Note" maxlength="250" value="${esc(r.note)}"></td>
-      <td><button class="cmp-del" data-delete type="button" aria-label="Supprimer la ligne">✕</button></td>
+    $('cmp-body').innerHTML=subset.map(r=>`<tr data-id="${esc(r.id)}" class="${r.gender==='F'?'cmp-female ':''}${expanded.has(r.id)?'cmp-open':''}">
+      <td data-label="Agent"><input data-field="name" aria-label="Nom" maxlength="100" value="${esc(r.name)}"><small class="cmp-brief">${esc(r.group)} · RX ${esc(r.rx||'?')} · Permis ${esc(r.piste||'?')}</small></td>
+      <td data-label="Équipe"><select data-field="team" aria-label="Équipe">${select([1,2,3,4].map(n=>[String(n),'Équipe '+n]),String(r.team))}</select></td>
+      <td data-label="Groupe"><select data-field="group" aria-label="Groupe">${select(groups.map(x=>[x,x]),r.group)}</select></td>
+      <td data-label="F/H"><select data-field="gender" aria-label="Femme ou homme">${select([['','—'],['F','F'],['M','H']],r.gender)}</select></td>
+      <td data-label="RX"><select data-field="rx" aria-label="RX">${select([['','?'],['oui','Oui'],['non','Non']],r.rx)}</select></td>
+      <td data-label="Permis"><select data-field="piste" aria-label="Permis piste">${select([['','?'],['oui','Oui'],['non','Non']],r.piste)}</select></td>
+      <td data-label="Note"><input data-field="note" aria-label="Note" maxlength="250" value="${esc(r.note)}"></td>
+      <td><button class="cmp-expand" data-expand type="button" aria-expanded="${expanded.has(r.id)}">${expanded.has(r.id)?'Fermer':'Modifier'}</button><button class="cmp-del" data-delete type="button" aria-label="Supprimer la ligne">✕</button></td>
     </tr>`).join('')||'<tr><td colspan="8">Aucun agent. Ajoute une ligne si nécessaire.</td></tr>';
     $('cmp-body').querySelectorAll('tr[data-id]').forEach(tr=>{
       const id=tr.dataset.id;
@@ -167,6 +211,8 @@
           else if(input.dataset.field==='name')drawCounts();
         });
       });
+      tr.querySelector('[data-expand]').onclick=()=>{const open=!expanded.has(id);if(open)expanded.add(id);else expanded.delete(id);
+        tr.classList.toggle('cmp-open',open);const btn=tr.querySelector('[data-expand]');btn.textContent=open?'Fermer':'Modifier';btn.setAttribute('aria-expanded',String(open))};
       tr.querySelector('[data-delete]').onclick=()=>{
         const r=rows().find(x=>x.id===id);if(!r||!confirm(`Retirer ${r.name||'cette ligne'} du brouillon ?`))return;
         remember();state[mode]=rows().filter(x=>x.id!==id);save('Ligne retirée du brouillon.');draw();
@@ -180,10 +226,10 @@
   }
   function drawOverview(){
     const counts=[4,1,2,3].map(n=>({team:n,...stats(rows().filter(r=>r.team===n))}));
-    $('cmp-overview').innerHTML=counts.map(c=>`<p>Équipe ${c.team} : <b>${c.total}</b> agents · ${c.rx} RX · ${c.piste} permis</p>`).join('')+
+    $('cmp-overview').innerHTML=counts.map(c=>`<p>${esc(mode==='photo'?photoTeamLabel(c.team):'Équipe '+c.team)} : <b>${c.total}</b> agents · ${c.rx} RX · ${c.piste} permis</p>`).join('')+
       '<p class="cmp-preview">Suggestion : comparer les effectifs et vérifier la présence des qualifications nécessaires à chaque poste. Une différence de compteur ne justifie pas à elle seule un changement d’agent.</p>';
   }
-  $('cmp-mode').onchange=e=>{mode=e.target.value;search='';$('cmp-search').value='';draw()};
+  $('cmp-mode').onchange=e=>{mode=e.target.value;team=4;search='';$('cmp-search').value='';draw()};
   $('cmp-search').oninput=e=>{search=e.target.value;draw()};
   $('cmp-add').onclick=()=>{remember();const r=normalizeRow({...blank,team});rows().push(r);save('Nouvelle ligne ajoutée au brouillon.');search='';$('cmp-search').value='';draw();
     const target=$('cmp-body').querySelector(`[data-id="${r.id}"] [data-field=name]`);target?.focus()};
