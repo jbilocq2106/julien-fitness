@@ -88,9 +88,11 @@
     <p id="mt-parif-import-status" role="status" class="mt-parif-import-status"></p>
     <div id="mt-parif-source-preview" class="mt-parif-source-preview hidden"></div>
     <div id="mt-parif-source-tools" class="mt-parif-source-tools hidden">
-      <button id="mt-parif-read-source" type="button">🔎 Lire le texte sur cet appareil</button>
-      <p class="mt-parif-disclaimer">Lecture assistée : un moteur de reconnaissance peut devoir se télécharger. Le fichier n’est pas envoyé par MyTEAM à un service d’analyse. Relis chaque nom et chaque poste : aucune affectation issue de l’OCR n’est validée automatiquement.</p>
+      <button id="mt-parif-read-source" type="button">🤖 Analyser et proposer le préremplissage</button>
+      <p class="mt-parif-disclaimer">Reconnaissance sur cet appareil : le moteur peut devoir se télécharger. Le fichier n’est pas envoyé par MyTEAM à un service d’analyse. Les noms sont proposés avec leur fiabilité ; aucun poste n’est modifié ni enregistré sans ton contrôle.</p>
       <textarea id="mt-parif-source-text" rows="7" readonly class="hidden" aria-label="Texte relevé sur le document"></textarea>
+      <div id="mt-parif-auto-preview" class="mt-parif-auto-preview hidden" aria-label="Propositions de préremplissage"></div>
+      <button id="mt-parif-auto-apply" type="button" class="mt-primary hidden">✅ Préremplir le brouillon avec les propositions cochées</button>
       <button id="mt-parif-source-edit" type="button">✏️ Compléter le plan en regardant le document</button>
     </div>
     <div id="mt-parif-import-issues" class="mt-parif-import-issues hidden"></div>
@@ -303,10 +305,12 @@
   }
   el('mt-parif-content').addEventListener('input',applyInput);
   const importInput=el('mt-parif-import-file');
-  let sourceFile=null,sourceObjectUrl=null;
+  let sourceFile=null,sourceObjectUrl=null,autoResult=null;
   const sourcePreview=el('mt-parif-source-preview'),sourceTools=el('mt-parif-source-tools'),sourceText=el('mt-parif-source-text');
+  const autoPreview=el('mt-parif-auto-preview'),autoApply=el('mt-parif-auto-apply');
   function clearSource(){
     if(sourceObjectUrl){URL.revokeObjectURL(sourceObjectUrl);sourceObjectUrl=null;}
+    autoResult=null;autoPreview.replaceChildren();autoPreview.classList.add('hidden');autoApply.classList.add('hidden');
     sourceFile=null;sourcePreview.replaceChildren();sourcePreview.classList.add('hidden');
     sourceTools.classList.add('hidden');sourceText.value='';sourceText.classList.add('hidden');
   }
@@ -359,19 +363,105 @@
       return await ocrCanvasOrImage(canvas);
     }finally{await pdf.destroy();}
   }
+  async function firstPdfPage(file){
+    const lib=await pdfLibrary(),pdf=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+    try{
+      const page=await pdf.getPage(1),viewport=page.getViewport({scale:2});
+      const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+      return canvas;
+    }finally{await pdf.destroy();}
+  }
+  function showAutoProposals(result){
+    autoPreview.replaceChildren();autoResult=result;
+    const title=document.createElement('strong');title.textContent='🤖 Préremplissage proposé — à vérifier';autoPreview.append(title);
+    const allowed=result.items.filter(x=>x.allowed),selected=allowed.filter(x=>x.checked);
+    const uncertain=allowed.length-selected.length,unmapped=result.items.length-allowed.length;
+    const summary=document.createElement('p');
+    summary.textContent=`${selected.length} lecture(s) fiables cochée(s) · ${uncertain} à contrôler · ${unmapped} case(s) non compatibles avec le plan actuel.`;
+    autoPreview.append(summary);
+    const dateNote=document.createElement('p');
+    dateNote.textContent=result.dateText?`Date visible sur le document : « ${result.dateText} ». Vérifie-la avant de remplir le brouillon du ${date}.`:`Date de la photo non reconnue. Vérifie qu’elle correspond au ${date}.`;
+    autoPreview.append(dateNote);
+    const details=document.createElement('details'),heading=document.createElement('summary');
+    heading.textContent=`Voir et cocher les ${result.items.length} propositions`;
+    details.append(heading);
+    const rows=document.createElement('div');rows.className='mt-parif-auto-list';
+    result.items.forEach((proposal,index)=>{
+      const row=document.createElement('label');row.className='mt-parif-auto-row'+(!proposal.allowed?' is-unmapped':!proposal.checked?' is-uncertain':'');
+      const check=document.createElement('input');check.type='checkbox';check.dataset.parifAutoIndex=String(index);
+      check.checked=proposal.checked;check.disabled=!proposal.allowed;
+      const copy=document.createElement('span'),name=document.createElement('b'),confidence=document.createElement('small');
+      name.textContent=`${proposal.label} → ${proposal.value}`;
+      confidence.textContent=!proposal.allowed?'Poste ou place absent(e) du plan actuel : non transférable':proposal.checked?`Lecture estimée ${proposal.confidence}% · relis avant d’enregistrer`:`⚠ Lecture incertaine (${proposal.confidence}%) · coche seulement si le nom est exact`;
+      copy.append(name,confidence);row.append(check,copy);rows.append(row);
+    });
+    details.append(rows);autoPreview.append(details);autoPreview.classList.remove('hidden');
+    autoApply.classList.toggle('hidden',allowed.length===0);
+  }
+  function dateFromPhotoCouldMatch(raw,selected){
+    const m=String(raw||'').match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})\b/);
+    if(!m)return false;
+    const a=String(m[1]).padStart(2,'0'),b=String(m[2]).padStart(2,'0');
+    return `${m[3]}-${b}-${a}`===selected||`${m[3]}-${a}-${b}`===selected;
+  }
+  autoApply.onclick=()=>{
+    if(!autoResult)return;
+    const chosen=Array.from(autoPreview.querySelectorAll('input[data-parif-auto-index]:checked'))
+      .map(input=>autoResult.items[Number(input.dataset.parifAutoIndex)]).filter(item=>item?.allowed);
+    if(!chosen.length){el('mt-parif-import-status').textContent='Coche les propositions que tu as relues pour préremplir le brouillon.';return;}
+    if(!dateFromPhotoCouldMatch(autoResult.dateText,date)){
+      if(!confirm(`⚠ Date à vérifier : le document indique « ${autoResult.dateText||'inconnue'} » et le brouillon est daté du ${date}. Es-tu certain de vouloir préparer ces affectations pour cette date ?`))return;
+    }
+    const conflicts=chosen.filter(item=>{
+      const shift=working.shifts[item.shift],parts=item.path.split('.');
+      const previous=parts[0]==='posts'?shift.posts[parts[1]]?.[Number(parts[2])]:parts[0]==='patrol'?shift.patrol[Number(parts[1])]:shift.supervisor;
+      return previous&&previous!==item.value;
+    });
+    if(conflicts.length&&!confirm(`${conflicts.length} case(s) du brouillon contiennent déjà une valeur différente. Remplacer uniquement ces cases par les propositions cochées ?`))return;
+    let applied=0;
+    for(const item of chosen){
+      const shift=working.shifts[item.shift],parts=item.path.split('.');
+      if(parts[0]==='posts'&&Array.isArray(shift.posts[parts[1]])&&Number(parts[2])<shift.posts[parts[1]].length){shift.posts[parts[1]][Number(parts[2])]=item.value;applied++;}
+      else if(parts[0]==='patrol'&&Number(parts[1])<shift.patrol.length){shift.patrol[Number(parts[1])]=item.value;applied++;}
+      else if(parts[0]==='supervisor'){shift.supervisor=item.value;applied++;}
+    }
+    const skipped=autoResult.items.filter(item=>!chosen.includes(item)&&item.allowed);
+    importIssues=[...autoResult.issues,...skipped.map(item=>`À relire : ${item.label} — ${item.value} (lecture ${item.confidence} %).`),
+      !dateFromPhotoCouldMatch(autoResult.dateText,date)?`Date du document à contrôler : ${autoResult.dateText||'non lue'}.`:''
+    ].filter(Boolean).slice(0,30);
+    showIssues();dropPreview();render();setMode('overview');
+    el('mt-parif-import-status').textContent=`${applied} case(s) préremplie(s) dans la prévisualisation. Rien n’est enregistré ni validé officiellement.`;
+    el('mt-parif-status').textContent='Relis les affectations, notamment les noms douteux, puis clique sur « Vérifier et enregistrer le brouillon ».';
+  };
   let readingSource=false;
   el('mt-parif-read-source').onclick=async()=>{
     if(readingSource||!sourceFile)return;
     const status=el('mt-parif-import-status'),button=el('mt-parif-read-source'),file=sourceFile;
-    readingSource=true;button.disabled=true;status.textContent='Lecture locale du document… cela peut prendre un moment.';
+    readingSource=true;button.disabled=true;status.textContent='Analyse locale du document… cela peut prendre un moment.';
     try{
-      const text=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?await readPdf(file):await ocrCanvasOrImage(file);
-      if(sourceFile!==file){return;}
-      sourceText.value=text.trim()||'Aucun texte lisible reconnu.';sourceText.classList.remove('hidden');
-      status.textContent='Lecture terminée. Le texte peut contenir des erreurs : compare-le au document avant de saisir ou corriger les agents. Aucun poste modifié automatiquement.';
+      let result=null;
+      try{
+        const reader=await loadLibrary('MyTeamParifPhotoReader','./parif-photo-reader-v1.js?v=20261018-1');
+        const api=await loadLibrary('Tesseract','https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+        const image=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?await firstPdfPage(file):file;
+        result=await reader.scan(image,api,message=>{if(sourceFile===file)status.textContent=message;});
+      }catch(error){console.warn('Reconnaissance structurée indisponible :',error);}
+      if(sourceFile!==file)return;
+      if(result?.supported){
+        showAutoProposals(result);
+        sourceText.value=result.items.map(item=>`${item.label} : ${item.value} (${item.confidence} %)`).join('\n');
+        sourceText.classList.remove('hidden');
+        status.textContent=`${result.items.length} nom(s) proposé(s) par la lecture locale. Vérifie les cases cochées et la date, puis applique au brouillon. Aucune sauvegarde automatique.`;
+      }else{
+        const text=file.type==='application/pdf'||/\.pdf$/i.test(file.name)?await readPdf(file):await ocrCanvasOrImage(file);
+        if(sourceFile!==file)return;
+        sourceText.value=text.trim()||'Aucun texte lisible reconnu.';sourceText.classList.remove('hidden');
+        status.textContent='Cette présentation ne correspond pas assez au modèle PARIF appris. Le texte reste disponible pour une saisie guidée, sans affectation automatique.';
+      }
     }catch(error){
       if(sourceFile===file)status.textContent=`Lecture automatique indisponible (${error.message}). Le fichier reste visible pour la saisie manuelle.`;
-    }finally{readingSource=false;button.disabled=false;}
+    }finally{readingSource=false;button.disabled=false;if(sourceFile&&sourceFile!==file)button.click();}
   };
   el('mt-parif-source-edit').onclick=()=>setMode('edit');
   window.addEventListener('pagehide',()=>{if(sourceObjectUrl)URL.revokeObjectURL(sourceObjectUrl)});
@@ -384,7 +474,9 @@
     if(!kind){status.textContent='Format non pris en charge. Choisis PDF, JPEG, PNG ou JSON.';return;}
     if(kind!=='json'){
       if(file.size>(kind==='pdf'?20000000:15000000)){status.textContent='Document trop volumineux (PDF : 20 Mo ; image : 15 Mo maximum).';return;}
-      prepareSource(file,kind);return;
+      prepareSource(file,kind);
+      // Un premier passage est proposé immédiatement, sans toucher au brouillon.
+      el('mt-parif-read-source').click();return;
     }
     if(file.size>1000000){status.textContent='Brouillon JSON trop volumineux : maximum 1 Mo.';return;}
     if(isDirty()&&!confirm('Les modifications non enregistrées seront remplacées par les données du fichier. Continuer ?'))return;
