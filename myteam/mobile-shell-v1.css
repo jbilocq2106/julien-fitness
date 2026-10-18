@@ -55,8 +55,12 @@
   .day span{font-size:10px;overflow-wrap:anywhere}
   #pwa-install-card{margin:10px 12px 0!important}
   #mt-mobile-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:stretch;gap:3px;position:fixed;bottom:0;left:0;right:0;z-index:80;padding:8px 7px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(24,35,52,.98);border-top:1px solid #536982;box-shadow:0 -8px 26px #080f1e80}
-  #mt-mobile-nav button{min-width:0;min-height:59px;padding:5px 1px;border-radius:11px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:750;color:#c6d3e4;font-size:10px;line-height:1.15}
+  #mt-mobile-nav button{min-width:0;min-height:59px;padding:5px 1px;border-radius:11px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:750;color:#c6d3e4;font-size:10px;line-height:1.15;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
   #mt-mobile-nav button[aria-current=page]{background:#4e3529;color:#fff1e5}
+  #mt-mobile-nav button.mt-dragging{position:relative;z-index:2;background:#e76b24;color:#fff;box-shadow:0 7px 24px #0009;scale:1.08}
+  #mt-mobile-nav button.mt-drop-target{outline:2px dashed #ffbb7e;outline-offset:-3px;background:#39516b}
+  #mt-nav-reorder-hint{display:none;position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);width:max-content;padding:11px 14px;border-radius:11px;background:#233b58;border:1px solid #eab383;color:#fff;font-size:12px;font-weight:800;text-align:center;box-shadow:0 6px 20px #0007;pointer-events:none}
+  #mt-mobile-nav.mt-reordering #mt-nav-reorder-hint,#mt-mobile-nav.mt-reorder-saved #mt-nav-reorder-hint{display:block}
   #mt-mobile-nav .mt-icon{font-size:23px;line-height:1.1}
   #mt-mobile-nav button:focus-visible,#mt-more-panel button:focus-visible{outline:3px solid #ffb06f;outline-offset:2px}
   #mt-more-shade:not([hidden]){display:block;position:fixed;inset:0;z-index:89;background:#000a}

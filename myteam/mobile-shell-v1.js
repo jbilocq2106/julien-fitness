@@ -44,10 +44,17 @@
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
   const navItems=[['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents']];
+  const NAV_ORDER_KEY='myteam_mobile_nav_order_v1';
+  const navDefinitions=[...navItems,['more','☰','Plus']];
+  const defaults=navDefinitions.map(item=>item[0]);
+  const storedOrder=read(NAV_ORDER_KEY,[]);
+  const order=[...new Set([...(Array.isArray(storedOrder)?storedOrder.filter(id=>defaults.includes(id)):[]),...defaults])];
   const mobileNav=document.createElement('nav');
   mobileNav.id='mt-mobile-nav';mobileNav.setAttribute('aria-label','Navigation principale');
-  mobileNav.innerHTML=navItems.map(([id,icon,label])=>`<button type="button" data-mt-open="${id}" aria-label="${label}"><span class="mt-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`).join('')+
-    '<button type="button" data-mt-open="more" aria-haspopup="dialog" aria-expanded="false"><span class="mt-icon" aria-hidden="true">☰</span><span>Plus</span></button>';
+  mobileNav.innerHTML=order.map(id=>{
+    const [,icon,label]=navDefinitions.find(item=>item[0]===id);
+    return `<button type="button" data-mt-open="${id}" aria-label="${label}" ${id==='more'?'aria-haspopup="dialog" aria-expanded="false"':''}><span class="mt-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
+  }).join('')+'<div id="mt-nav-reorder-hint" role="status" aria-live="polite"></div>';
   document.body.append(mobileNav);
   const shade=document.createElement('div');shade.id='mt-more-shade';shade.hidden=true;
   const more=document.createElement('div');more.id='mt-more-panel';more.hidden=true;
@@ -90,7 +97,71 @@
     markActive(btn.dataset.tab);
     closeMore();
   });
+  let drag=null,reorderMessageTimer=null,suppressNavClickUntil=0;
+  const navButtons=()=>Array.from(mobileNav.querySelectorAll('button[data-mt-open]'));
+  const reorderHint=mobileNav.querySelector('#mt-nav-reorder-hint');
+  const showReorderMessage=(message)=>{
+    reorderHint.textContent=message;mobileNav.classList.add('mt-reorder-saved');
+    clearTimeout(reorderMessageTimer);
+    reorderMessageTimer=setTimeout(()=>mobileNav.classList.remove('mt-reorder-saved'),2200);
+  };
+  function saveNavOrder(buttons){
+    buttons.forEach(button=>mobileNav.insertBefore(button,reorderHint));
+    try{localStorage.setItem(NAV_ORDER_KEY,JSON.stringify(buttons.map(button=>button.dataset.mtOpen)));showReorderMessage('✓ Ordre des boutons enregistré sur ce téléphone');}
+    catch{showReorderMessage('Ordre modifié, mais son enregistrement est indisponible');}
+  }
+  function clearDrag(){
+    if(!drag)return;
+    clearTimeout(drag.timer);
+    drag.button.classList.remove('mt-dragging');drag.button.removeAttribute('aria-grabbed');drag.button.style.transform='';
+    navButtons().forEach(button=>button.classList.remove('mt-drop-target'));
+    mobileNav.classList.remove('mt-reordering');drag=null;
+  }
+  function closestDropButton(x,button){
+    const candidates=navButtons().filter(item=>item!==button);
+    return candidates.reduce((best,item)=>{
+      const r=item.getBoundingClientRect(),distance=Math.abs(x-(r.left+r.width/2));
+      return !best||distance<best.distance?{button:item,distance}:best;
+    },null)?.button||null;
+  }
+  mobileNav.addEventListener('pointerdown',event=>{
+    const button=event.target.closest('button[data-mt-open]');
+    if(!button||drag||(event.pointerType==='mouse'&&event.button!==0))return;
+    const gesture={button,pointerId:event.pointerId,x:event.clientX,y:event.clientY,active:false,target:null,timer:null};
+    drag=gesture;
+    gesture.timer=setTimeout(()=>{
+      if(drag!==gesture)return;
+      gesture.active=true;button.classList.add('mt-dragging');button.setAttribute('aria-grabbed','true');
+      mobileNav.classList.add('mt-reordering');reorderHint.textContent='↔ Glisse le bouton à sa nouvelle place';
+      try{button.setPointerCapture(gesture.pointerId);}catch{}
+      if(typeof navigator.vibrate==='function')navigator.vibrate(25);
+    },550);
+  });
+  mobileNav.addEventListener('pointermove',event=>{
+    const gesture=drag;if(!gesture||event.pointerId!==gesture.pointerId)return;
+    const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+    if(!gesture.active){if(Math.hypot(dx,dy)>12)clearDrag();return;}
+    if(event.cancelable)event.preventDefault();
+    gesture.button.style.transform=`translate3d(${dx}px,0,0)`;
+    gesture.target=Math.abs(dx)>gesture.button.offsetWidth*.38?closestDropButton(event.clientX,gesture.button):null;
+    navButtons().forEach(button=>button.classList.toggle('mt-drop-target',button===gesture.target));
+  });
+  mobileNav.addEventListener('pointerup',event=>{
+    const gesture=drag;if(!gesture||event.pointerId!==gesture.pointerId)return;
+    if(!gesture.active){clearDrag();return;}
+    suppressNavClickUntil=Date.now()+700;
+    const target=gesture.target;
+    if(target){
+      const buttons=navButtons(),from=buttons.indexOf(gesture.button),to=buttons.indexOf(target);
+      buttons.splice(from,1);buttons.splice(to,0,gesture.button);
+      clearDrag();saveNavOrder(buttons);
+    }else{clearDrag();showReorderMessage('Maintiens puis glisse pour déplacer un bouton');}
+  });
+  mobileNav.addEventListener('pointercancel',clearDrag);
+  mobileNav.addEventListener('lostpointercapture',event=>{if(drag?.active&&event.target===drag.button)clearDrag()});
+  mobileNav.addEventListener('contextmenu',event=>event.preventDefault());
   mobileNav.addEventListener('click',event=>{
+    if(Date.now()<suppressNavClickUntil){event.preventDefault();event.stopImmediatePropagation();return;}
     const b=event.target.closest('[data-mt-open]');if(!b)return;
     b.dataset.mtOpen==='more'?openMore():activate(b.dataset.mtOpen);
   });
