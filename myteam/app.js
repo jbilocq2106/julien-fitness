@@ -149,6 +149,7 @@
       console.error(err)
     }finally{
       try{await load('./mobile-shell-v1.js?v=20261018-1')}catch(error){console.error('Navigation mobile indisponible :',error)}
+      try{await load('./mobile-polish-v1.js?v=20261018-1')}catch(error){console.error('Fiches mobiles indisponibles :',error)}
     }
   })();
 })();
