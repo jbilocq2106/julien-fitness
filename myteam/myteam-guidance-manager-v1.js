@@ -27,7 +27,9 @@
   tabs.forEach(([id,label])=>{
     const button=document.createElement('button');
     button.type='button';button.dataset.tab=id;button.textContent=label;
-    nav.append(button);
+    const neighbour=nav.querySelector(id==='consignes'?'[data-tab="prestation"]':'[data-tab="team"]');
+    if(neighbour)neighbour.insertAdjacentElement('afterend',button);
+    else nav.append(button);
     button.addEventListener('click',()=>{
       nav.querySelectorAll('[data-tab]').forEach(tab=>tab.classList.toggle('active',tab.dataset.tab===id));
       main.querySelectorAll('section').forEach(section=>section.classList.toggle('hidden',section.id!==id));
@@ -184,7 +186,7 @@
     if(!docs.length){host.innerHTML='<p class="muted">Aucun brouillon ni consigne validée.</p>';return;}
     host.innerHTML=docs.slice().sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))).map(doc=>`
       <div class="mtmg-doc-item"><div class="mtmg-doc-row"><strong>${esc(doc.title)}</strong>
-        <span class="mtmg-chip ${doc.status==='approved'?'approved':''}">${doc.status==='approved'?'✓ Validée':'Brouillon'}</span></div>
+        <span class="mtmg-chip ${doc.status==='approved'?'approved':''}">${doc.status==='approved'?'✓ Validée':doc.status==='superseded'?'Ancienne version':'Brouillon'}</span></div>
         <small>${esc(doc.fileName||'Source non précisée')} • Version ${Number(doc.version)||1}
           ${doc.approvedAt?' • validée le '+new Date(doc.approvedAt).toLocaleDateString('fr-FR'):''}</small>
         <button type="button" data-mtmg-open="${esc(doc.id)}">Ouvrir / réviser</button></div>`).join('');
@@ -196,7 +198,8 @@
     approval.checked=false;fileInput.value='';cameraInput.value='';get('mtmg-analyse').disabled=true;
     get('mtmg-selected').textContent=doc.fileName?`Source précédente : ${doc.fileName} (non conservée)`:'Aucune source conservée';
     get('mtmg-draft-state').textContent=doc.status==='approved'
-      ?`Version ${doc.version||1} validée — toute modification enregistrée repassera en brouillon.`
+      ?`Version ${doc.version||1} validée — une modification créera un brouillon séparé.`
+      :doc.status==='superseded'?`Ancienne version ${doc.version||1} — conservée pour référence.`
       :`Version ${doc.version||1} en brouillon — validation nécessaire.`;
     status('Relis les informations avant toute nouvelle validation.');
     instructions.scrollIntoView({behavior:'smooth',block:'start'});
@@ -237,12 +240,25 @@
         status('Cette version est déjà validée et inchangée. Aucun nouveau brouillon nécessaire.');
         return;
       }
-      if(changed)doc.version=(Number(doc.version)||1)+1;
+      if(changed&&(doc.status==='approved'||doc.status==='superseded')){
+        // Conserver intacte la consigne déjà validée pendant la préparation
+        // d'une nouvelle version. Aucune révision n'est officialisée d'office.
+        const previous=doc;
+        doc={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+          parentId:previous.id,createdAt:now,version:(Number(previous.version)||1)+1};
+        docs.push(doc);currentId=doc.id;
+      }else if(changed)doc.version=(Number(doc.version)||1)+1;
     }
     doc.title=values.title;doc.summary=values.summary;
     if(values.fileName)doc.fileName=values.fileName;
     doc.status=approved?'approved':'draft';doc.updatedAt=now;
     doc.approvedAt=approved?now:null;
+    if(approved&&doc.parentId){
+      const parent=docs.find(record=>record.id===doc.parentId);
+      if(parent?.status==='approved'){
+        parent.status='superseded';parent.replacedBy=doc.id;
+      }
+    }
     try{localStorage.setItem(KEY,JSON.stringify(docs));}
     catch(e){status('Espace de stockage insuffisant : rien n’a pu être enregistré.');return;}
     approval.checked=false;
