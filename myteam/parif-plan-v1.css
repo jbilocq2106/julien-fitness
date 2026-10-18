@@ -56,10 +56,11 @@
 .mt-parif-entry button{width:100%;min-height:51px}
 @media(max-width:480px){
   #parif .mt-parif-leaders{grid-template-columns:1fr}
+  #parif .mt-parif-post-grid{grid-template-columns:1fr}
   #parif .mt-parif-post-grid{gap:7px}
   #parif .mt-parif-slot-list{padding:6px}
   #parif .mt-parif-post h4{font-size:12px;padding:8px 3px}
-  #parif .mt-parif-slot-list input{font-size:14px;padding:8px 7px}
+  #parif .mt-parif-slot-list input{font-size:16px;padding:10px 9px}
   #parif .mt-parif-post small{font-size:10px}
   #parif .mt-parif-tabs button strong{font-size:12px}
   #parif .mt-parif-tabs button small{font-size:10px}
