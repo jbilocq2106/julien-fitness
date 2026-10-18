@@ -55,6 +55,7 @@
             ${field(index,'duration_minutes','Durée',decimal(mins),'min',{max:720,step:0.1})}
             ${field(index,'speed_kmh','Vitesse',decimal(row.speed_kmh),'km/h',{max:30,step:0.1})}
             ${field(index,'incline_percent','Inclinaison',decimal(row.incline_percent),'%',{max:35,step:0.5})}
+             ${field(index,'avg_hr_bpm','FC moyenne',decimal(row.avg_hr_bpm??row.avg_hr),'bpm',{max:230,step:1})}
           </div>
           <button type="button" class="ghost mt-post-calc" data-calc="${index}">↻ Recalculer la distance depuis la vitesse et la durée</button>
         </div>`;
@@ -121,7 +122,7 @@
       const draft=rows.map(row=>({...row}));
       const fields=body.querySelectorAll('.mt-post-value');
       const limits={distance_km:200,duration_minutes:720,speed_kmh:30,
-        incline_percent:35,weight_kg:600,reps:100,rir:10};
+        incline_percent:35,avg_hr_bpm:230,weight_kg:600,reps:100,rir:10};
       for(const input of fields){
         const index=Number(input.dataset.row);
         const name=input.dataset.field;
@@ -134,7 +135,7 @@
         }
         const raw=input.value.trim().replace(',','.');
         const value=raw===''?'':Number(raw);
-        const integerField=name==='reps'||name==='rir';
+        const integerField=name==='reps'||name==='rir'||name==='avg_hr_bpm';
         if(value!==''&&(!Number.isFinite(value)||value<0||value>limits[name]||
           (integerField&&!Number.isInteger(value)))){
           alert(`Vérifie « ${input.closest('label')?.querySelector('span')?.textContent||name} ».`);
@@ -174,7 +175,7 @@
       save();
       try{renderHome();}catch(e){}
       try{renderHistory();}catch(e){}
-      try{renderStatsSelect();}catch(e){}
+      try{renderStatsSelect();window.mtStatsRender?.();}catch(e){}
       try{if(affected.size){applyProgressionOverrides();renderProgram();}}catch(e){}
       openWorkoutDetail(key);
     };
