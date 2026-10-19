@@ -21,6 +21,14 @@
   let swipeStart = null;
   let blockClickUntil = 0;
 
+  function luxHolidays(year){
+  const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),day=(h+l-7*m+114)%31+1;
+  const easter=new Date(year,mo-1,day);
+  const add=(date,n)=>{const x=new Date(date);x.setDate(x.getDate()+n);return x};
+  const iso=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  return new Set([new Date(year,0,1),add(easter,1),new Date(year,4,1),new Date(year,4,9),add(easter,39),add(easter,50),new Date(year,5,23),new Date(year,7,15),new Date(year,10,1),new Date(year,11,25),new Date(year,11,26)].map(iso));
+}
   function projected(date) {
     const [year, month, day] = date.split('-').map(Number);
     const days = Math.round((Date.UTC(year, month - 1, day) - ANCHOR) / 86400000);
@@ -56,6 +64,7 @@
     const firstOffset = (dateMonth.getDay() + 6) % 7;
     const daysCount = new Date(year, monthIndex + 1, 0).getDate();
     const today = iso(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+    const legalHolidays = luxHolidays(year);
 
     monthEl.innerHTML = '';
     const header = document.createElement('span');
@@ -94,11 +103,12 @@
       const phase = projected(date);
       const actual = rows.length > 0;
       const type = actual ? rowType(rows[0]) : phase;
+      const isHoliday = legalHolidays.has(date);
       const cde = date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : phase !== 'rest');
       const col = (firstOffset + day - 1) % 7;
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = `day mt-cycle-day ${type}${col >= 5 ? ' we' : ''}${date === today ? ' mt-cycle-today' : ''}`;
+      el.className = `day mt-cycle-day ${type}${col >= 5 ? ' we' : ''}${date === today ? ' mt-cycle-today' : ''}${isHoliday ? ' mt-cycle-holiday' : ''}`;
       el.dataset.cycleDay = date;
       const number = document.createElement('b'); number.textContent = String(day);
       const summary = document.createElement('span');
@@ -106,8 +116,9 @@
       const detail = document.createElement('small');
       detail.className = 'mt-cycle-detail';
       detail.textContent = actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
+      if (isHoliday) detail.textContent += ' · 🇱🇺 Férié';
       el.append(number, summary, detail);
-      const accessible = `${day} ${title} : ${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim()}${cde ? ', chef d’équipe' : ''}`;
+      const accessible = `${day} ${title} : ${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim()}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
       el.setAttribute('aria-label', accessible);
       el.addEventListener('click', () => {
         if (Date.now() < blockClickUntil) return;
@@ -138,6 +149,8 @@
     #grid .mt-cycle-day .mt-cycle-detail{display:block;font-size:9px;line-height:1.3;margin-top:5px;color:#eef2f8;overflow-wrap:anywhere}
     #grid .mt-cycle-day.rest{background:#354052}
     #grid .mt-cycle-day.mt-cycle-today{box-shadow:inset 0 0 0 2px #fff}
+    #grid .mt-cycle-day.mt-cycle-holiday{border:2px solid #f2d172;background-image:linear-gradient(0deg,rgba(242,209,114,.13),rgba(242,209,114,.13))}
+    #grid .mt-cycle-day.mt-cycle-holiday.mt-cycle-today{box-shadow:inset 0 0 0 2px #fff}
     #grid .mt-cycle-day:focus-visible{outline:3px solid #fff;outline-offset:1px}
     @media(max-width:390px){#grid .mt-cycle-day{min-height:74px}#grid .mt-cycle-day .mt-cycle-detail{font-size:8px}}
   `;
