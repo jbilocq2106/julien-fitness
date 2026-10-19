@@ -40,18 +40,19 @@ function renderHome(){
 
 const EXERCISE_GUIDES=[
   {keys:['chest press','développé convergent','machine inclinée'],type:'press',muscles:'Pectoraux • triceps • deltoïde antérieur',cues:['Omoplates serrées et poitrine haute','Pousse sans décoller les épaules'],avoid:'Épaules en avant en fin de poussée'},
-  {keys:['développé incliné haltères'],type:'inclinePress',muscles:'Haut des pectoraux • triceps',cues:['Banc modérément incliné','Descente lente, coudes sous contrôle'],avoid:'Inclinaison trop forte qui transforme en développé épaules'},
+  {keys:['développé incliné haltères'],type:'inclinePress',muscles:'Haut des pectoraux • triceps',cues:['Règle le dossier à 30° (15–30° si besoin)','Descente lente, coudes sous contrôle'],avoid:'Banc à 45° ou plus si les épaules prennent le dessus'},
   {keys:['écartés poulie','pec fly','butterfly'],type:'fly',muscles:'Pectoraux',cues:['Coudes légèrement fléchis','Ramène les bras comme si tu entourais un tonneau'],avoid:'Chercher trop loin derrière le buste'},
   {keys:['tirage vertical'],type:'pulldown',muscles:'Grand dorsal • biceps • haut du dos',cues:['Poitrine sortie, épaules basses','Tire les coudes vers les côtes'],avoid:'Tirer derrière la nuque'},
-  {keys:['rowing haltère'],type:'row1',muscles:'Dos • grand dorsal • biceps',cues:['Dos neutre et gainé','Ramène le coude vers la hanche'],avoid:'Tourner le buste pour finir la répétition'},
-  {keys:['rowing poulie','rowing poitrine'],type:'row',muscles:'Milieu du dos • rhomboïdes • biceps',cues:['Poitrine stable','Serre les omoplates en fin de tirage'],avoid:'Se balancer en arrière'},
+  {keys:['rowing haltère'],type:'row1',muscles:'Dos • grand dorsal • biceps',cues:['Banc plat à 0° si tu prends appui dessus','Dos neutre et coude vers la hanche'],avoid:'Tourner le buste pour finir la répétition'},
+  {keys:['rowing poitrine'],type:'row',muscles:'Milieu du dos • rhomboïdes • biceps',cues:['Banc à 45° (30–45° selon morphologie), poitrine appuyée','Tire les coudes vers l’arrière sans lever le buste'],avoid:'Décoller le torse du dossier'},
+  {keys:['rowing poulie'],type:'row',muscles:'Milieu du dos • rhomboïdes • biceps',cues:['Poitrine stable','Serre les omoplates en fin de tirage'],avoid:'Se balancer en arrière'},
   {keys:['élévations latérales'],type:'lateral',muscles:'Deltoïde moyen',cues:['Bras souples, poignets neutres','Monte jusqu’à hauteur d’épaule'],avoid:'Hausser les trapèzes'},
   {keys:['face pull'],type:'facepull',muscles:'Arrière d’épaule • trapèzes • rotateurs externes',cues:['Tire vers le front','Écarte les mains en fin de mouvement'],avoid:'Charge trop lourde et mouvement raccourci'},
   {keys:['extension triceps corde','extension triceps barre'],type:'pushdown',muscles:'Triceps',cues:['Coudes collés au corps','Extension complète sans bouger les épaules'],avoid:'Laisser les coudes partir vers l’avant'},
   {keys:['extension triceps unilatérale'],type:'pushdown1',muscles:'Triceps',cues:['Épaule fixe','Contrôle la remontée'],avoid:'Tourner le buste'},
   {keys:['au-dessus de la tête corde'],type:'overheadTri',muscles:'Triceps • longue portion',cues:['Coudes orientés vers l’avant','Étirement contrôlé derrière la tête'],avoid:'Creuser fortement le bas du dos'},
   {keys:['dips assistés'],type:'dips',muscles:'Triceps • pectoraux',cues:['Buste plutôt vertical pour les triceps','Descends seulement dans une amplitude confortable'],avoid:'Épaules très basses ou douloureuses'},
-  {keys:['curl incliné'],type:'curl',muscles:'Biceps',cues:['Bras en arrière du buste','Garde les coudes immobiles'],avoid:'Décoller les coudes vers l’avant'},
+  {keys:['curl incliné'],type:'curl',muscles:'Biceps',cues:['Dossier à 45° (ou 60° si épaules sensibles)','Bras en arrière du buste, coudes immobiles'],avoid:'Remonter les coudes devant le buste'},
   {keys:['curl poulie','curl pupitre'],type:'curl',muscles:'Biceps • brachial',cues:['Mouvement contrôlé','Contracte sans casser les poignets'],avoid:'Balancer le buste'},
   {keys:['crunch poulie'],type:'crunch',muscles:'Grand droit • gainage abdominal',cues:['Enroule le sternum vers le bassin','Expire fortement en bas'],avoid:'Tirer seulement avec les bras'},
   {keys:['crunch inversé'],type:'reverseCrunch',muscles:'Abdominaux • bassin',cues:['Enroule le bassin vers le thorax','Mouvement lent, sans élan'],avoid:'Balancer les jambes'},
@@ -74,6 +75,14 @@ function exerciseGuide(name){
   const n=normText(name);
   return EXERCISE_GUIDES.find(g=>g.keys.some(k=>n.includes(normText(k))))||
     {type:'generic',muscles:'Muscles principaux de l’exercice',cues:['Exécution lente et contrôlée','Garde 1–2 répétitions en réserve'],avoid:'Sacrifier la technique pour augmenter la charge'};
+}
+function benchAngleInfo(name){
+  const n = normText(name);
+  if (n.includes('developpe incline halteres')) return { angle:'30°', detail:'Dossier incliné de 30° depuis l’horizontale. Plage 15–30° selon ton confort d’épaule.' };
+  if (n.includes('rowing poitrine appuyee')) return { angle:'45°', detail:'Banc réglable à 45° (possible 30–45°). Poitrine en appui, dos neutre.' };
+  if (n.includes('rowing haltere unilateral')) return { angle:'0°', detail:'Banc plat pour l’appui main/genou, si tu utilises un banc.' };
+  if (n.includes('curl incline')) return { angle:'45°', detail:'Dossier à 45° (jusqu’à 60° si tension d’épaule). Garde les bras derrière le buste.' };
+  return null;
 }
 function historyAliases(name){
   const n=normText(name);
@@ -358,6 +367,7 @@ function openWorkoutDetail(key){
 
 function exerciseInfoCard(e){
   const g=exerciseGuide(e.name);
+  const bench=benchAngleInfo(e.name);
   const recent=recentExercisePerformance(e.name);
   const target=e.sets?.[0];
   const targetText=target?(target.weight?`${target.weight} kg × ${target.reps}`:`${target.reps}`):'—';
@@ -375,6 +385,7 @@ function exerciseInfoCard(e){
       <div class="guide-pair"><span>Objectif</span><strong>${esc(targetText)}</strong></div>
       ${e.autoTarget?`<div class="auto-target">Objectif ajusté automatiquement</div>`:''}
     </div>
+    ${bench?`<div class="bench-angle-tip"><strong>📐 Banc : ${esc(bench.angle)}</strong><small>${esc(bench.detail)}</small></div>`:''}
     <button class="technique-toggle ghost" type="button">Technique</button>
     <div class="technique-details hidden">
       <div>✓ ${esc(g.cues[0])}</div>

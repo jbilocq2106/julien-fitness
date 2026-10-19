@@ -89,7 +89,7 @@
   const EXTRA_DATE = '2026-10-19';
   const luxDay = date => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Luxembourg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
   const extrasTonight = [
-    { name: 'Curl incliné haltères (supination)', coachOrder: 7, sets: [{ reps: '10–12', weight: null }, { reps: '10–12', weight: null }], rest: 60, note: 'Biceps : bras légèrement derrière le buste, supination contrôlée, 1–2 répétitions en réserve.' },
+    { name: 'Curl incliné haltères (supination)', coachOrder: 7, sets: [{ reps: '10–12', weight: null }, { reps: '10–12', weight: null }], rest: 60, note: 'Banc à 45° (jusqu’à 60° si les épaules sont sensibles). Bras légèrement derrière le buste, supination contrôlée, 1–2 répétitions en réserve.' },
     { name: 'Extensions des poignets haltères', coachOrder: 8, sets: [{ reps: '15–20', weight: null }, { reps: '15–20', weight: null }], rest: 45, note: 'Avant-bras/extenseurs : avant-bras appuyés, poignets seuls en mouvement, charge légère.' }
   ];
   function injectExtrasTonight() {

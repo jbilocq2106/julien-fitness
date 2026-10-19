@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "updated": "2026-10-19",
   "weekly_note": "4 séances de musculation flexibles • tapis modéré 75–95 min au total + 1 à 2 cardio dédiés selon la récupération, vers 150–210 min/semaine progressivement • pas de soulevé de terre",
   "sessions": [
@@ -49,7 +49,7 @@
             }
           ],
           "rest": 90,
-          "note": "Dos équilibré sans charger les lombaires.",
+          "note": "Banc à 45° (possible 30–45°) si version avec haltères : poitrine plaquée, nuque neutre, coudes vers les hanches. Préserve les lombaires.",
           "coachOrder": 2
         },
         {
@@ -69,7 +69,7 @@
             }
           ],
           "rest": 90,
-          "note": "RIR 1–2, amplitude contrôlée.",
+          "note": "Banc à 30° par rapport au sol (15–30° selon les épaules). Coudes légèrement rentrés, omoplates stables ; RIR 1–2.",
           "coachOrder": 3
         },
         {
@@ -242,7 +242,8 @@
             }
           ],
           "rest": 90,
-          "coachOrder": 2
+          "coachOrder": 2,
+          "note": "Banc plat à 0° si tu prends appui dessus (main et genou), dos droit, hanches fixes. Tirer le coude vers la hanche."
         },
         {
           "name": "Rowing poulie assis",
