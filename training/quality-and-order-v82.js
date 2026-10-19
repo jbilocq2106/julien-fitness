@@ -21,6 +21,8 @@
 
   function orderedExercises(exercises){
     if(!Array.isArray(exercises)||exercises.length<2)return exercises;
+    // L'ordre de coach explicite par séance prime sur le tri générique.
+    if(exercises.every(e=>Number.isFinite(Number(e.coachOrder))))return [...exercises].sort((a,b)=>Number(a.coachOrder)-Number(b.coachOrder));
     const used=new Set();
     const blocks=[];
     exercises.forEach((exercise,index)=>{

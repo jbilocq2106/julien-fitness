@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "updated": "2026-10-18",
+  "version": 7,
+  "updated": "2026-10-19",
   "weekly_note": "4 séances de musculation flexibles • tapis modéré 75–95 min au total + 1 à 2 cardio dédiés selon la récupération, vers 150–210 min/semaine progressivement • pas de soulevé de terre",
   "sessions": [
     {
@@ -29,44 +29,8 @@
               "weight": 52
             }
           ],
-          "rest": 90
-        },
-        {
-          "name": "Développé incliné haltères",
-          "sets": [
-            {
-              "reps": "10–12",
-              "weight": 16
-            },
-            {
-              "reps": "10–12",
-              "weight": 16
-            },
-            {
-              "reps": "10–12",
-              "weight": 16
-            }
-          ],
           "rest": 90,
-          "note": "RIR 1–2, amplitude contrôlée."
-        },
-        {
-          "name": "Écartés poulie vis-à-vis",
-          "sets": [
-            {
-              "reps": "12–15",
-              "weight": 18
-            },
-            {
-              "reps": "12–15",
-              "weight": 18
-            },
-            {
-              "reps": "12–15",
-              "weight": 18
-            }
-          ],
-          "rest": 60
+          "coachOrder": 1
         },
         {
           "name": "Rowing poitrine appuyée",
@@ -85,7 +49,47 @@
             }
           ],
           "rest": 90,
-          "note": "Dos équilibré sans charger les lombaires."
+          "note": "Dos équilibré sans charger les lombaires.",
+          "coachOrder": 2
+        },
+        {
+          "name": "Développé incliné haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": 16
+            },
+            {
+              "reps": "10–12",
+              "weight": 16
+            },
+            {
+              "reps": "10–12",
+              "weight": 16
+            }
+          ],
+          "rest": 90,
+          "note": "RIR 1–2, amplitude contrôlée.",
+          "coachOrder": 3
+        },
+        {
+          "name": "Écartés poulie vis-à-vis",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 18
+            },
+            {
+              "reps": "12–15",
+              "weight": 18
+            },
+            {
+              "reps": "12–15",
+              "weight": 18
+            }
+          ],
+          "rest": 60,
+          "coachOrder": 4
         },
         {
           "name": "Extension triceps corde",
@@ -104,7 +108,8 @@
               "weight": 36
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 5
         },
         {
           "name": "Curl poulie basse corde",
@@ -123,7 +128,8 @@
               "weight": 32
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 6
         },
         {
           "name": "Crunch poulie",
@@ -142,7 +148,8 @@
               "weight": 64
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 7
         },
         {
           "name": "Pallof press",
@@ -161,7 +168,8 @@
               "weight": null
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 8
         },
         {
           "name": "Vacuum / transverse",
@@ -175,7 +183,8 @@
               "weight": 0
             }
           ],
-          "rest": 30
+          "rest": 30,
+          "coachOrder": 9
         },
         {
           "name": "Tapis incliné",
@@ -186,7 +195,8 @@
             }
           ],
           "rest": 0,
-          "note": "5,2 km/h • 3 % • 20–25 min • effort modéré RPE 4–5/10, parler par phrases. Mollets sensibles : 0–2 %."
+          "note": "5,2 km/h • 3 % • 20–25 min • effort modéré RPE 4–5/10, parler par phrases. Mollets sensibles : 0–2 %.",
+          "coachOrder": 10
         }
       ]
     },
@@ -212,7 +222,8 @@
               "weight": 59
             }
           ],
-          "rest": 90
+          "rest": 90,
+          "coachOrder": 1
         },
         {
           "name": "Rowing haltère unilatéral",
@@ -230,7 +241,8 @@
               "weight": 20
             }
           ],
-          "rest": 90
+          "rest": 90,
+          "coachOrder": 2
         },
         {
           "name": "Rowing poulie assis",
@@ -248,7 +260,23 @@
               "weight": 59
             }
           ],
-          "rest": 90
+          "rest": 90,
+          "coachOrder": 3
+        },
+        {
+          "name": "Face pull corde",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 60,
+          "coachOrder": 4
         },
         {
           "name": "Élévations latérales",
@@ -266,21 +294,8 @@
               "weight": 6
             }
           ],
-          "rest": 60
-        },
-        {
-          "name": "Face pull corde",
-          "sets": [
-            {
-              "reps": "12–15",
-              "weight": null
-            },
-            {
-              "reps": "12–15",
-              "weight": null
-            }
-          ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 5
         },
         {
           "name": "Extension triceps au-dessus de la tête corde",
@@ -299,7 +314,8 @@
               "weight": 18
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 6
         },
         {
           "name": "Curl pupitre machine",
@@ -318,7 +334,8 @@
               "weight": 27
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 7
         },
         {
           "name": "Relevés de genoux chaise romaine",
@@ -337,7 +354,8 @@
               "weight": 0
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 8
         },
         {
           "name": "Planche RKC",
@@ -356,7 +374,8 @@
               "weight": 0
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 9
         },
         {
           "name": "Vacuum / transverse",
@@ -370,7 +389,8 @@
               "weight": 0
             }
           ],
-          "rest": 30
+          "rest": 30,
+          "coachOrder": 10
         },
         {
           "name": "Tapis incliné",
@@ -381,7 +401,8 @@
             }
           ],
           "rest": 0,
-          "note": "5,2 km/h • 3 % • 25–30 min • effort modéré RPE 4–5/10, parler par phrases. Mollets sensibles : 0–2 %."
+          "note": "5,2 km/h • 3 % • 25–30 min • effort modéré RPE 4–5/10, parler par phrases. Mollets sensibles : 0–2 %.",
+          "coachOrder": 11
         }
       ]
     },
@@ -412,7 +433,8 @@
             }
           ],
           "rest": 90,
-          "note": "Pas de soulevé de terre."
+          "note": "Pas de soulevé de terre.",
+          "coachOrder": 1
         },
         {
           "name": "Leg Curl assis",
@@ -430,7 +452,8 @@
               "weight": 52
             }
           ],
-          "rest": 75
+          "rest": 75,
+          "coachOrder": 2
         },
         {
           "name": "Leg Extension",
@@ -448,7 +471,8 @@
               "weight": null
             }
           ],
-          "rest": 75
+          "rest": 75,
+          "coachOrder": 3
         },
         {
           "name": "Mollets presse / machine",
@@ -466,7 +490,8 @@
               "weight": null
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 4
         },
         {
           "name": "Chest Press machine",
@@ -484,7 +509,8 @@
               "weight": 52
             }
           ],
-          "rest": 90
+          "rest": 90,
+          "coachOrder": 5
         },
         {
           "name": "Pec Fly machine",
@@ -502,7 +528,8 @@
               "weight": 52
             }
           ],
-          "rest": 75
+          "rest": 75,
+          "coachOrder": 6
         },
         {
           "name": "Extension triceps corde",
@@ -521,7 +548,8 @@
               "weight": 36
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 7
         },
         {
           "name": "Curl pupitre machine",
@@ -540,7 +568,8 @@
               "weight": 27
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 8
         },
         {
           "name": "Dead bug + expiration complète",
@@ -559,7 +588,8 @@
               "weight": 0
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 9
         },
         {
           "name": "Crunch inversé",
@@ -578,7 +608,8 @@
               "weight": 0
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 10
         },
         {
           "name": "Vacuum / transverse",
@@ -592,7 +623,8 @@
               "weight": 0
             }
           ],
-          "rest": 30
+          "rest": 30,
+          "coachOrder": 11
         },
         {
           "name": "Tapis incliné",
@@ -603,7 +635,8 @@
             }
           ],
           "rest": 0,
-          "note": "4,8 km/h • 1 % • 10–15 min • récupération après jambes, RPE 3–4/10 ; ne pas forcer si douleur aux mollets."
+          "note": "4,8 km/h • 1 % • 10–15 min • récupération après jambes, RPE 3–4/10 ; ne pas forcer si douleur aux mollets.",
+          "coachOrder": 12
         }
       ]
     },
@@ -613,24 +646,6 @@
       "focus": "Full body ludique • rappel bras/pecs/abdos • fatigue maîtrisée",
       "day_hint": "Dimanche",
       "exercises": [
-        {
-          "name": "Presse à cuisses",
-          "sets": [
-            {
-              "reps": "12",
-              "weight": 70
-            },
-            {
-              "reps": "10–12",
-              "weight": 80
-            },
-            {
-              "reps": "10–12",
-              "weight": 80
-            }
-          ],
-          "rest": 90
-        },
         {
           "name": "Chest Press machine",
           "sets": [
@@ -647,7 +662,8 @@
               "weight": 52
             }
           ],
-          "rest": 90
+          "rest": 90,
+          "coachOrder": 1
         },
         {
           "name": "Tirage vertical",
@@ -665,7 +681,27 @@
               "weight": 59
             }
           ],
-          "rest": 90
+          "rest": 90,
+          "coachOrder": 2
+        },
+        {
+          "name": "Presse à cuisses",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": 70
+            },
+            {
+              "reps": "10–12",
+              "weight": 80
+            },
+            {
+              "reps": "10–12",
+              "weight": 80
+            }
+          ],
+          "rest": 90,
+          "coachOrder": 3
         },
         {
           "name": "Leg Curl assis",
@@ -679,7 +715,8 @@
               "weight": 45
             }
           ],
-          "rest": 75
+          "rest": 75,
+          "coachOrder": 4
         },
         {
           "name": "Élévations latérales",
@@ -698,7 +735,8 @@
               "weight": 7
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 5
         },
         {
           "name": "Extension triceps corde",
@@ -717,7 +755,8 @@
               "weight": 36
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 6
         },
         {
           "name": "Curl poulie basse corde",
@@ -736,7 +775,8 @@
               "weight": 32
             }
           ],
-          "rest": 60
+          "rest": 60,
+          "coachOrder": 7
         },
         {
           "name": "Pallof press",
@@ -755,7 +795,8 @@
               "weight": null
             }
           ],
-          "rest": 45
+          "rest": 45,
+          "coachOrder": 8
         },
         {
           "name": "Vacuum / transverse",
@@ -769,7 +810,8 @@
               "weight": 0
             }
           ],
-          "rest": 30
+          "rest": 30,
+          "coachOrder": 9
         },
         {
           "name": "Tapis incliné",
@@ -780,7 +822,8 @@
             }
           ],
           "rest": 0,
-          "note": "5,1 km/h • 2 % • 20–25 min • effort modéré RPE 4–5/10 ; garder une récupération suffisante."
+          "note": "5,1 km/h • 2 % • 20–25 min • effort modéré RPE 4–5/10 ; garder une récupération suffisante.",
+          "coachOrder": 10
         }
       ]
     }

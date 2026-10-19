@@ -3,7 +3,7 @@
   const R = { base: 3608.63, sun: 14.6014, night: 4.1718, holiday: 41.7182, otBase: 20.8591, otSup: 10.4296, chefDay: 9.2475, xray: 75, leaveHour: 4.0789, fixedDed: 165, depAllowance: 692.83, care: .028, sick: .0025, pension: .085, dep: .014, credit: 46.64 };
   const TAX = [[3153.62, 304.90], [3195.37, 316.50], [3241.43, 328], [3537.44, 411.70]];
   const ACTUAL = {
-    '2026-09': { net: 3273.11, gross: 4045.57, taxable: 3153.62, tax: 304.90, social: 467.26, dependency: 46.94, totalH: 164, sunH: 8, nightH: 34.25, chefDays: 4, leaveH: 16, sunGross: 116.81, nightGross: 142.88, chefGross: 36.99, leaveGross: 65.26, xrayGross: 75, holidayGross: 0, otGross: 0, source: 'Fiche de paie septembre 2026' }
+    '2026-09': { net: 3273.11, baseNet: 2925.15, gross: 4045.57, taxable: 3153.62, tax: 304.90, social: 467.26, dependency: 46.94, totalH: 164, sunH: 8, nightH: 34.25, chefDays: 4, leaveH: 16, sunGross: 116.81, nightGross: 142.88, chefGross: 36.99, leaveGross: 65.26, xrayGross: 75, holidayGross: 0, otGross: 0, source: 'Fiche de paie septembre 2026' }
   };
   const PATTERN = ['morning', 'morning', 'afternoon', 'afternoon', 'night', 'night', 'rest', 'rest'];
   const HOURS = { morning: ['05:00', '13:00'], afternoon: ['13:00', '21:00'], night: ['21:00', '05:00'] };
@@ -161,6 +161,17 @@
     return section;
   }
 
+  function paymentSplitHtml(data, month, baseNet, amount){
+  if(!data.available)return '';
+  const base=data.actual?.baseNet??baseNet;
+  const complement=round(data.net-base);
+  const mark=data.actual?'':'≈ ';
+  return `<div class="mt-salary-split">
+    <div class="mt-salary-pay-card"><span>Virement de base</span><b>Fin ${label(month)}</b><strong>${mark}${amount(base)}</strong><small>Net ${data.actual?'réel':'habituel estimé'}</small></div>
+    <div class="mt-salary-pay-card"><span>Complément du mois travaillé</span><b>${payLabel(month)}</b><strong>${mark}${amount(complement)}</strong><small>Nuit, dimanche, fériés, RX, CDE et autres ajustements</small></div>
+  </div>`;
+}
+
   function render() {
     const section = ensureSection(); if (!section) return;
     const active = read('myteam_shifts', []), history = read('myteam_planning_history', {}), stored = read('myteam_salary_actuals', {});
@@ -174,6 +185,8 @@
     const state = actual ? 'Paie réelle' : selectedMonth < monthNow() ? 'Mois terminé · estimation' : 'Salaire prévisionnel';
     const source = data.projectedDays && data.importedCount ? 'Planning importé + cycle estimé' : data.projectedDays ? 'Roulement 2-2-2 estimé' : data.importedCount ? 'Planning enregistré' : 'Aucun planning enregistré';
     const amount = n => n == null ? 'À préciser' : euro(n);
+    const savedBase = Number(read('myteam_salary_base_net_v1', 2925.15));
+    const baseNet = Number.isFinite(savedBase) && savedBase > 0 && savedBase < 10000 ? savedBase : 2925.15;
     section.innerHTML = `
       <h2>💶 Salaire</h2>
       <p class="muted mt-salary-intro">Prévisions basées sur le planning et les montants de la fiche de paie de septembre 2026, jusqu’à décembre 2027.</p>
@@ -188,6 +201,8 @@
         <div class="mt-salary-gross">${available ? `${amount(data.gross)} brut ${actual ? 'réel' : 'estimé'}` : 'Planning de ce mois non disponible'}</div>
         <div class="mt-salary-source">${source}${selectedMonth >= '2026-11' ? ' · CDE prévu' : ''}</div>
       </div>
+      ${paymentSplitHtml(data, selectedMonth, baseNet, amount)}
+      <label class="mt-salary-base-edit">Base nette habituelle en fin de mois (modifiable)<input id="mt-salary-base-net" type="number" min="100" max="10000" step="0.01" value="${baseNet.toFixed(2)}" inputmode="decimal"><small>Référence : virement de septembre 2026, 2 925,15 € net. Le montant réel peut légèrement varier.</small></label>
       ${available ? `<div class="mt-salary-detail"><h3>Détail du mois</h3>
         <div><span>Heures au planning</span><b>${actual?.totalH != null ? hm(Number(actual.totalH) * 60) : hm(c?.total)}</b></div>
         <div><span>Dimanche</span><b>${actual?.sunH != null ? hm(Number(actual.sunH) * 60) : hm(c?.sunday)} · + ${amount(actual?.sunGross ?? c?.sunGross)}</b></div>
@@ -198,14 +213,19 @@
         ${(actual?.leaveGross ?? c?.leaveGross) > 0 ? `<div><span>Congés payés</span><b>+ ${amount(actual?.leaveGross ?? c?.leaveGross)}</b></div>` : ''}
         <div><span>Prime RX / X-ray</span><b>+ ${amount(actual?.xrayGross ?? c?.xrayGross)}</b></div></div>` : ''}
       <div class="mt-salary-note"><b>Quand est-ce payé ?</b>
-        <p>Le salaire de base est versé en fin de mois. Les majorations de nuit, du dimanche et les autres suppléments sont versés le <b>${payLabel(selectedMonth)}</b>, le mois suivant.</p>
-        <p>Le net affiché correspond au travail de <b>${label(selectedMonth)}</b>, pas au total des virements reçus pendant ce mois. ${actual ? 'Montant confirmé par la fiche de paie.' : 'Estimation indicative : planning réel, impôt, cotisations, absences et primes peuvent modifier la paie.'}</p>
+        <p><b>Fin de mois :</b> base nette habituelle. <b>${payLabel(selectedMonth)} :</b> complément pour le travail de ${label(selectedMonth)}. Les primes RX et CDE figurent dans les « Divers bruts » du décompte, avec les majorations de nuit, dimanche et fériés.</p>
+        <p>Le total net du mois travaillé est réparti entre deux dates de versement. ${actual ? 'Net confirmé par la fiche de paie ; la base est celle réellement reçue.' : 'Répartition estimée à partir de la base habituelle ; les taxes, absences ou régularisations peuvent changer le complément du 15.'}</p>
       </div>
       <div class="mt-salary-timeline"><h3>Les salaires mois par mois</h3><div class="mt-salary-month-list">${items.map(({ month, data: item }) => {
         const tag = item.actual ? 'Réel' : !item.available ? 'Sans données' : month < monthNow() ? 'Estimé' : 'Prévision';
-        return `<button type="button" class="mt-salary-month-card${month === selectedMonth ? ' selected' : ''}" data-salary-month="${month}" aria-pressed="${month === selectedMonth}"><span><b>${label(month)}</b><small>${tag}${item.projectedDays ? ' · cycle 2-2-2' : ''}</small></span><strong>${item.available ? (item.actual ? '' : '≈ ') + amount(item.net) : '—'}</strong></button>`;
+        return `<button type="button" class="mt-salary-month-card${month === selectedMonth ? ' selected' : ''}" data-salary-month="${month}" aria-pressed="${month === selectedMonth}"><span><b>${label(month)}</b><small>${tag}${item.available ? ` · Fin mois : ${amount(item.actual?.baseNet ?? baseNet)} · ${payLabel(month)} : ${item.actual ? '' : '≈ '}${amount(round(item.net - (item.actual?.baseNet ?? baseNet)))}` : ''}</small></span><strong>${item.available ? (item.actual ? '' : '≈ ') + amount(item.net) : '—'}</strong></button>`;
       }).join('')}</div></div>
       <p class="muted mt-salary-disclaimer">Horaires projetés : matin 05 h–13 h, après-midi 13 h–21 h, nuit 21 h–05 h. Fonction CDE estimée sur les jours travaillés dès novembre 2026. Jours fériés légaux luxembourgeois inclus quand travaillés ; taux SFER 200 % (8 h = 333,75 € sur la fiche de juin 2026). La régularisation exceptionnelle de 347 € n’est pas répétée chaque mois.</p>`;
+    section.querySelector('#mt-salary-base-net').onchange = e => {
+      const n = Number(String(e.target.value).replace(',', '.'));
+      if (!Number.isFinite(n) || n <= 0 || n >= 10000) { render(); return; }
+      localStorage.setItem('myteam_salary_base_net_v1', String(round(n))); render();
+    };
     section.querySelector('#mt-salary-month').onchange = e => { selectedMonth = e.target.value; render(); };
     section.querySelector('#mt-salary-prev').onclick = () => { if (index > 0) { selectedMonth = items[index - 1].month; render(); } };
     section.querySelector('#mt-salary-next').onclick = () => { if (index < items.length - 1) { selectedMonth = items[index + 1].month; render(); } };
@@ -219,6 +239,8 @@
     .mt-salary-selector label{min-width:0;flex:1;font-size:11px;color:#b7c8dd}.mt-salary-selector select{display:block;min-width:0;width:100%;margin-top:5px;border:1px solid #546a84;border-radius:11px;padding:12px 8px;background:#233650;color:white;font-size:15px;text-transform:capitalize}
     .mt-salary-hero{background:linear-gradient(140deg,#16445a,#20364c 67%,#1d293d);border:1px solid #37788b;border-radius:16px;padding:18px;margin:10px 0 14px}.mt-salary-state{font-size:12px;color:#d5e6ee}.mt-salary-hero h3{margin:8px 0;text-transform:capitalize}
     .mt-salary-net{font-size:34px;line-height:1.2;font-weight:900;color:#baf6dc}.mt-salary-gross{margin-top:7px;font-weight:750}.mt-salary-source{font-size:12px;color:#d2e5ef;margin-top:8px}
+    .mt-salary-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}.mt-salary-pay-card{background:#1d293d;border:1px solid #4f7181;border-radius:13px;padding:12px;display:grid;gap:5px}.mt-salary-pay-card span{font-size:11px;color:#aebacc}.mt-salary-pay-card b{font-size:12px;text-transform:capitalize}.mt-salary-pay-card strong{font-size:18px;color:#baf6dc}.mt-salary-pay-card small{font-size:10px;color:#c7d4df;line-height:1.4}
+    .mt-salary-base-edit{display:block;background:#23344a;border-radius:12px;padding:11px;margin:0 0 12px;font-size:12px}.mt-salary-base-edit input{width:100%;display:block;color:white;background:#111928;border:1px solid #668199;border-radius:8px;padding:10px;margin:7px 0;font:inherit;font-size:15px}.mt-salary-base-edit small{display:block;color:#c1d0dd;font-size:11px}
     .mt-salary-detail{background:#1d293d;border-radius:16px;padding:16px;margin-bottom:12px}.mt-salary-detail h3{margin:0 0 12px}.mt-salary-detail>div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #405064;padding:10px 0;font-size:13px;flex-wrap:wrap}.mt-salary-detail>div:last-child{border-bottom:0}.mt-salary-detail b{text-align:right}
     .mt-salary-note{border:1px solid #50677b;background:#23344a;border-radius:14px;padding:14px;font-size:13px;line-height:1.55}.mt-salary-note p{margin:8px 0 0}.mt-salary-timeline{margin:20px 0}.mt-salary-timeline h3{margin:0 0 10px}.mt-salary-month-list{display:grid;gap:7px}
     .mt-salary-month-card{display:flex;width:100%;justify-content:space-between;align-items:center;gap:9px;text-align:left;background:#25364b;border:1px solid #43556e;border-radius:12px;padding:12px 13px;color:white}.mt-salary-month-card.selected{border-color:#67dfbd;background:#1b4a4a}.mt-salary-month-card span{display:grid;gap:3px;min-width:0}.mt-salary-month-card span b{text-transform:capitalize}.mt-salary-month-card small{color:#bdd0df;font-size:11px}.mt-salary-month-card strong{white-space:nowrap;font-size:16px;text-align:right}

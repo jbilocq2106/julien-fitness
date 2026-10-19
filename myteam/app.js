@@ -131,7 +131,7 @@
       await load('../team4/app.js?v=20261017-7');
       document.querySelector('.voice-box')?.remove();
       await load('./hours-v1.js?v=20261017-8');
-      await load('./salary-forecast-v3.js?v=20261019-1');
+      await load('./salary-forecast-v3.js?v=20261019-2');
       await load('./agents-migration-v3.js?v=5');
       await load('./roster-v6.js?v=20261018-3');
       const visitsCss=document.createElement('link');
