@@ -33,8 +33,6 @@ function renderHome(){
   document.getElementById('nextSessionFocus').textContent=s.focus;
   const workouts=uniqueWorkouts(state.history);
   document.getElementById('statSessions').textContent=workouts.length;
-  document.getElementById('statSets').textContent=state.history.filter(r=>num(r.reps)>0).length;
-  document.getElementById('statVolume').textContent=fmt(state.history.reduce((a,r)=>a+(num(r.weight_kg)*num(r.reps)),0));
   const recent=workouts.slice(0,5);
   document.getElementById('recentList').innerHTML=recent.length?recent.map(w=>`<button class="list-item workout-link" data-workout="${encodeURIComponent(w.key)}"><div><strong>${esc(w.title)}</strong><small>${formatWorkoutDate(w.start_time)}</small></div><small>${w.sets} ${w.sets>1?'entrées':'entrée'} ›</small></button>`).join(''):'<div class="muted">Aucune séance importée.</div>';
   bindWorkoutLinks(document.getElementById('recentList'));
