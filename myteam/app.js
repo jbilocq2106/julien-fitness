@@ -144,6 +144,7 @@
       await load('./prestation-rules-v1.js?v=20261017-1');
       await load('./prestation-analysis-demo-v1.js?v=20261017-3');
       await load('./planning-pdf-import-v2.js?v=20261017-2');
+      await load('./planning-cycle-v1.js?v=20261019-1');
       renderDirectAgents();
     }catch(err){
       document.querySelector('.voice-box')?.remove();
