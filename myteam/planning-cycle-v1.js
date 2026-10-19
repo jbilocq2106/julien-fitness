@@ -16,6 +16,10 @@
   const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
   const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; } catch { return fallback; } };
+  const LEAVE_KEY = 'myteam_paid_leave_days_v1';
+  const leaveDays = () => new Set((read(LEAVE_KEY, []) || []).filter(date => /^\d{4}-\d{2}-\d{2}$/.test(String(date))));
+  const isLeave = row => row?.type === 'leave' || /vacances?|cong[eé]/i.test(String(row?.post || ''));
+  let leaveEditMode = false;
   const currentDate = new Date();
   let selected = Math.max(FIRST_MONTH, Math.min(LAST_MONTH, currentDate.getFullYear() * 12 + currentDate.getMonth()));
   let swipeStart = null;
@@ -43,9 +47,10 @@
     return Array.isArray(archived) ? archived.filter(s => s?.date === date) : [];
   }
   function rowType(row) {
+    if (isLeave(row)) return 'leave';
     if (row.type === 'training' || /formation/i.test(String(row.post || ''))) return 'training';
     if (['morning', 'afternoon', 'night'].includes(row.type)) return row.type;
-    if (/cong[eé]|repos|vacances?/i.test(String(row.post || ''))) return 'rest';
+    if (/repos/i.test(String(row.post || ''))) return 'rest';
     const hour = Number(String(row.start || '').slice(0, 2));
     if (!Number.isFinite(hour)) return 'morning';
     return hour >= 20 || hour < 4 ? 'night' : hour >= 12 ? 'afternoon' : 'morning';
@@ -88,6 +93,17 @@
     hint.className = 'mt-cycle-hint';
     hint.textContent = 'Balaye vers la gauche pour le mois suivant · Cycle théorique 2M / 2A / 2N / 2R';
     monthEl.append(header, hint);
+    const leaveTools = document.createElement('div');
+    leaveTools.className = 'mt-cycle-leave-tools';
+    const leaveButton = document.createElement('button');
+    leaveButton.type = 'button';
+    leaveButton.textContent = leaveEditMode ? '✓ Terminer les congés' : '🏖️ Entourer mes congés';
+    leaveButton.className = leaveEditMode ? 'mt-cycle-leave-edit active' : 'mt-cycle-leave-edit';
+    leaveButton.addEventListener('click', () => { leaveEditMode = !leaveEditMode; render(); });
+    const leaveHelp = document.createElement('small');
+    leaveHelp.textContent = leaveEditMode ? 'Touche une journée travaillée pour marquer ou retirer 8 h de congé payé.' : 'Cercles turquoise = congés payés · calculés dans Salaire';
+    leaveTools.append(leaveButton, leaveHelp);
+    monthEl.append(leaveTools);
 
     const fragment = document.createDocumentFragment();
     WEEKDAYS.forEach((name, index) => {
@@ -102,27 +118,40 @@
       const rows = officialRows(date);
       const phase = projected(date);
       const actual = rows.length > 0;
-      const type = actual ? rowType(rows[0]) : phase;
+      const importedLeave = rows.some(isLeave);
+      const markedLeave = leaveDays().has(date);
+      const paidLeave = importedLeave || markedLeave;
+      const type = paidLeave ? 'leave' : actual ? rowType(rows[0]) : phase;
       const isHoliday = legalHolidays.has(date);
-      const cde = date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : phase !== 'rest');
+      const cde = !paidLeave && date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : phase !== 'rest');
       const col = (firstOffset + day - 1) % 7;
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = `day mt-cycle-day ${type}${col >= 5 ? ' we' : ''}${date === today ? ' mt-cycle-today' : ''}${isHoliday ? ' mt-cycle-holiday' : ''}`;
+      el.className = `day mt-cycle-day ${type}${col >= 5 ? ' we' : ''}${date === today ? ' mt-cycle-today' : ''}${isHoliday ? ' mt-cycle-holiday' : ''}${paidLeave ? ' mt-cycle-paid-leave' : ''}`;
       el.dataset.cycleDay = date;
       const number = document.createElement('b'); number.textContent = String(day);
       const summary = document.createElement('span');
-      summary.textContent = actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : TYPES[phase];
+      summary.textContent = paidLeave ? '🏖️ Congé payé' : actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : TYPES[phase];
       const detail = document.createElement('small');
       detail.className = 'mt-cycle-detail';
-      detail.textContent = actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
+      detail.textContent = paidLeave ? (importedLeave ? 'Congé du planning importé' : '8 h estimées · marquées') : actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
       if (isHoliday) detail.textContent += ' · 🇱🇺 Férié';
       el.append(number, summary, detail);
-      const accessible = `${day} ${title} : ${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim()}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
+      const accessible = `${day} ${title} : ${paidLeave ? 'congé payé, ' : ''}${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim()}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
       el.setAttribute('aria-label', accessible);
       el.addEventListener('click', () => {
         if (Date.now() < blockClickUntil) return;
-        const description = actual
+        if (leaveEditMode) {
+          if (importedLeave) { alert('Congé déjà présent sur le planning importé. Modifie le planning source pour le retirer.'); return; }
+          if (!markedLeave && (phase === 'rest' || isHoliday)) { alert('Repos ou jour férié : cette journée ne doit normalement pas être déduite comme congé payé.'); return; }
+          const marked = leaveDays();
+          if (marked.has(date)) marked.delete(date); else marked.add(date);
+          localStorage.setItem(LEAVE_KEY, JSON.stringify([...marked].sort()));
+          window.dispatchEvent(new Event('myteam-paid-leave-updated'));
+          render();
+          return;
+        }
+        const description = paidLeave ? '🏖️ Congé payé (8 h estimées). Calculé dans le complément salarial.' : actual
           ? rows.map(r => `${r.start || '--:--'} – ${r.end || '--:--'} · ${r.post || 'Vacation'}`).join('\n') + (cde ? '\nFonction : chef d’équipe (CDE).' : '')
           : `${TYPES[phase]}${phase === 'rest' ? '' : ' · ' + SHIFT_HOURS[phase] + (phase === 'night' ? ' (fin le lendemain)' : '')}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
         alert(`${date}\n${description}`);
@@ -148,6 +177,14 @@
     #grid .mt-cycle-day span{font-size:11px;font-weight:650;overflow-wrap:anywhere}
     #grid .mt-cycle-day .mt-cycle-detail{display:block;font-size:9px;line-height:1.3;margin-top:5px;color:#eef2f8;overflow-wrap:anywhere}
     #grid .mt-cycle-day.rest{background:#354052}
+    #grid .mt-cycle-day.mt-cycle-paid-leave{background:#125c5b!important;outline:3px solid #46ffe0;outline-offset:-3px;box-shadow:inset 0 0 0 2px #0b383e,0 0 12px rgba(70,255,224,.38);color:white!important}
+    #grid .mt-cycle-day.mt-cycle-paid-leave span{font-weight:900;font-size:11px}
+    #grid .mt-cycle-day.mt-cycle-paid-leave .mt-cycle-detail{color:#ddfff9;font-weight:800}
+    #grid .mt-cycle-day.mt-cycle-holiday.mt-cycle-paid-leave{border:2px dashed #ffe08c}
+    .mt-cycle-leave-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .mt-cycle-leave-tools small{color:#a9dfd7;font-size:10px;flex:1;min-width:135px}
+    .mt-cycle-leave-edit{padding:8px 10px;border:2px solid #36c7b5;background:#214a54;color:#f2fffc;font-size:12px;font-weight:800;border-radius:10px}
+    .mt-cycle-leave-edit.active{background:#11a48c;color:#072d2b}
     #grid .mt-cycle-day.mt-cycle-today{box-shadow:inset 0 0 0 2px #fff}
     #grid .mt-cycle-day.mt-cycle-holiday{border:2px solid #f2d172;background-image:linear-gradient(0deg,rgba(242,209,114,.13),rgba(242,209,114,.13))}
     #grid .mt-cycle-day.mt-cycle-holiday.mt-cycle-today{box-shadow:inset 0 0 0 2px #fff}
@@ -185,7 +222,7 @@
   observer.observe(monthEl, { childList: true });
   observer.observe(grid, { childList: true });
   window.addEventListener('storage', event => {
-    if (['myteam_shifts', 'myteam_planning_history'].includes(event.key)) render();
+    if (['myteam_shifts', 'myteam_planning_history', LEAVE_KEY].includes(event.key)) render();
   });
 
   window.MyTeamCycleCalendar = { render, projected, changeMonth };

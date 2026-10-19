@@ -2,6 +2,8 @@
   'use strict';
   const R = { base: 3608.63, sun: 14.6014, night: 4.1718, holiday: 41.7182, otBase: 20.8591, otSup: 10.4296, chefDay: 9.2475, xray: 75, leaveHour: 4.0789, fixedDed: 165, depAllowance: 692.83, care: .028, sick: .0025, pension: .085, dep: .014, credit: 46.64 };
   const TAX = [[3153.62, 304.90], [3195.37, 316.50], [3241.43, 328], [3537.44, 411.70]];
+  const BASE_REFERENCE = 2925.42; // Moyenne des virements de juillet, août et septembre.
+  const LEAVE_KEY = 'myteam_paid_leave_days_v1';
   const ACTUAL = {
     '2026-09': { net: 3273.11, baseNet: 2925.15, gross: 4045.57, taxable: 3153.62, tax: 304.90, social: 467.26, dependency: 46.94, totalH: 164, sunH: 8, nightH: 34.25, chefDays: 4, leaveH: 16, sunGross: 116.81, nightGross: 142.88, chefGross: 36.99, leaveGross: 65.26, xrayGross: 75, holidayGross: 0, otGross: 0, source: 'Fiche de paie septembre 2026' }
   };
@@ -18,7 +20,12 @@
   const read = (key, fallback) => { try { const obj = JSON.parse(localStorage.getItem(key) || 'null'); return obj ?? fallback; } catch { return fallback; } };
   const rDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const addDays = (d, days) => { const x = new Date(d); x.setDate(x.getDate() + days); return x; };
-  const isLeave = s => /vacances?|cong[eé]/i.test(String(s.post || ''));
+  const isLeave = s => s?.type === 'leave' || /vacances?|cong[eé]/i.test(String(s?.post || ''));
+  const markedLeaveDays = () => { const dates = read(LEAVE_KEY, []); return new Set(Array.isArray(dates) ? dates.filter(d => /^\d{4}-\d{2}-\d{2}$/.test(String(d))) : []); };
+  const leaveHourRate = () => {
+    const n = Number(read('myteam_salary_leave_rate_v1', R.leaveHour));
+    return Number.isFinite(n) && n >= 0 && n <= 100 ? n : R.leaveHour;
+  };
   const isTraining = s => s.type === 'training' || /formation/i.test(String(s.post || ''));
   let selectedMonth = monthNow();
 
@@ -87,7 +94,7 @@
     let overtime = 0;
     for (const minutes of weeks.values()) overtime += Math.max(0, minutes - 2880);
     const sunGross = round(sunday / 60 * R.sun), nightGross = round(night / 60 * R.night);
-    const holidayGross = round(holiday / 60 * R.holiday), leaveGross = round(leaveMinutes / 60 * R.leaveHour);
+    const holidayGross = round(holiday / 60 * R.holiday), leaveGross = round(leaveMinutes / 60 * leaveHourRate());
     const otGross = round(overtime / 60 * (R.otBase + R.otSup)), chefGross = round(cdeDates.size * R.chefDay);
     const xrayGross = localStorage.getItem('myteam_salary_xray') === '0' ? 0 : R.xray;
     const gross = round(R.base + sunGross + nightGross + holidayGross + leaveGross + otGross + chefGross + xrayGross);
@@ -117,7 +124,13 @@
     const archived = history[month]?.rows;
     if (Array.isArray(archived)) archived.forEach(record);
     active.forEach(record);
-    const rows = [...imported.values()];
+    let rows = [...imported.values()];
+    for (const date of markedLeaveDays()) {
+      if (!date.startsWith(month) || rows.some(row => row.date === date && isLeave(row))) continue;
+      // Un congé saisi remplace la vacation importée ou le poste théorique du jour.
+      rows = rows.filter(row => row.date !== date);
+      rows.push({ date, start:'05:00', end:'13:00', post:'Congé payé (marqué)', type:'leave', plannedMinutes:480, manualLeave:true });
+    }
     const covered = new Set(rows.map(s => s.date));
     let projectedDays = 0;
     if (month >= monthNow() && month <= '2027-12') {
@@ -167,8 +180,8 @@
   const complement=round(data.net-base);
   const mark=data.actual?'':'≈ ';
   return `<div class="mt-salary-split">
-    <div class="mt-salary-pay-card"><span>Virement de base</span><b>Fin ${label(month)}</b><strong>${mark}${amount(base)}</strong><small>Net ${data.actual?'réel':'habituel estimé'}</small></div>
-    <div class="mt-salary-pay-card"><span>Complément du mois travaillé</span><b>${payLabel(month)}</b><strong>${mark}${amount(complement)}</strong><small>Nuit, dimanche, fériés, RX, CDE et autres ajustements</small></div>
+    <div class="mt-salary-pay-card"><span>Virement de base</span><b>Fin ${label(month)}</b><strong>${mark}${amount(base)}</strong><small>Net ${data.actual?'relevé':'moyen estimé'}</small></div>
+    <div class="mt-salary-pay-card"><span>Complément du mois travaillé</span><b>${payLabel(month)}</b><strong>${mark}${amount(complement)}</strong><small>Nuit, dimanche, fériés, RX, ${month >= '2026-11' ? 'CDE, ' : ''}congés et autres ajustements</small></div>
   </div>`;
 }
 
@@ -185,11 +198,11 @@
     const state = actual ? 'Paie réelle' : selectedMonth < monthNow() ? 'Mois terminé · estimation' : 'Salaire prévisionnel';
     const source = data.projectedDays && data.importedCount ? 'Planning importé + cycle estimé' : data.projectedDays ? 'Roulement 2-2-2 estimé' : data.importedCount ? 'Planning enregistré' : 'Aucun planning enregistré';
     const amount = n => n == null ? 'À préciser' : euro(n);
-    const savedBase = Number(read('myteam_salary_base_net_v1', 2925.15));
-    const baseNet = Number.isFinite(savedBase) && savedBase > 0 && savedBase < 10000 ? savedBase : 2925.15;
+    const savedBase = Number(read('myteam_salary_base_net_v1', BASE_REFERENCE));
+    const baseNet = Number.isFinite(savedBase) && savedBase > 0 && savedBase < 10000 ? savedBase : BASE_REFERENCE;
     section.innerHTML = `
       <h2>💶 Salaire</h2>
-      <p class="muted mt-salary-intro">Prévisions basées sur le planning et les montants de la fiche de paie de septembre 2026, jusqu’à décembre 2027.</p>
+      <p class="muted mt-salary-intro">Prévisions recalculées à partir du planning, des congés marqués et des taux figurant sur les fiches de paie. Montants nets indicatifs jusqu’à décembre 2027.</p>
       <div class="mt-salary-selector">
         <button type="button" id="mt-salary-prev" aria-label="Mois précédent" ${index === 0 ? 'disabled' : ''}>‹</button>
         <label for="mt-salary-month">Mois de travail<select id="mt-salary-month">${months.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${label(m)}</option>`).join('')}</select></label>
@@ -202,7 +215,8 @@
         <div class="mt-salary-source">${source}${selectedMonth >= '2026-11' ? ' · CDE prévu' : ''}</div>
       </div>
       ${paymentSplitHtml(data, selectedMonth, baseNet, amount)}
-      <label class="mt-salary-base-edit">Base nette habituelle en fin de mois (modifiable)<input id="mt-salary-base-net" type="number" min="100" max="10000" step="0.01" value="${baseNet.toFixed(2)}" inputmode="decimal"><small>Référence : virement de septembre 2026, 2 925,15 € net. Le montant réel peut légèrement varier.</small></label>
+      <label class="mt-salary-base-edit">Virement net de base estimé (modifiable)<input id="mt-salary-base-net" type="number" min="100" max="10000" step="0.01" value="${baseNet.toFixed(2)}" inputmode="decimal"><small>Moyenne des virements de juillet, août et septembre : 2 925,42 €. Elle varie légèrement d’un mois à l’autre.</small></label>
+      <label class="mt-salary-base-edit">Indemnité de congé supplémentaire par heure (brut, modifiable)<input id="mt-salary-leave-rate" type="number" min="0" max="100" step="0.0001" value="${leaveHourRate().toFixed(4)}" inputmode="decimal"><small>Référence septembre : 4,0789 €/h (16 h = 65,26 € brut). Ce taux peut changer ; les 8 h de congé marquées remplacent la vacation prévue.</small></label>
       ${available ? `<div class="mt-salary-detail"><h3>Détail du mois</h3>
         <div><span>Heures au planning</span><b>${actual?.totalH != null ? hm(Number(actual.totalH) * 60) : hm(c?.total)}</b></div>
         <div><span>Dimanche</span><b>${actual?.sunH != null ? hm(Number(actual.sunH) * 60) : hm(c?.sunday)} · + ${amount(actual?.sunGross ?? c?.sunGross)}</b></div>
@@ -210,21 +224,26 @@
         <div><span>Prime de fonction / CDE</span><b>${actual ? (actual.chefDays == null ? 'Jours non détaillés' : `${actual.chefDays} jours`) : `${c?.chefDays ?? 0} jours`} · + ${amount(actual?.chefGross ?? c?.chefGross)}</b></div>
         ${(actual?.holidayGross ?? c?.holidayGross) > 0 ? `<div><span>Fériés 🇱🇺 (200 % selon fiche)</span><b>${actual ? (actual.holidayH == null ? '' : `${hm(Number(actual.holidayH) * 60)} · `) : `${hm(c?.holiday)} · `}+ ${amount(actual?.holidayGross ?? c?.holidayGross)}</b></div>` : ''}
         ${(actual?.otGross ?? c?.otGross) > 0 ? `<div><span>Heures supplémentaires</span><b>+ ${amount(actual?.otGross ?? c?.otGross)}</b></div>` : ''}
-        ${(actual?.leaveGross ?? c?.leaveGross) > 0 ? `<div><span>Congés payés</span><b>+ ${amount(actual?.leaveGross ?? c?.leaveGross)}</b></div>` : ''}
+        <div><span>🏖️ Congés payés ${hm(actual?.leaveH != null ? Number(actual.leaveH) * 60 : c?.leaveMinutes ?? 0)}</span><b>+ ${amount(actual?.leaveGross ?? c?.leaveGross ?? 0)} brut</b></div>
         <div><span>Prime RX / X-ray</span><b>+ ${amount(actual?.xrayGross ?? c?.xrayGross)}</b></div></div>` : ''}
       <div class="mt-salary-note"><b>Quand est-ce payé ?</b>
         <p><b>Fin de mois :</b> base nette habituelle. <b>${payLabel(selectedMonth)} :</b> complément pour le travail de ${label(selectedMonth)}. Les primes RX et CDE figurent dans les « Divers bruts » du décompte, avec les majorations de nuit, dimanche et fériés.</p>
-        <p>Le total net du mois travaillé est réparti entre deux dates de versement. ${actual ? 'Net confirmé par la fiche de paie ; la base est celle réellement reçue.' : 'Répartition estimée à partir de la base habituelle ; les taxes, absences ou régularisations peuvent changer le complément du 15.'}</p>
+        <p>Le total net du mois travaillé est réparti entre deux dates de versement. ${actual ? 'Net confirmé par la fiche de paie ; la base est celle réellement reçue.' : 'Ce n’est pas un calcul net exact : taux d’indemnité de congé, absences, fiscalité, primes réelles et régularisations sont confirmés uniquement par la paie.'}</p>
       </div>
       <div class="mt-salary-timeline"><h3>Les salaires mois par mois</h3><div class="mt-salary-month-list">${items.map(({ month, data: item }) => {
         const tag = item.actual ? 'Réel' : !item.available ? 'Sans données' : month < monthNow() ? 'Estimé' : 'Prévision';
         return `<button type="button" class="mt-salary-month-card${month === selectedMonth ? ' selected' : ''}" data-salary-month="${month}" aria-pressed="${month === selectedMonth}"><span><b>${label(month)}</b><small>${tag}${item.available ? ` · Fin mois : ${amount(item.actual?.baseNet ?? baseNet)} · ${payLabel(month)} : ${item.actual ? '' : '≈ '}${amount(round(item.net - (item.actual?.baseNet ?? baseNet)))}` : ''}</small></span><strong>${item.available ? (item.actual ? '' : '≈ ') + amount(item.net) : '—'}</strong></button>`;
       }).join('')}</div></div>
-      <p class="muted mt-salary-disclaimer">Horaires projetés : matin 05 h–13 h, après-midi 13 h–21 h, nuit 21 h–05 h. Fonction CDE estimée sur les jours travaillés dès novembre 2026. Jours fériés légaux luxembourgeois inclus quand travaillés ; taux SFER 200 % (8 h = 333,75 € sur la fiche de juin 2026). La régularisation exceptionnelle de 347 € n’est pas répétée chaque mois.</p>`;
+      <p class="muted mt-salary-disclaimer">Congés payés importés ou entourés sur le calendrier : une journée marquée remplace un poste de 8 h dans cette estimation et ajoute l’indemnité brute de congé (BCOC) au complément du 15 suivant. Horaires projetés : matin 05 h–13 h, après-midi 13 h–21 h, nuit 21 h–05 h. Fonction CDE estimée sur les jours travaillés dès novembre 2026. Jours fériés légaux luxembourgeois inclus quand travaillés ; taux SFER 200 % (8 h = 333,75 € sur la fiche de juin 2026). La régularisation exceptionnelle de 347 € n’est pas répétée chaque mois.</p>`;
     section.querySelector('#mt-salary-base-net').onchange = e => {
       const n = Number(String(e.target.value).replace(',', '.'));
       if (!Number.isFinite(n) || n <= 0 || n >= 10000) { render(); return; }
       localStorage.setItem('myteam_salary_base_net_v1', String(round(n))); render();
+    };
+    section.querySelector('#mt-salary-leave-rate').onchange = e => {
+      const n = Number(String(e.target.value).replace(',', '.'));
+      if (!Number.isFinite(n) || n < 0 || n > 100) { render(); return; }
+      localStorage.setItem('myteam_salary_leave_rate_v1', String(n)); render();
     };
     section.querySelector('#mt-salary-month').onchange = e => { selectedMonth = e.target.value; render(); };
     section.querySelector('#mt-salary-prev').onclick = () => { if (index > 0) { selectedMonth = items[index - 1].month; render(); } };
@@ -249,5 +268,6 @@
   document.head.append(css);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(render, 0)); else setTimeout(render, 0);
   document.addEventListener('click', e => { if (e.target?.dataset?.tab === 'salary') setTimeout(render, 0); });
+  window.addEventListener('myteam-paid-leave-updated', render);
   window.MyTeamRenderSalary = render;
 })();
