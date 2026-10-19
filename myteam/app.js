@@ -134,6 +134,10 @@
       await load('./salary-v2.js?v=20261017-1');
       await load('./agents-migration-v3.js?v=5');
       await load('./roster-v6.js?v=20261018-3');
+      const visitsCss=document.createElement('link');
+      visitsCss.rel='stylesheet';visitsCss.href='./post-visits-v1.css?v=20261019-1';
+      document.head.append(visitsCss);
+      await load('./post-visits-v1.js?v=20261019-1');
       await load('./composition-v1.js?v=20261018-3');
       renderDirectAgents();
       await load('./prestation-share-v1.js?v=2');

@@ -43,7 +43,7 @@
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents']];
+  const navItems=[['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents'],['visits','✅','Visites']];
   const NAV_ORDER_KEY='myteam_mobile_nav_order_v1';
   const navDefinitions=[...navItems,['more','☰','Plus']];
   const defaults=navDefinitions.map(item=>item[0]);
