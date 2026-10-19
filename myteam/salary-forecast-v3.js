@@ -3,7 +3,6 @@
   const R = { base: 3608.63, sun: 14.6014, night: 4.1718, holiday: 41.7182, otBase: 20.8591, otSup: 10.4296, chefDay: 9.2475, xray: 75, leaveHour: 4.0789, fixedDed: 165, depAllowance: 692.83, care: .028, sick: .0025, pension: .085, dep: .014, credit: 46.64 };
   const TAX = [[3153.62, 304.90], [3195.37, 316.50], [3241.43, 328], [3537.44, 411.70]];
   const ACTUAL = {
-    '2026-06': { net: 3954.60, gross: 4967.79, taxable: 3241.43, tax: 328, social: 560.14, dependency: 59.85, totalH: 160, sunH: 25.75, holidayH: 8, sunGross: 375.99, nightGross: 153.31, holidayGross: 333.75, chefGross: 129.48, leaveGross: 150.83, otGross: 140.80, xrayGross: 75, source: 'Fiche de paie juin 2026 (solde à payer après régularisation)' },
     '2026-09': { net: 3273.11, gross: 4045.57, taxable: 3153.62, tax: 304.90, social: 467.26, dependency: 46.94, totalH: 164, sunH: 8, nightH: 34.25, chefDays: 4, leaveH: 16, sunGross: 116.81, nightGross: 142.88, chefGross: 36.99, leaveGross: 65.26, xrayGross: 75, holidayGross: 0, otGross: 0, source: 'Fiche de paie septembre 2026' }
   };
   const PATTERN = ['morning', 'morning', 'afternoon', 'afternoon', 'night', 'night', 'rest', 'rest'];
@@ -105,7 +104,8 @@
   function monthKeys(history, actuals) {
     const all = new Set([...Object.keys(history), ...Object.keys(actuals)]);
     for (let y = 2026; y <= 2027; y++) for (let m = y === 2026 ? 9 : 1; m <= 12; m++) all.add(`${y}-${String(m).padStart(2, '0')}`);
-    return [...all].filter(m => /^\d{4}-(0[1-9]|1[0-2])$/.test(m)).sort();
+    // The archive begins with the confirmed September payslip; forecasts start in October.
+    return [...all].filter(m => /^\d{4}-(0[1-9]|1[0-2])$/.test(m) && m >= '2026-09').sort();
   }
 
   function monthRows(month, active, history) {
