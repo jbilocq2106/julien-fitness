@@ -760,7 +760,7 @@ document.getElementById('plus15').onclick=()=>{const l=timer.running?Math.max(0,
 document.getElementById('minus15').onclick=()=>{const l=timer.running?Math.max(0,Math.ceil((timer.end-Date.now())/1000)):timer.remaining;startTimer(Math.max(0,l-15))};
 document.getElementById('timerToggle').onclick=()=>{if(timer.running){timer.remaining=Math.max(0,Math.ceil((timer.end-Date.now())/1000));timer.running=false;clearInterval(timer.interval);}else startTimer(timer.remaining||90);timerRender();};
 
-document.getElementById('helpBtn').onclick=()=>document.getElementById('helpModal').classList.remove('hidden');
+// Le bouton d'aide est remplacé par le raccourci Basic-Fit ; le contenu d'aide reste conservé.
 document.getElementById('closeHelpBtn').onclick=()=>document.getElementById('helpModal').classList.add('hidden');
 document.getElementById('helpModal').onclick=(e)=>{if(e.target.id==='helpModal')e.currentTarget.classList.add('hidden');};
 document.getElementById('closeSessionBtn').onclick=()=>document.getElementById('sessionModal').classList.add('hidden');
@@ -774,7 +774,78 @@ document.getElementById('rirToggleBtn').onclick=()=>{
 
 document.getElementById('startNextBtn').onclick=()=>startWorkout(state.nextSessionId);
 document.getElementById('refreshProgramBtn').onclick=loadProgram;
-document.getElementById('wakeBtn').onclick=async()=>{try{if(!('wakeLock'in navigator))return alert('Wake Lock non disponible sur ce navigateur.');if(wakeLock){await wakeLock.release();wakeLock=null;document.getElementById('wakeBtn').textContent='Écran allumé';}else{wakeLock=await navigator.wakeLock.request('screen');document.getElementById('wakeBtn').textContent='Écran verrouillé';}}catch(e){}};
-document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&wakeLock){try{wakeLock=await navigator.wakeLock.request('screen')}catch(e){}}});
+// Le code QR Basic-Fit est renouvelé en continu : on ouvre l'app officielle,
+ // sans stocker de capture d'écran (qui ne fonctionnerait pas à la borne YANGA).
+const BASIC_FIT_PLAY='https://play.google.com/store/apps/details?id=com.basicfit.trainingApp';
+const BASIC_FIT_IOS='https://apps.apple.com/lu/app/basic-fit/id1588263601';
+document.getElementById('waterBtn').onclick=()=>{
+  if(/Android/i.test(navigator.userAgent)){
+    // Tentative de lancement natif, avec repli vers la fiche officielle Google Play.
+    const intent='intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.basicfit.trainingApp;S.browser_fallback_url='+encodeURIComponent(BASIC_FIT_PLAY)+';end';
+    window.location.href=intent;
+  }else if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
+    window.location.href=BASIC_FIT_IOS;
+  }else{
+    window.open('https://www.basic-fit.com/fr-lu/qrcode','_blank','noopener');
+  }
+};
+
+let screenLockWanted=false,screenLockRequesting=false;
+const screenLockOverlay=document.getElementById('screenLockOverlay');
+const screenLockButton=document.getElementById('wakeBtn');
+function renderScreenLock(){
+  screenLockOverlay.classList.toggle('hidden',!screenLockWanted);
+  screenLockButton.setAttribute('aria-pressed',String(screenLockWanted));
+  document.getElementById('wakeIcon').textContent=screenLockWanted?'🔒':'🔓';
+  document.getElementById('wakeCaption').textContent=screenLockWanted?'Bloqué':'Libre';
+  screenLockButton.setAttribute('aria-label',screenLockWanted?'Déverrouiller My Training':'Verrouiller My Training et garder l’écran allumé');
+  screenLockButton.title=screenLockWanted?'Déverrouiller':'Verrouiller et garder l’écran allumé';
+  document.getElementById('screenLockStatus').textContent=screenLockWanted&&wakeLock&&!wakeLock.released?
+    'Écran maintenu allumé · appuis bloqués':'Maintien de l’écran en cours ou indisponible';
+}
+async function acquireScreenWakeLock(){
+  if(!screenLockWanted||document.visibilityState!=='visible'||screenLockRequesting||(wakeLock&&!wakeLock.released))return;
+  screenLockRequesting=true;
+  try{
+    const sentinel=await navigator.wakeLock.request('screen');
+    if(!screenLockWanted){await sentinel.release();return;}
+    wakeLock=sentinel;
+    sentinel.addEventListener('release',()=>{
+      if(wakeLock===sentinel)wakeLock=null;
+      renderScreenLock();
+    });
+  }finally{
+    screenLockRequesting=false;
+    renderScreenLock();
+  }
+}
+async function unlockTrainingScreen(){
+  screenLockWanted=false;
+  const current=wakeLock;wakeLock=null;
+  renderScreenLock();
+  if(current&&!current.released){try{await current.release();}catch(e){}}
+}
+screenLockButton.onclick=async()=>{
+  if(screenLockWanted){await unlockTrainingScreen();return;}
+  if(!navigator.wakeLock||!navigator.wakeLock.request){
+    alert('Ton navigateur ne permet pas de maintenir l’écran allumé.');
+    return;
+  }
+  screenLockWanted=true;
+  try{
+    await acquireScreenWakeLock();
+    if(!wakeLock)throw new Error('Wake Lock indisponible');
+    renderScreenLock();
+  }catch(e){
+    await unlockTrainingScreen();
+    alert('Impossible de garder l’écran allumé. Vérifie le mode économie d’énergie.');
+  }
+};
+document.getElementById('unlockScreenBtn').onclick=unlockTrainingScreen;
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&screenLockWanted){
+    acquireScreenWakeLock().catch(()=>renderScreenLock());
+  }
+});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 load();loadProgram();if(state.activeWorkout){renderWorkout();startWorkoutClock()}timerRender();
