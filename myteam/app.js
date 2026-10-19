@@ -144,7 +144,7 @@
       await load('./prestation-rules-v1.js?v=20261017-1');
       await load('./prestation-analysis-demo-v1.js?v=20261017-3');
       await load('./planning-pdf-import-v2.js?v=20261017-2');
-      await load('./planning-cycle-v1.js?v=20261019-1');
+      await load('./planning-cycle-v1.js?v=20261019-2');
       renderDirectAgents();
     }catch(err){
       document.querySelector('.voice-box')?.remove();
@@ -154,7 +154,8 @@
       console.error(err)
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
-      try{await load('./mobile-shell-v1.js?v=20261018-5')}catch(error){console.error('Navigation mobile indisponible :',error)}
+      try{await load('./mobile-shell-v1.js?v=20261019-1')}catch(error){console.error('Navigation mobile indisponible :',error)}
+      try{await load('./today-operations-v1.js?v=20261019-1')}catch(error){console.error('Suivi quotidien indisponible :',error)}
       try{await load('./mobile-polish-v1.js?v=20261018-1')}catch(error){console.error('Fiches mobiles indisponibles :',error)}
       try{await load('./secure-backup-v1.js?v=20261018-1')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}

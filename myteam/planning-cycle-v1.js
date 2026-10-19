@@ -12,6 +12,7 @@
   const CDE_START = '2026-11-01';
   const PATTERN = ['morning', 'morning', 'afternoon', 'afternoon', 'night', 'night', 'rest', 'rest'];
   const TYPES = { morning: 'Matin', afternoon: 'Après-midi', night: 'Nuit', rest: 'Repos' };
+  const SHIFT_HOURS = { morning: '05h–13h', afternoon: '13h–21h', night: '21h–05h' };
   const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
   const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; } catch { return fallback; } };
@@ -104,15 +105,15 @@
       summary.textContent = actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : TYPES[phase];
       const detail = document.createElement('small');
       detail.className = 'mt-cycle-detail';
-      detail.textContent = actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : cde ? 'CDE · prévu' : phase === 'rest' ? 'Cycle' : 'Prévu';
+      detail.textContent = actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
       el.append(number, summary, detail);
-      const accessible = `${day} ${title} : ${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : TYPES[phase]}${cde ? ', chef d’équipe' : ''}`;
+      const accessible = `${day} ${title} : ${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim()}${cde ? ', chef d’équipe' : ''}`;
       el.setAttribute('aria-label', accessible);
       el.addEventListener('click', () => {
         if (Date.now() < blockClickUntil) return;
         const description = actual
           ? rows.map(r => `${r.start || '--:--'} – ${r.end || '--:--'} · ${r.post || 'Vacation'}`).join('\n') + (cde ? '\nFonction : chef d’équipe (CDE).' : '')
-          : `${TYPES[phase]}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
+          : `${TYPES[phase]}${phase === 'rest' ? '' : ' · ' + SHIFT_HOURS[phase] + (phase === 'night' ? ' (fin le lendemain)' : '')}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
         alert(`${date}\n${description}`);
       });
       fragment.append(el);

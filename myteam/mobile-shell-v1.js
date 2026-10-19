@@ -15,10 +15,7 @@
   todaySection.innerHTML=`
     <div class="card mt-hero"><div class="mt-eyebrow">Mon tableau de bord</div><h2>☀️ Aujourd’hui</h2>
       <p class="mt-today-date" id="mt-date"></p><span class="mt-status-chip warn" id="mt-summary">Chargement des informations locales…</span></div>
-    <button type="button" id="mt-attach-parif-photo" class="mt-attach-parif-photo">📎 Joindre la photo du plan PARIF</button>
     <div class="mt-columns"><div>
-      <div class="card"><h3>🕒 Mon poste du jour</h3><div id="mt-my-shifts" role="status"></div>
-        <p class="mt-section-caption">Issu de ton planning personnel enregistré sur cet appareil.</p></div>
       <div class="card"><h3>👥 Absences à vérifier</h3><div id="mt-absences"></div>
         <p class="mt-section-caption">Un congé demandé n’est pas forcément accordé. Seules les absences maladie signalées dans les fiches locales sont affichées, sans motif médical.</p></div>
     </div><div>
@@ -165,17 +162,6 @@
     const b=event.target.closest('[data-mt-open]');if(!b)return;
     b.dataset.mtOpen==='more'?openMore():activate(b.dataset.mtOpen);
   });
-  $('mt-attach-parif-photo').onclick=()=>{
-    const picker=$('mt-parif-date'),targetDate=isoDay(new Date());
-    if(picker&&picker.value!==targetDate){
-      picker.value=targetDate;
-      picker.dispatchEvent(new Event('change',{bubbles:true}));
-      if(picker.value!==targetDate)return;
-    }
-    activate('parif');
-    const file=$('mt-parif-import-file');
-    if(file)file.click();
-  };
   more.addEventListener('click',event=>{
     const b=event.target.closest('[data-mt-other]');if(b)activate(b.dataset.mtOther);
   });
@@ -195,10 +181,6 @@
   function renderToday(){
     const now=new Date(),date=isoDay(now);
     $('mt-date').textContent=dayLabel(now);
-    const allShifts=read('myteam_shifts',[]),shifts=Array.isArray(allShifts)?allShifts.filter(s=>s?.date===date):[];
-    $('mt-my-shifts').innerHTML=shifts.length?shifts.map(s=>`<div class="mt-line"><strong>${esc(s.start||'?')} – ${esc(s.end||'?')}</strong><small>${esc(s.post||'Poste non renseigné')} · ${esc(s.type||'Vacation')}</small></div>`).join(''):
-      '<p class="mt-empty">Aucune vacation indiquée aujourd’hui. Repos possible ou planning incomplet.</p>';
-
     const allLeaves=read('myteam_leave_v1',[]),leaves=Array.isArray(allLeaves)?allLeaves.filter(l=>l?.from<=date&&l?.to>=date):[];
     const profiles=read('myteam_agent_profiles_v1',{});
     const sick=profiles&&typeof profiles==='object'&&!Array.isArray(profiles)?Object.entries(profiles).filter(([,p])=>p?.sickActive===true&&(!p.sickEnd||p.sickEnd>=date)).map(([name])=>name):[];
@@ -218,7 +200,6 @@
 
     const alerts=[];
     if(leaveNames.length>4)alerts.push({level:'warn',title:`${leaveNames.length} demandes de congé simultanées`,detail:'Le seuil indicatif de 4 est dépassé. Vérifier les validations et l’effectif disponible.'});
-    for(const s of shifts){if(!s.post)alerts.push({level:'warn',title:'Poste non renseigné dans ton planning',detail:`Vacation ${s.start||'?'}–${s.end||'?'} : compléter l’information avant de contrôler la couverture.`});}
     const analyses=dailyAnalyses(date);
     const rows=analyses.flatMap(a=>Array.isArray(a.rows)?a.rows:[]);
     const bad=rows.filter(r=>r?.manualStatus==='bad'||(!r?.manualStatus&&r?.status==='bad'));
