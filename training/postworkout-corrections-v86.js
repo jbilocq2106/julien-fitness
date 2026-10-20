@@ -15,7 +15,7 @@
     return (state.history||[]).filter(row=>matchesWorkout(row,key));
   }
   function cardioRow(row,name){
-    return row.set_type==='cardio'||(row.set_type!=='normal'&&
+    return row.set_type==='cardio'||(row.set_type!=='normal'&&row.set_type!=='timed'&&
       (Number(row.duration_seconds)>0||Number(row.distance_km)>0))||
       (typeof isCardioName==='function'&&isCardioName(name));
   }
@@ -44,7 +44,13 @@
 
   function exerciseEditor(group,groupIndex){
     const isCardio=group.entries.some(({row})=>cardioRow(row,group.name));
+    const isTimed=group.entries.some(({row})=>row.set_type==='timed');
     const entries=group.entries.map(({row,index},position)=>{
+      if(isTimed){
+        return '<div class="mt-post-set"><div class="mt-post-set-name">Série '+(row.set_index!=null?Number(row.set_index)+1:position+1)+'</div><div class="mt-post-fields">'+
+          field(index,'duration_seconds','Durée',decimal(row.duration_seconds),'s',{max:36000,step:1})+
+          '</div></div>';
+      }
       if(isCardio){
         const mins=Number(row.duration_seconds)>0
           ?Math.round(Number(row.duration_seconds)/60*100)/100:'';
@@ -121,7 +127,7 @@
     body.querySelector('#mt-post-save').onclick=()=>{
       const draft=rows.map(row=>({...row}));
       const fields=body.querySelectorAll('.mt-post-value');
-      const limits={distance_km:200,duration_minutes:720,speed_kmh:30,
+      const limits={distance_km:200,duration_minutes:720,duration_seconds:36000,speed_kmh:30,
         incline_percent:35,avg_hr_bpm:230,weight_kg:600,reps:100,rir:10};
       for(const input of fields){
         const index=Number(input.dataset.row);
@@ -135,7 +141,7 @@
         }
         const raw=input.value.trim().replace(',','.');
         const value=raw===''?'':Number(raw);
-        const integerField=name==='reps'||name==='rir'||name==='avg_hr_bpm';
+        const integerField=name==='reps'||name==='rir'||name==='avg_hr_bpm'||name==='duration_seconds';
         if(value!==''&&(!Number.isFinite(value)||value<0||value>limits[name]||
           (integerField&&!Number.isInteger(value)))){
           alert(`Vérifie « ${input.closest('label')?.querySelector('span')?.textContent||name} ».`);
