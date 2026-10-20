@@ -70,6 +70,15 @@
     const daysCount = new Date(year, monthIndex + 1, 0).getDate();
     const today = iso(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
     const legalHolidays = luxHolidays(year);
+    const monthKey = iso(year, monthIndex, 1).slice(0, 7);
+    const activePlanning = read('myteam_shifts', []);
+    const archive = read('myteam_planning_history', {});
+    const meta = read('myteam_planning_meta', {});
+    const declaredMonths = Array.isArray(meta?.months) ? meta.months : [];
+    const currentPdfMonth = meta?.source === 'pdf-local' &&
+      (declaredMonths.length ? declaredMonths.includes(monthKey) :
+        Array.isArray(activePlanning) && activePlanning.some(r => String(r?.date || '').startsWith(monthKey)));
+    const officialPdfMonth = currentPdfMonth || archive?.[monthKey]?.meta?.source === 'pdf-local';
 
     monthEl.innerHTML = '';
     const header = document.createElement('span');
@@ -91,7 +100,7 @@
     header.append(previous, monthLabel, next);
     const hint = document.createElement('small');
     hint.className = 'mt-cycle-hint';
-    hint.textContent = 'Balaye vers la gauche pour le mois suivant · Cycle théorique 2M / 2A / 2N / 2R';
+    hint.textContent = 'Balaye vers la gauche · PDF importé prioritaire ; sinon cycle théorique 2M / 2A / 2N / 2R';
     monthEl.append(header, hint);
     const leaveTools = document.createElement('div');
     leaveTools.className = 'mt-cycle-leave-tools';
@@ -121,9 +130,9 @@
       const importedLeave = rows.some(isLeave);
       const markedLeave = leaveDays().has(date);
       const paidLeave = importedLeave || markedLeave;
-      const type = paidLeave ? 'leave' : actual ? rowType(rows[0]) : phase;
+      const type = paidLeave ? 'leave' : actual ? rowType(rows[0]) : officialPdfMonth ? 'rest' : phase;
       const isHoliday = legalHolidays.has(date);
-      const cde = !paidLeave && date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : phase !== 'rest');
+      const cde = !paidLeave && date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : !officialPdfMonth && phase !== 'rest');
       const col = (firstOffset + day - 1) % 7;
       const el = document.createElement('button');
       el.type = 'button';
@@ -131,19 +140,20 @@
       el.dataset.cycleDay = date;
       const number = document.createElement('b'); number.textContent = String(day);
       const summary = document.createElement('span');
-      summary.textContent = paidLeave ? '🏖️ Congé payé' : actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : TYPES[phase];
+      summary.textContent = paidLeave ? '🏖️ Congé payé' : actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : officialPdfMonth ? 'Non planifié' : TYPES[phase];
       const detail = document.createElement('small');
       detail.className = 'mt-cycle-detail';
-      detail.textContent = paidLeave ? (importedLeave ? 'Congé du planning importé' : '8 h estimées · marquées') : actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
+      detail.textContent = paidLeave ? (importedLeave ? 'Congé du planning importé' : '8 h estimées · marquées') : actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : officialPdfMonth ? 'Aucun poste sur le PDF' : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
       if (isHoliday) detail.textContent += ' · 🇱🇺 Férié';
       el.append(number, summary, detail);
-      const accessible = `${day} ${title} : ${paidLeave ? 'congé payé, ' : ''}${actual ? 'planning importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim()}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
+      const fallbackDescription = officialPdfMonth ? 'aucune vacation sur le PDF' : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim();
+      const accessible = `${day} ${title} : ${paidLeave ? 'congé payé, ' : ''}${actual ? 'planning importé' : officialPdfMonth ? 'planning PDF importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : fallbackDescription}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
       el.setAttribute('aria-label', accessible);
       el.addEventListener('click', () => {
         if (Date.now() < blockClickUntil) return;
         if (leaveEditMode) {
           if (importedLeave) { alert('Congé déjà présent sur le planning importé. Modifie le planning source pour le retirer.'); return; }
-          if (!markedLeave && (phase === 'rest' || isHoliday)) { alert('Repos ou jour férié : cette journée ne doit normalement pas être déduite comme congé payé.'); return; }
+          if (!markedLeave && (phase === 'rest' || isHoliday || (officialPdfMonth && !actual))) { alert('Jour non planifié sur le PDF, repos théorique ou jour férié : vérifie avant de poser un congé payé.'); return; }
           const marked = leaveDays();
           if (marked.has(date)) marked.delete(date); else marked.add(date);
           localStorage.setItem(LEAVE_KEY, JSON.stringify([...marked].sort()));
@@ -153,7 +163,7 @@
         }
         const description = paidLeave ? '🏖️ Congé payé (8 h estimées). Calculé dans le complément salarial.' : actual
           ? rows.map(r => `${r.start || '--:--'} – ${r.end || '--:--'} · ${r.post || 'Vacation'}`).join('\n') + (cde ? '\nFonction : chef d’équipe (CDE).' : '')
-          : `${TYPES[phase]}${phase === 'rest' ? '' : ' · ' + SHIFT_HOURS[phase] + (phase === 'night' ? ' (fin le lendemain)' : '')}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
+          : officialPdfMonth ? 'Aucune vacation indiquée sur le planning PDF importé.' : `${TYPES[phase]}${phase === 'rest' ? '' : ' · ' + SHIFT_HOURS[phase] + (phase === 'night' ? ' (fin le lendemain)' : '')}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
         alert(`${date}\n${description}`);
       });
       fragment.append(el);
