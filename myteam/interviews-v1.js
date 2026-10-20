@@ -65,7 +65,7 @@
       <p class="iv-intro">Un échange entre professionnels pour écouter, clarifier les attentes et avancer ensemble. Aucun classement, aucune note ni sanction automatique.</p>
       <p id="iv-progress" class="iv-sub"></p>
       <div class="iv-trust"><strong>Ma parole de chef d’équipe</strong>
-        <p>« Tu peux me parler avec confiance. Je prends très au sérieux mon devoir de discrétion et de confidentialité. Je ne répéterai pas tes propos par curiosité, par facilité ou pour alimenter des discussions. Mon rôle est de t’écouter, de t’aider et de faire remonter les difficultés de façon respectueuse. Si un problème de sûreté, de sécurité ou une obligation professionnelle exige une alerte, je te l’expliquerai autant que possible et je ne partagerai que le nécessaire. »</p></div>
+        <p>« Tu peux me parler en confiance. Si tu me confies une difficulté personnelle, de santé ou une tension avec quelqu’un, je n’ai pas à l’ébruiter ni à en parler aux autres agents. Je prends mon devoir de discrétion et de confidentialité très à cœur. Je n’inscrirai pas ici les détails de ta vie privée. Si tu souhaites mon aide, nous verrons ensemble ce qu’il est utile de transmettre et à qui. Si une obligation ou un risque pour la sûreté ou la sécurité impose de signaler certains faits, je te l’expliquerai autant que possible et je ne partagerai que le nécessaire. »</p></div>
     </div>
     <div class="card"><div class="iv-row"><label class="iv-label">Agent de la Team 4<select id="iv-agent"><option value="">Sélectionner un agent…</option></select></label>
       <button type="button" id="iv-new" class="iv-secondary">+ Nouvel entretien</button></div>
