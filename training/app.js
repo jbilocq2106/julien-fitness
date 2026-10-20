@@ -346,6 +346,11 @@ function openWorkoutDetail(key){
       isCardioName(name)
     );
 
+    if(sets.some(r=>r.set_type==='timed')){
+      return '<div class="history-exercise"><h3>'+esc(name)+'</h3><div class="timed-history">'+
+        sets.map((r,i)=>'<div class="timed-history-row"><span>Série '+(i+1)+'</span><strong>'+timeFmt(Math.round(num(r.duration_seconds)))+'</strong></div>').join('')+
+        '</div></div>';
+    }
     if(cardio){
       return `<div class="history-exercise"><h3>${esc(name)}</h3><div class="cardio-history">${esc(cardioSummary(sets[0]))}</div></div>`;
     }
@@ -557,7 +562,7 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
     return;
   }
 
-  const completedSets=w.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done&&num(s.reps)>0).length,0);
+  const completedSets=w.exercises.reduce((n,e)=>n+e.sets.filter(s=>s.done&&(num(s.reps)>0||num(s.durationSeconds)>0)).length,0);
   const completedCardio=w.exercises.filter(e=>e.cardio?.done).length;
   if(completedSets+completedCardio===0){
     if(confirm('Aucune série ni cardio validé. Annuler simplement cette séance ?'))cancelActiveWorkout();
@@ -575,10 +580,10 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
         speed_kmh:speed||'',incline_percent:incline||'',avg_hr_bpm:(num(e.cardio.avgHr)>=40&&num(e.cardio.avgHr)<=230)?num(e.cardio.avgHr):'',rpe:'',rir:'',exercise_order:exerciseIndex+1
       });
     }
-    e.sets.filter(s=>s.done&&num(s.reps)>0).forEach((s,i)=>state.history.unshift({
+    e.sets.filter(s=>s.done&&(num(s.reps)>0||num(s.durationSeconds)>0)).forEach((s,i)=>state.history.unshift({
       title,start_time:start.toISOString(),end_time:end.toISOString(),description:'My Training',
-      exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:'normal',
-      weight_kg:num(s.weight),reps:num(s.reps),distance_km:'',duration_seconds:'',speed_kmh:'',incline_percent:'',
+      exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:num(s.durationSeconds)>0?'timed':'normal',
+      weight_kg:num(s.durationSeconds)>0?0:num(s.weight),reps:num(s.durationSeconds)>0?0:num(s.reps),distance_km:'',duration_seconds:num(s.durationSeconds)>0?Math.round(num(s.durationSeconds)):'',speed_kmh:'',incline_percent:'',
       rpe:'',rir:String(s.rir??''),exercise_order:exerciseIndex+1
     }));
   });
