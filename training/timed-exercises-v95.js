@@ -101,6 +101,11 @@
       const target = targetSeconds(set.targetReps);
       if (!target) return;
       row.classList.add('mt-timed-set-row');
+      const exercise = state.activeWorkout.exercises[ei];
+      if (exercise.sets.every(item => targetSeconds(item.targetReps))) {
+        const header = row.closest('.exercise')?.querySelector('.set-head');
+        if (header) header.style.display = 'none';
+      }
       if (row.querySelector('.mt-timed-controls')) return;
       const controls = document.createElement('div');
       controls.className = 'mt-timed-controls';
@@ -148,7 +153,7 @@
   finishButton.onclick = function (event) {
     let changed = false;
     timedSets().forEach(item => {
-      if (!item.set.timedStartedAt) return;
+      if (!item.set.timedStartedAt && !(Number(item.set.timedElapsedMs) > 0)) return;
       const set = item.set;
       set.durationSeconds = Math.max(1, Math.round(elapsedMs(set) / 1000));
       set.timedElapsedMs = 0;
@@ -160,7 +165,7 @@
     if (changed) save();
     return previousFinish.call(this, event);
   };
-  setInterval(updateDisplays, 250);
+  setInterval(updateDisplays, 500);
   document.addEventListener('visibilitychange', updateDisplays);
   if (state.activeWorkout) renderWorkout();
 })();
