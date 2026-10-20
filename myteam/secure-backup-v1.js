@@ -26,8 +26,8 @@
     @media(max-width:780px){#secure-backup .card{padding:16px}#secure-backup button{width:100%;font-size:15px}}
   </style>
     <div class="card"><h2>🔐 Sauvegarde privée MyTEAM</h2>
-      <p class="sb-help">Une copie de tes données MyTEAM peut être chiffrée directement sur ton appareil. Tu peux ensuite conserver ce fichier dans ton Drive personnel. Aucune donnée ni mot de passe ne sont envoyés par MyTEAM.</p>
-      <p class="sb-caution"><b>Important :</b> cette sauvegarde est manuelle. La synchronisation automatique Google est encore en préparation. N’oublie pas ta phrase secrète : sans elle, personne ne pourra ouvrir la sauvegarde.</p>
+      <p class="sb-help">Cette fonction crée un fichier chiffré sur ton appareil, à conserver par exemple sur ton Drive personnel. Elle n’envoie rien par elle-même. Si tu actives séparément la synchronisation cloud, seules les données déjà chiffrées sont transmises à Firebase.</p>
+      <p class="sb-caution"><b>Important :</b> cette sauvegarde télécharge un fichier manuel. La synchronisation chiffrée en ligne se configure séparément plus haut sur cette page. N’oublie pas ta phrase secrète : sans elle, personne ne pourra ouvrir la sauvegarde.</p>
     </div>
     <div class="card"><h3>1. Créer une sauvegarde chiffrée</h3>
       <label for="sb-password">Phrase secrète (12 caractères minimum)</label>
