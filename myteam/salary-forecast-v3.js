@@ -131,9 +131,13 @@
       rows = rows.filter(row => row.date !== date);
       rows.push({ date, start:'05:00', end:'13:00', post:'Congé payé (marqué)', type:'leave', plannedMinutes:480, manualLeave:true });
     }
+    const meta = read('myteam_planning_meta', {});
+    const declaredMonths = Array.isArray(meta?.months) ? meta.months : [];
+    const currentPdfMonth = meta?.source === 'pdf-local' && (declaredMonths.length ? declaredMonths.includes(month) : active.some(s => String(s?.date || '').startsWith(month)));
+    const officialPdfMonth = currentPdfMonth || history?.[month]?.meta?.source === 'pdf-local';
     const covered = new Set(rows.map(s => s.date));
     let projectedDays = 0;
-    if (month >= monthNow() && month <= '2027-12') {
+    if (!officialPdfMonth && month >= monthNow() && month <= '2027-12') {
       const [y, mo] = month.split('-').map(Number);
       for (let d = 1, count = new Date(y, mo, 0).getDate(); d <= count; d++) {
         const date = `${month}-${String(d).padStart(2, '0')}`;
@@ -145,7 +149,7 @@
         projectedDays++;
       }
     }
-    return { rows, importedCount: imported.size, projectedDays };
+    return { rows, importedCount: imported.size, projectedDays, officialPdfMonth };
   }
 
   function monthData(month, active, history, actuals) {
@@ -196,7 +200,7 @@
     const data = items[index]?.data; if (!data) return;
     const actual = data.actual, c = data.calc, available = data.available;
     const state = actual ? 'Paie réelle' : selectedMonth < monthNow() ? 'Mois terminé · estimation' : 'Salaire prévisionnel';
-    const source = data.projectedDays && data.importedCount ? 'Planning importé + cycle estimé' : data.projectedDays ? 'Roulement 2-2-2 estimé' : data.importedCount ? 'Planning enregistré' : 'Aucun planning enregistré';
+    const source = data.officialPdfMonth ? 'Planning PDF officiel (sans prolongation du cycle)' : data.projectedDays && data.importedCount ? 'Planning importé + cycle estimé' : data.projectedDays ? 'Roulement 2-2-2 estimé' : data.importedCount ? 'Planning enregistré' : 'Aucun planning enregistré';
     const amount = n => n == null ? 'À préciser' : euro(n);
     const savedBase = Number(read('myteam_salary_base_net_v1', BASE_REFERENCE));
     const baseNet = Number.isFinite(savedBase) && savedBase > 0 && savedBase < 10000 ? savedBase : BASE_REFERENCE;
