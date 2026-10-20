@@ -20,8 +20,8 @@
     ['equipe','Respect et entraide','Rester courtois, aider ses collègues, accueillir les remarques sans agressivité et traiter chacun avec équité.'],
     ['initiative','Initiative responsable','Proposer des améliorations et prévenir les difficultés, tout en respectant les limites de son rôle et les validations nécessaires.']
   ];
-  const blank=(agent='')=>({id:'',agent,date:day(),status:'preparation',agentPositive:'',agentNeeds:'',agentTraining:'',agentIdeas:'',managerPositive:'',managerFocus:'',topics:[],agentCommitment:'',managerCommitment:'',followUp:'',createdAt:'',updatedAt:''});
-  const fields=['date','status','agentPositive','agentNeeds','agentTraining','agentIdeas','managerPositive','managerFocus','agentCommitment','managerCommitment','followUp'];
+  const blank=(agent='')=>({id:'',agent,date:day(),status:'preparation',agentPositive:'',agentNeeds:'',agentTraining:'',agentIdeas:'',feedbackHelpful:'',feedbackImprove:'',managerPositive:'',managerFocus:'',topics:[],agentCommitment:'',managerCommitment:'',workingAgreement:'',followUp:'',createdAt:'',updatedAt:''});
+  const fields=['date','status','agentPositive','agentNeeds','agentTraining','agentIdeas','feedbackHelpful','feedbackImprove','managerPositive','managerFocus','agentCommitment','managerCommitment','workingAgreement','followUp'];
   const read=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v.filter(r=>r&&typeof r.id==='string'&&typeof r.agent==='string'):[]}catch{return []}};
   let records=read(),agent='',currentId='',baseline='',currentPanel='agent';
 
@@ -83,6 +83,14 @@
         <label class="iv-label">Qu’aimerais-tu voir améliorer ?<textarea id="iv-agentNeeds" maxlength="3000" placeholder="Organisation, moyens, communication, conditions de travail… sans informations médicales"></textarea></label>
         <label class="iv-label">De quoi aurais-tu besoin pour progresser ?<textarea id="iv-agentTraining" maxlength="3000" placeholder="Formation, accompagnement, clarification des consignes…"></textarea></label>
         <label class="iv-label">Quelles propositions aimerais-tu faire ?<textarea id="iv-agentIdeas" maxlength="3000" placeholder="Une idée concrète, un changement simple, un retour d’expérience…"></textarea></label>
+        <hr class="iv-separator">
+        <h3>Et moi, qu’est-ce que je peux améliorer ?</h3>
+        <p class="iv-sub">Inviter l’agent à donner son avis sur la manière de manager, sans exiger une réponse immédiate ni se justifier à chaud. Écouter, demander un exemple si besoin, puis chercher une solution ensemble.</p>
+        <div class="iv-trust"><strong>Comment ouvrir le sujet</strong>
+          <p>« Je t’ai expliqué ce que j’attends de toi, mais ça fonctionne dans les deux sens. Dans ma manière de communiquer, de décider ou d’organiser le travail, il y a peut-être des choses que je pourrais mieux faire. Tu peux me le dire franchement et respectueusement : je ne t’en tiendrai pas rigueur. Je ne te promets pas qu’on sera toujours d’accord, mais je m’engage à t’écouter. Et si tu préfères y réfléchir, on pourra en reparler plus tard. »</p></div>
+        <label class="iv-label">Qu’est-ce que je fais qui t’aide dans ton travail ?<textarea id="iv-feedbackHelpful" maxlength="3000" placeholder="Une façon de communiquer ou de travailler à conserver…"></textarea></label>
+        <label class="iv-label">Qu’est-ce que je pourrais changer pour mieux travailler avec toi ?<textarea id="iv-feedbackImprove" maxlength="3000" placeholder="Un retour précis sur mon organisation, mes décisions ou ma communication, sans jugement personnel…"></textarea></label>
+        <p class="iv-sub">Questions de relance possibles : « As-tu un exemple concret ? » · « Qu’est-ce qui serait plus simple pour toi ? » · « Comment pourrions-nous procéder autrement ? »</p>
       </div>
       <div id="iv-panel-manager" class="iv-hidden" role="tabpanel">
         <h3>Mes attentes, expliquées avec respect</h3><p class="iv-sub">Les cases indiquent uniquement que le point a été abordé ensemble. Elles ne jugent ni la personne ni son niveau de performance. Les procédures officielles prévalent toujours.</p>
@@ -94,6 +102,7 @@
         <h3>Ce que nous décidons ensemble</h3><p class="iv-sub">Ne rien supposer accepté : reformuler les décisions et laisser l’agent apporter des corrections.</p>
         <label class="iv-label">Engagement ou prochaine étape de l’agent<textarea id="iv-agentCommitment" maxlength="3000" placeholder="Une action concrète proposée ou discutée…"></textarea></label>
         <label class="iv-label">Mon engagement en tant que chef d’équipe<textarea id="iv-managerCommitment" maxlength="3000" placeholder="Une aide, une réponse à apporter, une remontée à faire, un retour promis…"></textarea></label>
+        <label class="iv-label">Notre manière de fonctionner, convenue ensemble<textarea id="iv-workingAgreement" maxlength="3000" placeholder="Ex. clarifier les consignes dès la relève ; me faire un retour au calme ; je réponds à toute question sans reproche…"></textarea></label>
         <label class="iv-label">Date envisagée pour refaire le point<input id="iv-followUp" type="date"></label>
         <div class="iv-trust"><strong>Terminer l’entretien</strong><p>« Merci de m’avoir parlé franchement. Mon objectif n’est pas de te piéger, mais que tu saches ce que j’attends et que tu puisses aussi me dire ce dont tu as besoin. Si quelque chose ne va pas, viens m’en parler : on cherchera une solution. »</p></div>
       </div>
@@ -169,10 +178,11 @@
     const items=topics.filter(([id])=>v.topics.includes(id));
     const lines=[`MyTEAM — Entretien du ${short(v.date)} — ${agent}`,'',
       'PAROLE DE L’AGENT',`Points positifs : ${v.agentPositive||'—'}`,`Souhaits d’amélioration : ${v.agentNeeds||'—'}`,
-      `Besoins d’accompagnement : ${v.agentTraining||'—'}`,`Propositions : ${v.agentIdeas||'—'}`,'',
+      `Besoins d’accompagnement : ${v.agentTraining||'—'}`,`Propositions : ${v.agentIdeas||'—'}`,
+      `Mon management — ce qui aide : ${v.feedbackHelpful||'—'}`,`Mon management — ce que je peux améliorer : ${v.feedbackImprove||'—'}`,'',
       'ATTENTES DU CHEF D’ÉQUIPE','Priorité à la sûreté, à la vigilance et au respect des consignes.',
       ...items.map(([,title])=>'Point abordé : '+title),`Forces reconnues : ${v.managerPositive||'—'}`,`Attentes individuelles : ${v.managerFocus||'—'}`,'',
-      'ENGAGEMENTS & SUIVI',`Agent : ${v.agentCommitment||'—'}`,`Chef d’équipe : ${v.managerCommitment||'—'}`,`Prochain point : ${short(v.followUp)}`,
+      'ENGAGEMENTS & SUIVI',`Agent : ${v.agentCommitment||'—'}`,`Chef d’équipe : ${v.managerCommitment||'—'}`,`Fonctionnement convenu : ${v.workingAgreement||'—'}`,`Prochain point : ${short(v.followUp)}`,
       '',"Document de travail personnel — pas de compte rendu officiel ni d'engagement validé par une signature."];
     const content=lines.join('\n');
     if(!navigator.clipboard?.writeText){message('Copie automatique indisponible sur cet appareil.');return}
