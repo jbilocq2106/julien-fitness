@@ -51,6 +51,12 @@
     #interviews .iv-msg{min-height:22px;font-size:13px;color:#bcebd8;line-height:1.5}#interviews .iv-error{color:#ffada8}
     #interviews .iv-empty{color:#b8c8d9;padding:14px;background:#253449;border-radius:11px}
     #interviews .iv-separator{border:0;border-top:1px solid #3e526a;margin:19px 0}
+    #interviews .iv-dictation-wrap{display:flex;align-items:flex-start;gap:8px}
+    #interviews .iv-dictation-wrap textarea{flex:1 1 auto;min-width:0;width:100%}
+    #interviews .iv-mic{flex:0 0 49px;min-height:49px;border:1px solid #7691aa;border-radius:11px;background:#37516d;padding:9px 4px;font-size:22px}
+    #interviews .iv-mic[aria-pressed=true]{background:#a82b37;border-color:#ff97a0;animation:iv-pulse 1.4s infinite}
+    #interviews .iv-mic:focus-visible{outline:3px solid #ffbb80;outline-offset:2px}
+    @keyframes iv-pulse{50%{box-shadow:0 0 0 4px #f871712a}}
     #interviews .iv-hidden{display:none!important}
     @media(min-width:781px){#interviews .iv-fields-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}}
     @media(max-width:480px){#interviews .iv-panels button{font-size:11px;padding:12px 4px}#interviews .iv-actions button{flex-basis:100%}}
@@ -108,6 +114,7 @@
       </div>
       <div class="iv-actions"><button type="button" id="iv-save" class="iv-primary">✓ Enregistrer la fiche</button><button type="button" id="iv-copy" class="iv-secondary">Copier la synthèse</button><button type="button" id="iv-delete">Supprimer cette fiche</button></div>
       <p id="iv-status-message" class="iv-msg" role="status" aria-live="polite"></p>
+      <p class="iv-privacy">🎙️ Dictée vocale facultative : demande l’accord de l’agent et appuie sur le micro à côté de la réponse. Le navigateur peut transmettre la voix à son service de transcription. MyTEAM ne conserve aucun fichier audio. Vérifie les mots avant d’enregistrer et n’utilise pas ce micro pour des confidences médicales ou privées.</p>
       <p class="iv-privacy">🔒 Notes personnelles enregistrées uniquement dans le navigateur de cet appareil, sans chiffrement ni synchronisation. Aucune donnée n’est envoyée à G4S ou à un agent. Ne saisis pas de confidences sensibles, de données de santé ni de détails de sûreté confidentiels. Les notes ne constituent pas un compte rendu officiel ou disciplinaire.</p>
     </div>
     <div id="iv-history-card" class="card iv-hidden"><h3>Historique des entretiens de cet agent</h3><div id="iv-history"></div></div>`;
@@ -138,7 +145,7 @@
   }
   function isDirty(){return !!agent&&JSON.stringify(values())!==baseline}
   function confirmAway(){return !isDirty()||confirm('Cette fiche contient des changements non enregistrés. Les abandonner ?')}
-  function panel(name){currentPanel=name;section.querySelectorAll('[data-iv-panel]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ivPanel===name)));
+  function panel(name){if(currentPanel!==name)stopDictation();currentPanel=name;section.querySelectorAll('[data-iv-panel]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ivPanel===name)));
     ['agent','manager','suite'].forEach(id=>$('iv-panel-'+id).classList.toggle('iv-hidden',id!==name))}
   function fill(record){
     currentId=record.id||'';fields.forEach(f=>$('iv-'+f).value=record[f]||'');
@@ -153,13 +160,15 @@
   }
   function openAgent(name){
     if(!confirmAway()){ $('iv-agent').value=agent;return }
+    stopDictation();consentedAgent='';
     agent=name;currentId='';renderAgents();
     if(!name){$('iv-form').classList.add('iv-hidden');$('iv-history-card').classList.add('iv-hidden');baseline='';return}
     const latest=records.filter(r=>r.agent===name).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')))[0];
     fill(latest||blank(name));renderHistory();
   }
-  function newRecord(){if(!agent)return;if(!confirmAway())return;fill(blank(agent));$('iv-status-message').textContent='Nouvel entretien non enregistré.'}
+  function newRecord(){if(!agent)return;if(!confirmAway())return;stopDictation();fill(blank(agent));$('iv-status-message').textContent='Nouvel entretien non enregistré.'}
   function save(){
+    stopDictation();
     if(!agent)return;
     const next=values();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(next.date)||Number.isNaN(new Date(next.date+'T12:00:00').getTime())){message('Indique une date valide.',true);return}
@@ -173,7 +182,82 @@
     catch{message('Enregistrement impossible. Vérifie l’espace disponible.',true)}
   }
   function message(text,error=false){const el=$('iv-status-message');el.textContent=text;el.classList.toggle('iv-error',error)}
+
+  // SpeechRecognition transcrit dans les zones de texte : aucun MediaRecorder,
+  // aucun Blob audio, aucun envoi explicite effectué par MyTEAM.
+  const SpeechEngine=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let dictation=null,consentedAgent='';
+  function stopDictation(){
+    if(!dictation)return;
+    const run=dictation;
+    try{run.recognition.stop()}catch{}
+    if(dictation===run)finishDictation(run);
+  }
+  function finishDictation(run){
+    if(dictation!==run)return;
+    run.input.readOnly=false;
+    run.button.setAttribute('aria-pressed','false');
+    run.button.textContent='🎙️';
+    run.button.title='Dicter cette réponse';
+    dictation=null;
+  }
+  function startDictation(input,button){
+    if(dictation){const same=dictation.input===input;stopDictation();message(same?'Dictée arrêtée. Relis le texte avant de sauvegarder.':'Dictée précédente arrêtée. Appuie de nouveau pour ce champ.');return}
+    if(!agent)return message('Sélectionne un agent avant de dicter.',true);
+    if(!SpeechEngine)return message('La transcription vocale intégrée n’est pas disponible dans ce navigateur. Utilise le micro du clavier Samsung ou Gboard.',true);
+    if(consentedAgent!==agent){
+      const accepted=confirm('L’agent a-t-il donné son accord pour une dictée vocale ?\n\nLe navigateur peut envoyer la voix à un service de reconnaissance en ligne. MyTEAM ne conserve pas l’audio. Ne dicte pas de confidences personnelles ou médicales.');
+      if(!accepted){message('Micro non activé. Tu peux saisir la réponse au clavier.');return}
+      consentedAgent=agent;
+    }
+    const recognition=new SpeechEngine();
+    recognition.lang='fr-FR';recognition.interimResults=true;recognition.continuous=false;
+    const base=input.value.trim(),run={recognition,input,button,base,finalText:'',interimText:'',error:''};
+    dictation=run;input.readOnly=true;button.textContent='⏹️';button.setAttribute('aria-pressed','true');button.title='Arrêter la dictée';
+    const compose=(final,interim)=>[base,final,interim].filter(Boolean).join(' ').trim().slice(0,input.maxLength||3000);
+    recognition.onresult=event=>{
+      if(dictation!==run)return;
+      let final='',interim='';
+      for(let i=0;i<event.results.length;i++){
+        const transcript=String(event.results[i][0]?.transcript||'').trim();
+        if(event.results[i].isFinal)final+=transcript+' ';else interim+=transcript+' ';
+      }
+      run.finalText=final.trim();run.interimText=interim.trim();
+      input.value=compose(run.finalText,run.interimText);
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+    };
+    recognition.onerror=event=>{
+      run.error=event.error||'unknown';
+      const messages={'not-allowed':'Microphone refusé. Autorise-le dans Chrome si tu souhaites dicter.',
+        'audio-capture':'Aucun microphone disponible.','network':'Réseau indisponible pour la transcription.',
+        'no-speech':'Aucune parole reconnue. Tu peux réessayer.',
+        'service-not-allowed':'Service de transcription non autorisé.',
+        'aborted':'Dictée interrompue.'};
+      message(messages[run.error]||'La transcription a rencontré un problème. Vérifie le texte.',true);
+    };
+    recognition.onend=()=>{
+      if(dictation!==run)return;
+      // Conserver aussi le texte provisoire s’il n’y a pas eu de résultat final :
+      // l’utilisateur le vérifie et le corrige avant de l’enregistrer.
+      input.value=compose(run.finalText,run.finalText?'':run.interimText);
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      finishDictation(run);
+      if(!run.error)message('Dictée terminée. Relis et corrige la transcription, puis appuie sur « Enregistrer la fiche ».');
+    };
+    try{recognition.start();message('🎙️ Écoute en cours… Appuie sur ⏹️ pour arrêter.')}
+    catch(error){finishDictation(run);message('Impossible de démarrer le micro. Vérifie les autorisations de Chrome.',true)}
+  }
+  section.querySelectorAll('textarea').forEach(input=>{
+    const wrapper=document.createElement('span');wrapper.className='iv-dictation-wrap';
+    input.parentNode.insertBefore(wrapper,input);wrapper.append(input);
+    const button=document.createElement('button');button.type='button';button.className='iv-mic';
+    button.textContent='🎙️';button.title='Dicter cette réponse';button.setAttribute('aria-pressed','false');
+    const question=input.closest('label')?.textContent.trim()||'cette réponse';
+    button.setAttribute('aria-label','Démarrer ou arrêter la dictée : '+question);
+    wrapper.append(button);button.onclick=()=>startDictation(input,button);
+  });
   function copySummary(){
+    stopDictation();
     if(!agent)return;const v=values();
     const items=topics.filter(([id])=>v.topics.includes(id));
     const lines=[`MyTEAM — Entretien du ${short(v.date)} — ${agent}`,'',
@@ -189,6 +273,7 @@
     navigator.clipboard.writeText(content).then(()=>message('Synthèse copiée. Vérifie son contenu avant tout partage.')).catch(()=>message('Copie impossible : autorisation refusée.',true));
   }
   function deleteRecord(){
+    stopDictation();
     if(!currentId)return;
     if(!confirm(`Supprimer définitivement cet entretien du ${short($('iv-date').value)} pour ${agent} sur cet appareil ?`))return;
     const updated=records.filter(r=>r.id!==currentId);
@@ -203,8 +288,10 @@
   $('iv-agent').addEventListener('change',e=>openAgent(e.target.value));
   $('iv-new').onclick=()=>newRecord();$('iv-save').onclick=save;$('iv-copy').onclick=copySummary;$('iv-delete').onclick=deleteRecord;
   section.querySelectorAll('[data-iv-panel]').forEach(b=>b.onclick=()=>panel(b.dataset.ivPanel));
-  $('iv-history').onclick=e=>{const b=e.target.closest('[data-iv-open]');if(!b)return;if(!confirmAway())return;
+  $('iv-history').onclick=e=>{const b=e.target.closest('[data-iv-open]');if(!b)return;if(!confirmAway())return;stopDictation();
     const r=records.find(v=>v.id===b.dataset.ivOpen&&v.agent===agent);if(!r)return;fill(r);$('iv-form').scrollIntoView({behavior:'smooth',block:'start'})};
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopDictation()});
+  nav.addEventListener('click',event=>{const b=event.target.closest('[data-tab]');if(b&&b!==tab)stopDictation()});
   window.addEventListener('storage',e=>{if(e.key===AGENTS_KEY||e.key===KEY){if(e.key===KEY)records=read();renderAgents();if(agent)renderHistory()}});
   const detail=$('agent-detail');
   if(detail&&!$('iv-agent-shortcut')){
