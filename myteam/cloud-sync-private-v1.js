@@ -4,8 +4,8 @@
   const DATA_KEY = 'myteam_cloud_sync_state_v1';
   const KEY_PATTERN = /^myteam(?:[._-]|$)/i;
   const SKIP_PATTERN = /^myteam_cloud_/i;
-  const MAX_BYTES = 12 * 1024 * 1024;
-  const MAX_PARTS = 128;
+  const MAX_BYTES = 48 * 1024 * 1024;
+  const MAX_PARTS = 512;
   const PART_LENGTH = 170000;
   const KDF_ITERATIONS = 310000;
   const AAD = new TextEncoder().encode('MyTEAM/cloud/encrypted-snapshot/v1');
@@ -211,7 +211,7 @@
     for(const name of names)entries[name]=localStorage.getItem(name)||'';
     const obj={schema:'myteam-cloud-snapshot-v1',entries,attachments:await capturePhotos()};
     const bytes=encoder.encode(JSON.stringify(obj));
-    if(bytes.length>MAX_BYTES)throw Error('Données et photos trop volumineuses pour la sauvegarde chiffrée (12 Mo).');
+    if(bytes.length>MAX_BYTES)throw Error('Sauvegarde de '+(bytes.length/1048576).toFixed(1)+' Mo : la limite de sécurité actuelle est de '+(MAX_BYTES/1048576)+' Mo. Les données de cet appareil sont conservées.');
     return obj;
   }
   async function fingerprint(snapshot) {
@@ -471,10 +471,12 @@
     const manifestRef=refs().manifest;
     const oldRevision=expectedManifest?.revision||null;
     const id=(crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random()).replace(/[^A-Za-z0-9_-]/g,'');
-    const sealed=await seal(vaultKey,JSON.stringify(snapshot));
+    const payload=JSON.stringify(snapshot);
+    const sizeMiB=(encoder.encode(payload).length/1048576).toFixed(1);
+    const sealed=await seal(vaultKey,payload);
     const parts=[];
     for(let start=0;start<sealed.length;start+=PART_LENGTH)parts.push(sealed.slice(start,start+PART_LENGTH));
-    if(!parts.length||parts.length>MAX_PARTS)throw Error('Sauvegarde trop volumineuse.');
+    if(!parts.length||parts.length>MAX_PARTS)throw Error('Sauvegarde de '+sizeMiB+' Mo trop volumineuse pour cet envoi. Données locales conservées.');
     const {chunk}=refs();
     for(let start=0;start<parts.length;start+=5){
       const tasks=[];
@@ -482,6 +484,7 @@
         tasks.push(sdk.setDoc(chunk(id+'_'+i),{value:parts[i]}));
       }
       await Promise.all(tasks);
+      status('☁️ Sauvegarde chiffrée : '+Math.min(start+5,parts.length)+' / '+parts.length+' morceaux envoyés ('+sizeMiB+' Mo).');
     }
     await sdk.runTransaction(firestore,async tx=>{
       const current=await tx.get(manifestRef);
