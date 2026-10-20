@@ -123,7 +123,84 @@
     }
     return false;
   }
-  function capture() {
+  const PHOTO_STORES=[
+    {db:'myteam_parif_photo_plans_v1',table:'photos'},
+    {db:'myteam_leave_board_photos_v1',table:'documents'}
+  ];
+  async function photoDatabase(info) {
+    return new Promise((resolve,reject)=>{
+      const request=indexedDB.open(info.db,1);
+      request.onupgradeneeded=()=>{
+        if(!request.result.objectStoreNames.contains(info.table))request.result.createObjectStore(info.table);
+      };
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||Error('Stockage photo inaccessible.'));
+    });
+  }
+  async function serializePhoto(value) {
+    if(value instanceof Blob)return {__myteamBinaryBlob:true,mime:value.type,bytes:bytesToB64(new Uint8Array(await value.arrayBuffer()))};
+    if(Array.isArray(value))return Promise.all(value.map(serializePhoto));
+    if(value&&typeof value==='object'){
+      const out={};
+      for(const [k,v] of Object.entries(value))out[k]=await serializePhoto(v);
+      return out;
+    }
+    return value;
+  }
+  async function deserializePhoto(value) {
+    if(value&&typeof value==='object'&&!Array.isArray(value)&&value.__myteamBinaryBlob===true){
+      if(typeof value.bytes!=='string'||value.bytes.length>MAX_BYTES*2)throw Error('Image de sauvegarde invalide.');
+      return new Blob([b64ToBytes(value.bytes)],{type:String(value.mime||'application/octet-stream').slice(0,120)});
+    }
+    if(Array.isArray(value))return Promise.all(value.map(deserializePhoto));
+    if(value&&typeof value==='object'){
+      const out={};
+      for(const [k,v] of Object.entries(value))out[k]=await deserializePhoto(v);
+      return out;
+    }
+    return value;
+  }
+  async function capturePhotos() {
+    const result={};
+    for(const info of PHOTO_STORES){
+      const db=await photoDatabase(info);
+      try{
+        const records=await new Promise((resolve,reject)=>{
+          const tx=db.transaction(info.table,'readonly');
+          const os=tx.objectStore(info.table);
+          const keys=os.getAllKeys(),values=os.getAll();
+          tx.oncomplete=()=>resolve(keys.result.map((key,i)=>({key,value:values.result[i]})));
+          tx.onerror=()=>reject(tx.error||Error('Photos illisibles.'));
+        });
+        result[info.db]=[];
+        for(const record of records)result[info.db].push({key:record.key,value:await serializePhoto(record.value)});
+      }finally{db.close()}
+    }
+    return result;
+  }
+  async function restorePhotos(photos) {
+    if(!photos||typeof photos!=='object'||Array.isArray(photos))return;
+    for(const info of PHOTO_STORES){
+      if(!Array.isArray(photos[info.db]))continue;
+      const records=[];
+      for(const row of photos[info.db]){
+        if(!row||!(typeof row.key==='string'||typeof row.key==='number'))throw Error('Clé de photo incorrecte.');
+        records.push({key:row.key,value:await deserializePhoto(row.value)});
+      }
+      const db=await photoDatabase(info);
+      try{
+        await new Promise((resolve,reject)=>{
+          const tx=db.transaction(info.table,'readwrite'),os=tx.objectStore(info.table);
+          os.clear();
+          for(const row of records)os.put(row.value,row.key);
+          tx.oncomplete=resolve;
+          tx.onerror=()=>reject(tx.error||Error('Photos non restaurées.'));
+          tx.onabort=()=>reject(tx.error||Error('Restauration photo annulée.'));
+        });
+      }finally{db.close()}
+    }
+  }
+  async function capture() {
     const names=[];
     for(let i=0;i<localStorage.length;i++){
       const name=localStorage.key(i);
@@ -132,9 +209,9 @@
     names.sort();
     const entries={};
     for(const name of names)entries[name]=localStorage.getItem(name)||'';
-    const obj={schema:'myteam-cloud-snapshot-v1',entries};
+    const obj={schema:'myteam-cloud-snapshot-v1',entries,attachments:await capturePhotos()};
     const bytes=encoder.encode(JSON.stringify(obj));
-    if(bytes.length>MAX_BYTES)throw Error('Données trop volumineuses pour cette version de la sauvegarde (12 Mo).');
+    if(bytes.length>MAX_BYTES)throw Error('Données et photos trop volumineuses pour la sauvegarde chiffrée (12 Mo).');
     return obj;
   }
   async function fingerprint(snapshot) {
@@ -336,10 +413,11 @@
       if(!record?.snapshot?.entries){status('Aucune version locale antérieure trouvée.');return;}
       if(!confirm('Restaurer les données conservées sur cet appareil avant la dernière récupération en ligne ? La version actuelle sera elle aussi sauvegardée.'))return;
       const previous=record.snapshot;
-      await preserveBeforeRestore(capture());
+      await preserveBeforeRestore(await capture());
       applying=true;
       try{
-        for(const name of Object.keys(capture().entries))if(!(name in previous.entries))localStorage.removeItem(name);
+        await restorePhotos(previous.attachments);
+        for(const name of Object.keys((await capture()).entries))if(!(name in previous.entries))localStorage.removeItem(name);
         for(const [name,value] of Object.entries(previous.entries))if(safeKey(name)&&typeof value==='string')localStorage.setItem(name,value);
         localStorage.removeItem(DATA_KEY);
       }finally{applying=false;}
@@ -349,14 +427,15 @@
     finally{working=false;}
   }
   async function applyRemote(remote,manifest) {
-    const local=capture();
+    const local=await capture();
     const oldBackup=await preserveBeforeRestore(local);
     applying=true;
     try{
+      await restorePhotos(remote.attachments);
       const remoteEntries=remote.entries;
       for(const name of Object.keys(local.entries))if(!(name in remoteEntries))localStorage.removeItem(name);
       for(const [name,value] of Object.entries(remoteEntries))localStorage.setItem(name,value);
-      const newHash=await fingerprint(capture());
+      const newHash=await fingerprint(await capture());
       saveMarker(manifest.revision,newHash);
       status('✅ Données récupérées et ancienne version sauvegardée sur cet appareil. Actualisation…','ok');
       setTimeout(()=>location.reload(),900);
@@ -373,7 +452,7 @@
       if(!manifest)throw Error('Aucune sauvegarde en ligne.');
       const snapshot=await downloadRemote(manifest);
       const remoteCount=Object.keys(snapshot.entries).length;
-      const localCount=Object.keys(capture().entries).length;
+      const localCount=Object.keys((await capture()).entries).length;
       if(!confirm('Récupérer '+remoteCount+' éléments depuis la sauvegarde chiffrée ? Les '+localCount+' éléments locaux actuels seront préservés dans une sauvegarde de sécurité sur cet appareil avant leur remplacement.')) {
         status('Restauration annulée. Aucune donnée modifiée.');return;
       }
@@ -433,7 +512,7 @@
     if(blocked&&!forceLocal)return;
     working=true;
     try{
-      const local=capture();
+      const local=await capture();
       const hash=await fingerprint(local);
       const marker=loadMarker();
       const remote=await getRemoteManifest();
