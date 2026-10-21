@@ -7,7 +7,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
   'use strict';
   const KEY='mt_body_measurements_v1';
   const MEASUREMENTS=[
-    ['neckCm','Cou','cm'], ['chestCm','Poitrine','cm'],
+    ['heightCm','Taille (hauteur)','cm'], ['neckCm','Cou','cm'], ['chestCm','Poitrine','cm'],
     ['waistCm','Taille anatomique','cm'], ['navelCm','Ventre au nombril','cm'],
     ['hipsCm','Hanches','cm'], ['armLeftCm','Bras gauche','cm'],
     ['armRightCm','Bras droit','cm'], ['forearmLeftCm','Avant-bras gauche','cm'],
@@ -154,6 +154,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
   dateInput.addEventListener('change',()=>{
     const existing=read().find(x=>x.date===dateInput.value&&!x.deleted);
     if(existing)fill(existing);
+    else fill({date:dateInput.value});
   });
   document.getElementById('mtbReset').onclick=()=>fill({date:today()});
   const makeHashImport=()=>{
