@@ -1,0 +1,25 @@
+/* My Training v96 — mesures corporelles sur telephone */
+#bodyMeasurementsView h2{margin:0 0 6px}
+.mtb-intro{line-height:1.5;margin-bottom:12px}
+#bodyMeasurementsView input[type=date],#bodyMeasurementsView input[type=number]{width:100%;min-width:0;background:#0e1727;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px}
+#bodyMeasurementsView details{margin:13px 0;border:1px solid var(--line);border-radius:12px;padding:12px;background:#0e1727}
+#bodyMeasurementsView details summary{font-size:14px;font-weight:800;cursor:pointer}
+.mtb-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
+.mtb-field{display:block;min-width:0;margin:0}
+.mtb-field span{display:block;min-height:30px;color:var(--muted);line-height:1.3}
+.mtb-field input{font-size:16px}
+.mtb-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.mtb-kpis>div{display:flex;flex-direction:column;gap:4px;min-width:0;background:#0e1727;border-radius:10px;padding:10px 7px}
+.mtb-kpis strong{font-size:19px;overflow-wrap:anywhere}
+.mtb-kpis small{font-size:10px;color:var(--muted)}
+#mtbCloud{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.mtb-footnote{line-height:1.5;margin:9px 0 13px}
+.mtb-actions{display:flex;gap:7px;flex-wrap:wrap}
+.mtb-entry{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}
+.mtb-entry:last-child{border:0}
+.mtb-entry strong{display:block}
+.mtb-entry small{display:block;color:var(--muted);margin-top:3px;font-size:11px;line-height:1.4}
+.mtb-entry-actions{display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.mtb-entry-actions button{font-size:11px;padding:8px}
+@media(max-width:410px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))}.bottom-nav button{padding:8px 2px;font-size:10px}.mtb-kpis strong{font-size:16px}}
+@media(min-width:411px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
