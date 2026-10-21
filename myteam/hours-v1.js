@@ -64,8 +64,9 @@
       if(String(day).startsWith(selectedMonth))importedLeave.add(day);
     }
     const leaveMinutes=importedLeave.size*480;
-    const credit=selectedMonth==='2026-11'&&!rows.some(x=>x?.date==='2026-11-01')&&!importedLeave.has('2026-11-01')?480:0;
-    return{worked,leaveMinutes,credit,total:worked+leaveMinutes+credit,night,sunday,both,training,chef,leaveDays:importedLeave.size};
+    // Toussaint 2026 le dimanche non travaille : 1 jour de recuperation (hors heures du mois).
+    const compDayDue=selectedMonth==='2026-11'&&!rows.some(x=>x?.date==='2026-11-01'&&!isLeave(x));
+    return{worked,leaveMinutes,compDayDue,total:worked+leaveMinutes,night,sunday,both,training,chef,leaveDays:importedLeave.size};
   }
   function render(){
     const box=document.querySelector('#hours');if(!box)return;
@@ -78,10 +79,10 @@
     box.innerHTML='<h2>Mes heures</h2><label for="mt-hours-month" style="display:block;margin-bottom:12px;font-weight:750">Mois consulté</label>'+
       '<select id="mt-hours-month" style="width:100%;background:#27364c;border:1px solid #50647d;color:white;border-radius:10px;font-size:16px;padding:12px;margin-bottom:12px">'+options+'</select>'+
       '<div class="card">'+
-      (!hasRows&&!c.leaveDays&&!c.credit?'<p class="muted">Aucun poste enregistré pour ce mois. Le roulement théorique ne remplace pas le planning officiel.</p>':
+      (!hasRows&&!c.leaveDays?'<p class="muted">Aucun poste enregistré pour ce mois. Le roulement théorique ne remplace pas le planning officiel.</p>':
         '<p><strong>Total comptabilisé : '+fmt(c.total)+'</strong></p>'+
         '<p>Heures travaillées : <b>'+fmt(c.worked)+'</b></p>'+
-        '<p>Congés payés : <b>'+fmt(c.leaveMinutes)+'</b> ('+c.leaveDays+' jour(s) × 8 h)</p>'+ (c.credit?'<p>1er novembre, férié comptabilisé : <b>+8 h</b></p>':'')+
+        '<p>Congés payés : <b>'+fmt(c.leaveMinutes)+'</b> ('+c.leaveDays+' jour(s) × 8 h)</p>'+ (c.compDayDue?'<p><b>🇱🇺 1er novembre : 1 jour de congé compensatoire à récupérer</b> (non compris dans le total mensuel).</p>':'')+
         '<hr style="border:0;border-top:1px solid #41536a;margin:14px 0">'+
         '<p><b>🌙 Nuit — 22 h à 6 h</b><br>'+fmt(c.night)+'</p>'+
         '<p><b>☀️ Dimanche — dimanche 6 h à lundi 6 h</b><br>'+fmt(c.sunday)+'</p>'+
