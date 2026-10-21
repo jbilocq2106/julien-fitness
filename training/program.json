@@ -1,7 +1,7 @@
 {
-  "version": 8,
-  "updated": "2026-10-19",
-  "weekly_note": "4 séances de musculation flexibles • tapis modéré 75–95 min au total + 1 à 2 cardio dédiés selon la récupération, vers 150–210 min/semaine progressivement • pas de soulevé de terre",
+  "version": 9,
+  "updated": "2026-10-21",
+  "weekly_note": "4 séances habituelles S1–S4 + séance spéciale S5 à la demande • S5 hors roulement • aucun soulevé de terre",
   "sessions": [
     {
       "id": "S1",
@@ -299,24 +299,25 @@
           "coachOrder": 5
         },
         {
-          "name": "Extension triceps au-dessus de la tête corde",
+          "name": "Extension triceps barre V (poulie haute)",
           "superset": "A",
           "sets": [
             {
               "reps": "12–15",
-              "weight": 14
+              "weight": null
             },
             {
-              "reps": "12–15",
-              "weight": 18
+              "reps": "10–12",
+              "weight": null
             },
             {
-              "reps": "12–15",
-              "weight": 18
+              "reps": "10–12",
+              "weight": null
             }
           ],
           "rest": 60,
-          "coachOrder": 6
+          "coachOrder": 6,
+          "note": "Alternative sans mouvement au-dessus de la tête. Coudes proches du corps, descente contrôlée ; commencer léger et régler la charge après la première séance."
         },
         {
           "name": "Curl pupitre machine",
@@ -825,6 +826,234 @@
           "rest": 0,
           "note": "5,1 km/h • 2 % • 20–25 min • effort modéré RPE 4–5/10 ; garder une récupération suffisante.",
           "coachOrder": 10
+        }
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "Séance spéciale — Bras / Avant-bras / Abdos / Obliques",
+      "focus": "Biceps + triceps • avant-bras • sangle abdominale • tapis • séance indépendante du roulement",
+      "day_hint": "À la demande — ne remplace pas les séances 1 à 4",
+      "exercises": [
+        {
+          "name": "Curl incliné haltères",
+          "coachOrder": 1,
+          "superset": "A",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "note": "Banc à 45° ; coudes fixes, mouvement contrôlé et 1–2 répétitions en réserve."
+        },
+        {
+          "name": "Extension triceps corde",
+          "coachOrder": 2,
+          "superset": "A",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 32
+            },
+            {
+              "reps": "10–12",
+              "weight": 36
+            },
+            {
+              "reps": "10–12",
+              "weight": 36
+            }
+          ],
+          "rest": 75,
+          "note": "Coudes près du corps, sans cambrer ni hausser les épaules."
+        },
+        {
+          "name": "Curl marteau haltères",
+          "coachOrder": 3,
+          "superset": "B",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "note": "Prise neutre ; travailler biceps, brachial et brachio-radial, sans élan."
+        },
+        {
+          "name": "Extension triceps barre V (poulie haute)",
+          "coachOrder": 4,
+          "superset": "B",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "note": "Alternative à l'extension au-dessus de la tête. Charge de départ à ajuster, ne pas verrouiller brutalement les coudes."
+        },
+        {
+          "name": "Flexions poignets haltères",
+          "coachOrder": 5,
+          "superset": "C",
+          "sets": [
+            {
+              "reps": "15–20",
+              "weight": null
+            },
+            {
+              "reps": "15–20",
+              "weight": null
+            }
+          ],
+          "rest": 45,
+          "note": "Avant-bras soutenus sur banc ou cuisses ; petite amplitude lente."
+        },
+        {
+          "name": "Extensions poignets haltères",
+          "coachOrder": 6,
+          "superset": "C",
+          "sets": [
+            {
+              "reps": "15–20",
+              "weight": null
+            },
+            {
+              "reps": "15–20",
+              "weight": null
+            }
+          ],
+          "rest": 45,
+          "note": "Paumes vers le bas, charge légère, ne pas casser brutalement le poignet."
+        },
+        {
+          "name": "Crunch poulie",
+          "coachOrder": 7,
+          "superset": "D",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 64
+            },
+            {
+              "reps": "12–15",
+              "weight": 64
+            },
+            {
+              "reps": "12–15",
+              "weight": 64
+            }
+          ],
+          "rest": 45,
+          "note": "Enrouler le buste, expirer sur l'effort ; éviter de tirer avec les bras."
+        },
+        {
+          "name": "Pallof press",
+          "coachOrder": 8,
+          "superset": "D",
+          "sets": [
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            },
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            },
+            {
+              "reps": "10–12/côté",
+              "weight": null
+            }
+          ],
+          "rest": 45,
+          "note": "Anti-rotation pour les obliques ; bassin stable et sans tourner le tronc."
+        },
+        {
+          "name": "Crunch inversé",
+          "coachOrder": 9,
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "Enrouler doucement le bassin, sans tirer sur les lombaires."
+        },
+        {
+          "name": "Planche latérale",
+          "coachOrder": 10,
+          "sets": [
+            {
+              "reps": "25–35 s/côté",
+              "weight": 0
+            },
+            {
+              "reps": "25–35 s/côté",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "Gainage obliques ; arrêter si gêne au cou, aux épaules ou au dos."
+        },
+        {
+          "name": "Vacuum / transverse",
+          "coachOrder": 11,
+          "sets": [
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 30,
+          "note": "Expiration douce et complète ; sans apnée prolongée."
+        },
+        {
+          "name": "Tapis incliné",
+          "coachOrder": 12,
+          "sets": [
+            {
+              "reps": "25–30 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "5,2 km/h • 3 % • 25–30 min • allure permettant de parler ; limiter à 0–2 % en cas de gêne aux mollets. Ajuster selon fatigue."
         }
       ]
     }
