@@ -14,8 +14,11 @@
       const history=JSON.parse(localStorage.getItem('myteam_planning_history')||'{}')||{};
       const saved=history?.[month]?.rows;
       if(!Array.isArray(saved)||!saved.length)return false;
-      localStorage.setItem('myteam_shifts',JSON.stringify(saved));
-      if(history[month]?.meta)localStorage.setItem('myteam_planning_meta',JSON.stringify(history[month].meta));
+      // Restaurer le mois courant sans effacer des mois futurs deja importes.
+      const merged=[...active.filter(s=>String(s?.date||'').slice(0,7)!==month),...saved]
+        .sort((x,y)=>String(x.date).localeCompare(String(y.date))||String(x.start).localeCompare(String(y.start)));
+      localStorage.setItem('myteam_shifts',JSON.stringify(merged));
+      if(!active.length&&history[month]?.meta)localStorage.setItem('myteam_planning_meta',JSON.stringify(history[month].meta));
       localStorage.setItem('myteam_planning_repair',JSON.stringify({month,restoredAt:new Date().toISOString(),reason:'current-month-missing'}));
       return true;
     }catch{return false}
