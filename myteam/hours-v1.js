@@ -64,7 +64,8 @@
       if(String(day).startsWith(selectedMonth))importedLeave.add(day);
     }
     const leaveMinutes=importedLeave.size*480;
-    return{worked,leaveMinutes,total:worked+leaveMinutes,night,sunday,both,training,chef,leaveDays:importedLeave.size};
+    const credit=selectedMonth==='2026-11'&&!rows.some(x=>x?.date==='2026-11-01')&&!importedLeave.has('2026-11-01')?480:0;
+    return{worked,leaveMinutes,credit,total:worked+leaveMinutes+credit,night,sunday,both,training,chef,leaveDays:importedLeave.size};
   }
   function render(){
     const box=document.querySelector('#hours');if(!box)return;
