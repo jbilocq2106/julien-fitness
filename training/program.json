@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "updated": "2026-10-21",
   "weekly_note": "4 séances habituelles S1–S4 + séance spéciale S5 à la demande • S5 hors roulement • aucun soulevé de terre",
   "sessions": [
@@ -854,7 +854,7 @@
             }
           ],
           "rest": 75,
-          "note": "Charges de départ proposées par estimation (pas de performance confirmée sur ce mouvement précis). Banc à 45° ; 1–2 répétitions en réserve. Si trop lourd ou technique imparfaite, réduire."
+          "note": "Tu as déjà effectué ce curl. Les 10/12/12 kg sont provisoires tant que la charge exacte n’a pas été retrouvée ; MyTraining recherchera automatiquement les séries enregistrées dans l’historique local ou synchronisé. Banc à 45°, coudes fixes, 1–2 répétitions en réserve."
         },
         {
           "name": "Extension triceps corde",
