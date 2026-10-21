@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "updated": "2026-10-21",
   "weekly_note": "4 séances habituelles S1–S4 + séance spéciale S5 à la demande • S5 hors roulement • aucun soulevé de terre",
   "sessions": [
@@ -954,8 +954,24 @@
           "note": "Paumes vers le bas, charge légère, ne pas casser brutalement le poignet."
         },
         {
-          "name": "Crunch poulie",
+          "name": "Curl inversé barre EZ",
           "coachOrder": 7,
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 60,
+          "note": "Prise en pronation (paumes vers le sol), coudes près du corps ; monte sans balancer, charge légère à modérée et poignets alignés. Travaille surtout brachio-radial et extenseurs. Arrêter si douleur au poignet ou au coude."
+        },
+        {
+          "name": "Crunch poulie",
+          "coachOrder": 8,
           "superset": "D",
           "sets": [
             {
@@ -976,7 +992,7 @@
         },
         {
           "name": "Pallof press",
-          "coachOrder": 8,
+          "coachOrder": 9,
           "superset": "D",
           "sets": [
             {
@@ -997,7 +1013,7 @@
         },
         {
           "name": "Crunch inversé",
-          "coachOrder": 9,
+          "coachOrder": 10,
           "sets": [
             {
               "reps": "12–15",
@@ -1013,7 +1029,7 @@
         },
         {
           "name": "Planche latérale",
-          "coachOrder": 10,
+          "coachOrder": 11,
           "sets": [
             {
               "reps": "25–35 s/côté",
@@ -1029,7 +1045,7 @@
         },
         {
           "name": "Vacuum / transverse",
-          "coachOrder": 11,
+          "coachOrder": 12,
           "sets": [
             {
               "reps": "20–30 s",
@@ -1045,7 +1061,7 @@
         },
         {
           "name": "Tapis incliné",
-          "coachOrder": 12,
+          "coachOrder": 13,
           "sets": [
             {
               "reps": "25–30 min",
