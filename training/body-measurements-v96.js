@@ -86,6 +86,10 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     '<details><summary>Composition corporelle RENPHO</summary>'+grid(RENPHO)+'</details>'+
     '<p class="muted mtb-footnote">Les mesures de graisse et de muscle RENPHO sont des estimations. Comparer sur plusieurs semaines, dans les memes conditions.</p>'+
     '<div class="mtb-actions"><button type="submit" class="primary">Enregistrer le bilan</button><button type="button" id="mtbReset" class="ghost">Nouveau bilan</button></div></form></div>'+
+    '<div class="card"><div class="section-title"><h3>Comparatif des bilans</h3></div><p class="muted">Compare deux dates, les ecarts et la tendance de chaque indicateur.</p>'+
+    '<div class="mtb-compare-controls"><label>Du <select id="mtbFrom" aria-label="Bilan de depart"></select></label><label>Au <select id="mtbTo" aria-label="Bilan d arrivee"></select></label></div>'+
+    '<div id="mtbCompareTable"></div><label class="mtb-metric-label">Courbe de progression <select id="mtbMetric"></select></label>'+
+    '<div class="mtb-chart-box"><svg id="mtbTrend" viewBox="0 0 360 180" role="img" aria-label="Courbe des mesures"></svg></div><p id="mtbTrendHelp" class="muted mtb-footnote"></p></div>'+
     '<div class="card"><div class="section-title"><h3>Historique</h3></div><div id="mtbHistory"></div></div>';
   const form=document.getElementById('mtbForm');
   const dateInput=document.getElementById('mtbDate');
@@ -94,6 +98,67 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     FIELDS.forEach(([key])=>{const el=form.querySelector('[data-mtb="'+key+'"]');el.value=row?.[key]??'';});
     view.querySelector('details').open=true;
   }
+  // Comparaison locale : aucune mensuration n'est integree au code publie.
+  function renderComparison(rows){
+    const ordered=[...rows].sort((a,b)=>a.date.localeCompare(b.date));
+    const dates=ordered.map(x=>x.date);
+    const fromEl=document.getElementById('mtbFrom'),toEl=document.getElementById('mtbTo');
+    const metricEl=document.getElementById('mtbMetric'),tableEl=document.getElementById('mtbCompareTable');
+    const svg=document.getElementById('mtbTrend'),help=document.getElementById('mtbTrendHelp');
+    if(!fromEl||!toEl||!metricEl||!tableEl||!svg)return;
+    const oldFrom=fromEl.value,oldTo=toEl.value,oldMetric=metricEl.value;
+    const options=dates.map(date=>'<option value="'+date+'">'+esc(date.split('-').reverse().join('/'))+'</option>').join('');
+    fromEl.innerHTML=options;toEl.innerHTML=options;
+    fromEl.value=dates.includes(oldFrom)?oldFrom:(dates[0]||'');
+    toEl.value=dates.includes(oldTo)?oldTo:(dates[dates.length-1]||'');
+    if(!metricEl.options.length){
+      metricEl.innerHTML=FIELDS.map(([key,label,unit])=>'<option value="'+key+'">'+esc(label)+(unit?' ('+esc(unit)+')':'')+'</option>').join('');
+    }
+    metricEl.value=KNOWN.has(oldMetric)?oldMetric:'weightKg';
+    if(!dates.length){
+      tableEl.innerHTML='<p class="muted">Ajoute ton premier bilan pour activer les comparaisons.</p>';
+      svg.innerHTML='';help.textContent='';return;
+    }
+    const a=ordered.find(x=>x.date===fromEl.value),b=ordered.find(x=>x.date===toEl.value);
+    function tableGroup(fields,title){
+      const present=fields.filter(([key])=>a?.[key]!=null||b?.[key]!=null);
+      if(!present.length)return '';
+      return '<h4 class="mtb-group-title">'+esc(title)+'</h4><div class="mtb-table-wrap"><table class="mtb-table"><thead><tr><th>Mesure</th><th>Depart</th><th>Arrivee</th><th>Evolution</th></tr></thead><tbody>'+
+        present.map(([key,label,unit])=>{
+          const first=a?.[key],last=b?.[key],both=first!=null&&last!=null;
+          const difference=both?Math.round((last-first)*100)/100:null;
+          const absolute=difference==null||a.date===b.date?'—':(difference>0?'+':'')+fmt(difference,unit);
+          const relative=both&&first!==0&&a.date!==b.date?' ('+(difference>0?'+':'')+fmt(Math.round((last-first)/first*1000)/10,'%')+')':'';
+          return '<tr><th scope="row">'+esc(label)+'</th><td>'+fmt(first,unit)+'</td><td>'+fmt(last,unit)+'</td><td class="mtb-delta">'+absolute+relative+'</td></tr>';
+        }).join('')+'</tbody></table></div>';
+    }
+    tableEl.innerHTML=dates.length<2?'<p class="muted">Premier bilan enregistre. Ajoute une autre date pour voir les evolutions.</p>':
+      (a.date===b.date?'<p class="muted">Choisis deux dates differentes pour afficher les ecarts.</p>':'')+
+      tableGroup(MEASUREMENTS,'Mensurations au ruban')+tableGroup(RENPHO,'Balance RENPHO');
+    const metric=metricEl.value;
+    const entry=FIELDS.find(x=>x[0]===metric);
+    const start=fromEl.value<toEl.value?fromEl.value:toEl.value;
+    const end=fromEl.value>toEl.value?fromEl.value:toEl.value;
+    const points=ordered.filter(row=>row.date>=start&&row.date<=end&&row[metric]!=null);
+    svg.setAttribute('aria-label','Evolution de '+(entry?.[1]||'la mesure')+' entre '+start+' et '+end);
+    if(!points.length){svg.innerHTML='';help.textContent='Aucune valeur disponible pour cette mesure sur cette periode.';return;}
+    const W=360,H=180,left=43,right=12,top=12,bottom=37;
+    const vals=points.map(x=>x[metric]),min=Math.min(...vals),max=Math.max(...vals);
+    const margin=Math.max((max-min)*0.14,Math.abs(max)*0.01,0.15);
+    const low=min-margin,high=max+margin;
+    const startTime=Date.parse(start+'T12:00:00'),endTime=Date.parse(end+'T12:00:00');
+    const span=Math.max(1,endTime-startTime);
+    const x=d=>left+(Date.parse(d+'T12:00:00')-startTime)/span*(W-left-right);
+    const y=v=>top+(high-v)/(high-low)*(H-top-bottom);
+    const path=points.map((p,i)=>(i?'L':'M')+x(p.date).toFixed(2)+' '+y(p[metric]).toFixed(2)).join(' ');
+    svg.innerHTML=[high,(high+low)/2,low].map(v=>'<line x1="'+left+'" y1="'+y(v).toFixed(2)+'" x2="'+(W-right)+'" y2="'+y(v).toFixed(2)+'" class="mtb-gridline"/><text x="'+(left-6)+'" y="'+(y(v)+4).toFixed(2)+'" class="mtb-axis" text-anchor="end">'+esc(fmt(Math.round(v*10)/10,''))+'</text>').join('')+
+      '<path d="'+path+'" class="mtb-trendline"/>'+
+      points.map(p=>'<circle cx="'+x(p.date).toFixed(2)+'" cy="'+y(p[metric]).toFixed(2)+'" r="4" class="mtb-trendpoint"><title>'+esc(p.date.split('-').reverse().join('/')+' : '+fmt(p[metric],entry?.[2]||''))+'</title></circle>').join('')+
+      '<text x="'+left+'" y="'+(H-9)+'" class="mtb-axis">'+esc(start.split('-').reverse().join('/'))+'</text>'+
+      '<text x="'+(W-right)+'" y="'+(H-9)+'" text-anchor="end" class="mtb-axis">'+esc(end.split('-').reverse().join('/'))+'</text>';
+    help.textContent=points.length+' relevé'+(points.length>1?'s':'')+' affiché'+(points.length>1?'s':'')+' · '+(entry?.[1]||'Mesure')+' ('+(entry?.[2]||'indice')+'). La courbe utilise une echelle adaptee aux valeurs, pas une origine zero.';
+  }
+  ['mtbFrom','mtbTo','mtbMetric'].forEach(id=>document.getElementById(id).addEventListener('change',()=>renderComparison(live())));
   function render(){
     const rows=live(),latest=rows[0],prev=rows[1],sum=document.getElementById('mtbSummary');
     if(!latest)sum.innerHTML='<p class="muted">Aucune mesure enregistree.</p>';
@@ -123,7 +188,8 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
       const row=live().find(x=>x.date===b.dataset.mtbdelete);
       if(row&&confirm('Supprimer la mesure du '+row.date+' de cet appareil et de la synchronisation ?')){
         saveRecord({date:row.date,deleted:true,updatedAt:Date.now()});
-      }
+        renderComparison(rows);
+  }
     });
   }
   function updateHome(){
