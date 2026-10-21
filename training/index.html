@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css?v=58">
   <link rel="stylesheet" href="features-v57.css?v=57">
+  <link rel="stylesheet" href="body-measurements-v96.css?v=96">
 </head>
 <body>
   <header class="topbar">
@@ -78,6 +79,8 @@
       <div class="section-title"><h2>Historique</h2><button id="exportBtn" class="ghost">Sauvegarder</button></div>
       <div id="historyList" class="list"></div>
     </section>
+
+    <section id="bodyMeasurementsView" class="view"></section>
 
     <section id="statsView" class="view">
       <h2>Stats</h2>
@@ -165,6 +168,7 @@
     <button data-view="programView">Programme</button>
     <button data-view="historyView">Historique</button>
     <button data-view="statsView">Stats</button>
+    <button data-view="bodyMeasurementsView">Mesures</button>
   </nav>
 
   <script src="app.js?v=95"></script>
@@ -192,5 +196,6 @@
   <script src="coach-memory-v91.js?v=92"></script>
   <script type="module" src="cloud-sync-v94.js?v=94"></script>
   <script src="timed-exercises-v95.js?v=95"></script>
+  <script type="module" src="body-measurements-v96.js?v=96"></script>
 </body>
 </html>
