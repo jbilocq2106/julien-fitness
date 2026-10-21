@@ -114,6 +114,40 @@
     leaveTools.append(leaveButton, leaveHelp);
     monthEl.append(leaveTools);
 
+    // Ne jamais additionner les mois stockes : le total suit le mois affiche.
+    const paidLeaveDates = new Set([...leaveDays()].filter(date => date.startsWith(monthKey)));
+    let workMinutes=0, storedLeaveDates=new Set(), actualRowsCount=0;
+    const storedDays=[];
+    for(let day=1;day<=daysCount;day++){
+      const date=iso(year,monthIndex,day);
+      for(const row of officialRows(date)){
+        actualRowsCount++;
+        if(isLeave(row)){storedLeaveDates.add(date);continue;}
+        const declared=Number(row.plannedMinutes);
+        if(row.plannedMinutes!==undefined&&row.plannedMinutes!==null&&Number.isFinite(declared)&&declared>=0&&declared<=1440){
+          workMinutes+=declared;
+        }else if(/^\\d\\d:\\d\\d$/.test(String(row.start||''))&&/^\\d\\d:\\d\\d$/.test(String(row.end||''))){
+          const [aH,aM]=row.start.split(':').map(Number),[bH,bM]=row.end.split(':').map(Number);
+          let duration=(bH*60+bM)-(aH*60+aM);
+          if(duration<0)duration+=1440;
+          workMinutes+=duration;
+        }
+      }
+    }
+    for(const day of storedLeaveDates)paidLeaveDates.add(day);
+    const leaveMinutes=paidLeaveDates.size*480;
+    const hourFormat=value=>Math.floor(value/60)+' h '+String(value%60).padStart(2,'0');
+    let totalNote=document.getElementById('planning-local-note');
+    if(!totalNote){
+      totalNote=document.createElement('p');
+      totalNote.id='planning-local-note';
+      totalNote.className='muted mt-cycle-hours-summary';
+    }
+    totalNote.textContent=(actualRowsCount||paidLeaveDates.size||officialPdfMonth)
+      ? title+' : '+hourFormat(workMinutes)+' travaillées + '+hourFormat(leaveMinutes)+' de congés = '+hourFormat(workMinutes+leaveMinutes)+' comptabilisées'
+      : title+' : heures réelles non renseignées (cycle théorique uniquement)';
+    monthEl.after(totalNote);
+
     const fragment = document.createDocumentFragment();
     WEEKDAYS.forEach((name, index) => {
       const el = document.createElement('div');
@@ -191,6 +225,7 @@
     #grid .mt-cycle-day.mt-cycle-paid-leave span{font-weight:900;font-size:11px}
     #grid .mt-cycle-day.mt-cycle-paid-leave .mt-cycle-detail{color:#ddfff9;font-weight:800}
     #grid .mt-cycle-day.mt-cycle-holiday.mt-cycle-paid-leave{border:2px dashed #ffe08c}
+    .mt-cycle-hours-summary{padding:10px 12px;margin:8px 0 12px;background:#26364c;border-left:3px solid #36c7b5;border-radius:8px;font-size:13px;line-height:1.45;color:#f3f7ff}
     .mt-cycle-leave-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
     .mt-cycle-leave-tools small{color:#a9dfd7;font-size:10px;flex:1;min-width:135px}
     .mt-cycle-leave-edit{padding:8px 10px;border:2px solid #36c7b5;background:#214a54;color:#f2fffc;font-size:12px;font-weight:800;border-radius:10px}
