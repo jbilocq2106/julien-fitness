@@ -164,7 +164,8 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     history.replaceState(history.state,'',location.pathname+location.search);
     try{
       const b64=hash.slice('#mt-bilan='.length).replace(/-/g,'+').replace(/_/g,'/');
-      const payload=JSON.parse(atob(b64));
+      const decoded=JSON.parse(atob(b64));
+      const payload=Array.isArray(decoded)?Object.fromEntries([['date',decoded[0]],['source','RENPHO + ruban'],...FIELDS.map(([key],i)=>[key,decoded[i+1]])]):decoded;
       const row=clean(payload);
       if(!row||row.deleted||!KNOWN.has('weightKg')||!Object.keys(row).some(k=>KNOWN.has(k)))throw new Error('Format invalide');
       const previous=read().find(x=>x.date===row.date&&!x.deleted);
