@@ -135,10 +135,11 @@
     }
     for(const day of storedLeaveDates)paidLeaveDates.add(day);
     const leaveMinutes=paidLeaveDates.size*480;
-    // Exception demandee : 1er novembre 2026 = 8 h comptabilisees sans vacation.
-    // Ce credit concerne le decompte du planning, pas automatiquement la paie.
-    const holidayCreditDate='2026-11-01';
-    const holidayCreditMinutes=monthKey==='2026-11'&&!officialRows(holidayCreditDate).length&&!paidLeaveDates.has(holidayCreditDate)?480:0;
+    // Luxembourg : Toussaint le dimanche 1er novembre 2026.
+    // Si non travaille, un jour de conge compensatoire est du en nature :
+    // ni vacation supplementaire ni 8 heures ajoutees au mois.
+    const holidayCompDate='2026-11-01';
+    const holidayCompDue=monthKey==='2026-11'&&!officialRows(holidayCompDate).some(row=>!isLeave(row));
     const hourFormat=value=>Math.floor(value/60)+' h '+String(value%60).padStart(2,'0');
     let totalNote=document.getElementById('planning-local-note');
     if(!totalNote){
@@ -147,7 +148,7 @@
       totalNote.className='muted mt-cycle-hours-summary';
     }
     totalNote.textContent=(actualRowsCount||paidLeaveDates.size||officialPdfMonth)
-      ? title+' : '+hourFormat(workMinutes)+' travaillées + '+hourFormat(leaveMinutes)+' de congés'+(holidayCreditMinutes?' + '+hourFormat(holidayCreditMinutes)+' férié (1er nov.)':'')+' = '+hourFormat(workMinutes+leaveMinutes+holidayCreditMinutes)+' comptabilisées'
+      ? title+' : '+hourFormat(workMinutes)+' travaillées + '+hourFormat(leaveMinutes)+' de congés = '+hourFormat(workMinutes+leaveMinutes)+' comptabilisées'+(holidayCompDue?' · 1 jour férié compensatoire à récupérer (hors total)':'')
       : title+' : heures réelles non renseignées (cycle théorique uniquement)';
     monthEl.after(totalNote);
 
@@ -167,25 +168,25 @@
       const importedLeave = rows.some(isLeave);
       const markedLeave = leaveDays().has(date);
       const paidLeave = importedLeave || markedLeave;
-      const holidayCredit=holidayCreditMinutes>0&&date===holidayCreditDate;
+      const holidayComp=holidayCompDue&&date===holidayCompDate;
       const type = paidLeave ? 'leave' : actual ? rowType(rows[0]) : officialPdfMonth ? 'rest' : phase;
       const isHoliday = legalHolidays.has(date);
       const cde = !paidLeave && date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : !officialPdfMonth && phase !== 'rest');
       const col = (firstOffset + day - 1) % 7;
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = `day mt-cycle-day ${type}${col >= 5 ? ' we' : ''}${date === today ? ' mt-cycle-today' : ''}${isHoliday ? ' mt-cycle-holiday' : ''}${paidLeave ? ' mt-cycle-paid-leave' : ''}${holidayCredit ? ' mt-cycle-holiday-credit' : ''}`;
+      el.className = `day mt-cycle-day ${type}${col >= 5 ? ' we' : ''}${date === today ? ' mt-cycle-today' : ''}${isHoliday ? ' mt-cycle-holiday' : ''}${paidLeave ? ' mt-cycle-paid-leave' : ''}${holidayComp ? ' mt-cycle-holiday-comp' : ''}`;
       el.dataset.cycleDay = date;
       const number = document.createElement('b'); number.textContent = String(day);
       const summary = document.createElement('span');
-      summary.textContent = paidLeave ? '🏖️ Congé payé' : holidayCredit ? '🇱🇺 Férié +8 h' : actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : officialPdfMonth ? 'Non planifié' : TYPES[phase];
+      summary.textContent = paidLeave ? '🏖️ Congé payé' : holidayComp ? '🇱🇺 Férié' : actual ? rows.map(r => r.start || r.post || 'Vacation').join(' / ') : officialPdfMonth ? 'Non planifié' : TYPES[phase];
       const detail = document.createElement('small');
       detail.className = 'mt-cycle-detail';
-      detail.textContent = paidLeave ? (importedLeave ? 'Congé du planning importé' : '8 h estimées · marquées') : holidayCredit ? 'Comptabilisé sans travail · selon ton décompte' : actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : officialPdfMonth ? 'Aucun poste sur le PDF' : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
+      detail.textContent = paidLeave ? (importedLeave ? 'Congé du planning importé' : '8 h estimées · marquées') : holidayComp ? '1 jour à récupérer · hors total' : actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : officialPdfMonth ? 'Aucun poste sur le PDF' : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
       if (isHoliday) detail.textContent += ' · 🇱🇺 Férié';
       el.append(number, summary, detail);
       const fallbackDescription = officialPdfMonth ? 'aucune vacation sur le PDF' : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim();
-      const accessible = `${day} ${title} : ${paidLeave ? 'congé payé, ' : ''}${holidayCredit ? '8 heures de férié comptabilisées sans vacation, ' : ''}${actual ? 'planning importé' : officialPdfMonth ? 'planning PDF importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : fallbackDescription}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
+      const accessible = `${day} ${title} : ${paidLeave ? 'congé payé, ' : ''}${holidayComp ? '1 jour compensatoire à récupérer, hors total, ' : ''}${actual ? 'planning importé' : officialPdfMonth ? 'planning PDF importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : fallbackDescription}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
       el.setAttribute('aria-label', accessible);
       el.addEventListener('click', () => {
         if (Date.now() < blockClickUntil) return;
@@ -199,7 +200,7 @@
           render();
           return;
         }
-        const description = paidLeave ? '🏖️ Congé payé (8 h estimées). Calculé dans le complément salarial.' : holidayCredit ? '🇱🇺 1er novembre : 8 h de férié ajoutées au total de novembre selon ton décompte. Aucun poste effectué. Vérifier séparément les droits à repos compensatoire / rémunération.' : actual
+        const description = paidLeave ? '🏖️ Congé payé (8 h estimées). Calculé dans le complément salarial.' : holidayComp ? '🇱🇺 Toussaint : jour férié légal tombé un dimanche non travaillé. Droit à 1 jour de congé compensatoire à prendre en nature sous 3 mois, avec possibilité de report jusqu’à mars 2027 selon les nécessités de service. Aucune heure supplémentaire ajoutée au total de novembre.' : actual
           ? rows.map(r => `${r.start || '--:--'} – ${r.end || '--:--'} · ${r.post || 'Vacation'}`).join('\n') + (cde ? '\nFonction : chef d’équipe (CDE).' : '')
           : officialPdfMonth ? 'Aucune vacation indiquée sur le planning PDF importé.' : `${TYPES[phase]}${phase === 'rest' ? '' : ' · ' + SHIFT_HOURS[phase] + (phase === 'night' ? ' (fin le lendemain)' : '')}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
         alert(`${date}\n${description}`);
@@ -225,8 +226,8 @@
     #grid .mt-cycle-day span{font-size:11px;font-weight:650;overflow-wrap:anywhere}
     #grid .mt-cycle-day .mt-cycle-detail{display:block;font-size:9px;line-height:1.3;margin-top:5px;color:#eef2f8;overflow-wrap:anywhere}
     #grid .mt-cycle-day.rest{background:#354052}
-    #grid .mt-cycle-day.mt-cycle-holiday-credit{background:#594779;border:2px solid #f2d172}
-    #grid .mt-cycle-day.mt-cycle-holiday-credit .mt-cycle-detail{color:#fff0c6;font-weight:800}
+    #grid .mt-cycle-day.mt-cycle-holiday-comp{background:#594779;border:2px solid #f2d172}
+    #grid .mt-cycle-day.mt-cycle-holiday-comp .mt-cycle-detail{color:#fff0c6;font-weight:800}
     #grid .mt-cycle-day.mt-cycle-paid-leave{background:#125c5b!important;outline:3px solid #46ffe0;outline-offset:-3px;box-shadow:inset 0 0 0 2px #0b383e,0 0 12px rgba(70,255,224,.38);color:white!important}
     #grid .mt-cycle-day.mt-cycle-paid-leave span{font-weight:900;font-size:11px}
     #grid .mt-cycle-day.mt-cycle-paid-leave .mt-cycle-detail{color:#ddfff9;font-weight:800}
