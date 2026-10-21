@@ -4,6 +4,10 @@
   'use strict';
 
   const GYMS_KEY='mt_known_gym_locations_v1';
+  const GYM_OPTIONS=['Basic-Fit Sandweiler','Basic-Fit Yutz','Basic-Fit Thionville'];
+  const DEFAULT_GYM=GYM_OPTIONS[0];
+  const SANDWEILER_BACKFILL_KEY='mt_sandweiler_last_two_20261021_v1';
+  let pendingGymChoice='';
   let knownGyms=[];
   let currentPosition=null;
   let currentPositionWorkout=null;
@@ -67,75 +71,66 @@
     },{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
   }
 
-  function ensureModal(){
-    let modal=document.getElementById('mtGymModal');
+  // Choix explicite : aucune géolocalisation nécessaire ni envoyée.
+  function ensureSelectionModal(){
+    let modal=document.getElementById('mtGymSelectionModal');
     if(modal)return modal;
     modal=document.createElement('div');
-    modal.id='mtGymModal';modal.className='modal hidden';
+    modal.id='mtGymSelectionModal';
+    modal.className='modal hidden';
     modal.setAttribute('role','dialog');
     modal.setAttribute('aria-modal','true');
-    modal.setAttribute('aria-labelledby','mtGymModalTitle');
+    modal.setAttribute('aria-labelledby','mtGymSelectionTitle');
     modal.innerHTML=`
-      <div class="modal-card mt-gym-modal-card">
-        <div class="section-title">
-          <div><div class="eyebrow">LIEU D’ENTRAÎNEMENT</div><h2 id="mtGymModalTitle">Quelle salle ?</h2></div>
-          <button type="button" class="ghost" id="mtGymClose">Fermer</button>
+      <div class="modal-card mt-gym-choice-card">
+        <div class="eyebrow">SALLE D’ENTRAÎNEMENT</div>
+        <h2 id="mtGymSelectionTitle">Dans quel Basic-Fit ?</h2>
+        <p class="muted">Sandweiler est proposé par défaut. Confirme ou choisis Yutz ou Thionville.</p>
+        <div id="mtGymChoices" class="mt-gym-options" role="radiogroup" aria-label="Choisir le Basic-Fit">
+          ${GYM_OPTIONS.map((name,index)=>`<label class="mt-gym-option">
+            <input type="radio" name="mtGymSelection" value="${name}" ${index===0?'checked':''}>
+            <span>${name}</span>
+          </label>`).join('')}
         </div>
-        <p id="mtGymLocationStatus" class="muted">Tu peux donner un nom à cet endroit.</p>
-        <label for="mtGymNameInput">Nom de la salle</label>
-        <input id="mtGymNameInput" list="mtGymPreviousNames" maxlength="100"
-          placeholder="Ex. Ma salle à Luxembourg" autocomplete="off">
-        <datalist id="mtGymPreviousNames"></datalist>
-        <p class="muted mt-gym-explanation">Ce nom sera indiqué dans l’historique, avec les heures. Le téléphone pourra reconnaître la même salle par GPS les prochaines fois.</p>
-        <div class="mt-gym-modal-actions">
-          <button type="button" class="ghost" id="mtGymLocateAgain">📍 Actualiser GPS</button>
-          <button type="button" class="primary" id="mtGymStore">Enregistrer</button>
+        <div class="mt-gym-choice-actions">
+          <button type="button" class="ghost" id="mtGymChoiceCancel">Annuler</button>
+          <button type="button" class="primary" id="mtGymChoiceConfirm">Confirmer la salle</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
-    modal.querySelector('#mtGymClose').onclick=()=>modal.classList.add('hidden');
-    modal.onclick=event=>{if(event.target===modal)modal.classList.add('hidden');};
-    modal.querySelector('#mtGymLocateAgain').onclick=()=>locate(state.activeWorkout);
-    modal.querySelector('#mtGymStore').onclick=storeGym;
     return modal;
+  }
+
+  function promptGymSelection(onConfirm,selectedName=DEFAULT_GYM){
+    const modal=ensureSelectionModal();
+    const selection=GYM_OPTIONS.includes(selectedName)?selectedName:DEFAULT_GYM;
+    for(const radio of modal.querySelectorAll('input[name="mtGymSelection"]')){
+      radio.checked=radio.value===selection;
+    }
+    modal.classList.remove('hidden');
+    const close=()=>{modal.classList.add('hidden');document.removeEventListener('keydown',onEscape);};
+    const onEscape=event=>{if(event.key==='Escape'){event.preventDefault();close();}};
+    document.addEventListener('keydown',onEscape);
+    modal.querySelector('#mtGymChoiceCancel').onclick=close;
+    modal.querySelector('#mtGymChoiceConfirm').onclick=()=>{
+      const chosen=modal.querySelector('input[name="mtGymSelection"]:checked')?.value||DEFAULT_GYM;
+      close();
+      onConfirm(chosen);
+    };
+    modal.onclick=event=>{if(event.target===modal)close();};
+    modal.querySelector('input[name="mtGymSelection"]:checked')?.focus();
   }
 
   function openGymModal(){
     const workout=state.activeWorkout;
     if(!workout)return;
-    const modal=ensureModal();
-    modal.querySelector('#mtGymNameInput').value=workout.gymName||'';
-    const suggestions=modal.querySelector('#mtGymPreviousNames');
-    suggestions.replaceChildren();
-    [...new Set(knownGyms.map(g=>g.name))].sort((a,b)=>a.localeCompare(b,'fr')).forEach(name=>{
-      const option=document.createElement('option');option.value=name;suggestions.appendChild(option);
-    });
-    modal.classList.remove('hidden');
-    if(currentPositionWorkout===workout.started){
-      locationMessage(`Position déjà enregistrée (précision ≈ ${Math.round(currentPosition.accuracy)} m).`);
-    }else locate(workout);
-    modal.querySelector('#mtGymNameInput').focus();
-  }
-
-  function storeGym(){
-    const workout=state.activeWorkout;
-    if(!workout)return;
-    const input=document.getElementById('mtGymNameInput');
-    const name=input.value.trim();
-    if(!name){alert('Indique un nom pour la salle, ou « Maison » si tu t’entraînes chez toi.');return;}
-    workout.gymName=name;
-    workout.gymDetection=currentPositionWorkout===workout.started?'gps-confirmed':'manual';
-    if(currentPositionWorkout===workout.started&&currentPosition&&currentPosition.accuracy<=350){
-      const position=currentPosition;
-      const existing=knownGyms.find(g=>g.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')&&distanceMeters(g,position)<250);
-      if(existing){existing.lat=position.lat;existing.lon=position.lon;}
-      else knownGyms.push({name,lat:position.lat,lon:position.lon});
-      knownGyms=knownGyms.slice(-50);
-      try{localStorage.setItem(GYMS_KEY,JSON.stringify(knownGyms));}catch(e){}
-    }
-    save();
-    document.getElementById('mtGymModal')?.classList.add('hidden');
-    renderWorkout();
+    promptGymSelection(name=>{
+      if(state.activeWorkout!==workout)return;
+      workout.gymName=name;
+      workout.gymDetection='selected';
+      save();
+      renderWorkout();
+    },workout.gymName||DEFAULT_GYM);
   }
 
   function refreshWorkoutBadge(){
@@ -173,30 +168,80 @@
     window.recalculateProgressionFromWorkout=recalculateProgressionFromWorkout;
   }
 
+  // Ne corriger qu'une seule fois les deux dernières vraies séances
+  // après la récupération éventuelle des données privées Firebase.
+  function backfillSandweilerForLastTwo(){
+    if(localStorage.getItem(SANDWEILER_BACKFILL_KEY))return false;
+    const groups=new Map();
+    function add(title,start){
+      const date=Date.parse(start||'');
+      if(!Number.isFinite(date)||!title)return;
+      const key=String(title)+'|'+String(start);
+      groups.set(key,{key,title,start,date});
+    }
+    (state.history||[]).forEach(row=>add(row.title,row.start_time));
+    (state.sessions||[]).forEach(row=>add(row.title,row.start));
+    const latest=[...groups.values()].sort((a,b)=>b.date-a.date).slice(0,2);
+    if(latest.length<2)return false;
+    const keys=new Set(latest.map(group=>group.key));
+    let changed=false;
+    (state.history||[]).forEach(row=>{
+      if(!keys.has(String(row.title||'')+'|'+String(row.start_time||'')))return;
+      if(row.gym_name!==DEFAULT_GYM){row.gym_name=DEFAULT_GYM;changed=true;}
+    });
+    (state.sessions||[]).forEach(summary=>{
+      if(!keys.has(String(summary.title||'')+'|'+String(summary.start||'')))return;
+      if(summary.gym_name!==DEFAULT_GYM){summary.gym_name=DEFAULT_GYM;changed=true;}
+    });
+    localStorage.setItem(SANDWEILER_BACKFILL_KEY,JSON.stringify({
+      groups:latest.map(group=>group.key),name:DEFAULT_GYM,updatedAt:new Date().toISOString()
+    }));
+    if(changed){save();try{renderHistory();}catch(e){}}
+    return changed;
+  }
+  window.mtBackfillBasicFitSandweiler=backfillSandweilerForLastTwo;
+
   function autoLocateNewWorkout(previousWorkout){
     const workout=state.activeWorkout;
     if(previousWorkout||!workout||workout.testMode)return;
     currentPosition=null;currentPositionWorkout=null;
-    locate(workout);
+    // Une salle est choisie explicitement au lancement : ne pas
+    // lui substituer silencieusement un résultat GPS.
+    if(!pendingGymChoice&&!workout.gymName)locate(workout);
+  }
+
+  function promptBeforeStart(begin,testMode){
+    if(testMode)return begin();
+    if(state.activeWorkout){
+      alert('Une séance est déjà en cours. Termine-la ou annule-la avant d’en démarrer une autre.');
+      return;
+    }
+    promptGymSelection(chosen=>{
+      if(state.activeWorkout)return;
+      pendingGymChoice=chosen;
+      try{
+        begin();
+        const workout=state.activeWorkout;
+        if(!workout||workout.testMode)return;
+        workout.gymName=chosen;
+        workout.gymDetection='selected';
+        save();
+        renderWorkout();
+      }finally{pendingGymChoice='';}
+    });
   }
 
   if(typeof startWorkout==='function'){
     const previousStart=startWorkout;
     startWorkout=function(...args){
-      const before=state.activeWorkout;
-      const result=previousStart(...args);
-      autoLocateNewWorkout(before);
-      return result;
+      return promptBeforeStart(()=>previousStart(...args),!!args[1]);
     };
     window.startWorkout=startWorkout;
   }
   if(typeof mtStartCardioSession==='function'){
     const previousCardio=mtStartCardioSession;
     mtStartCardioSession=function(...args){
-      const before=state.activeWorkout;
-      const result=previousCardio(...args);
-      autoLocateNewWorkout(before);
-      return result;
+      return promptBeforeStart(()=>previousCardio(...args),!!args[1]);
     };
     window.mtStartCardioSession=mtStartCardioSession;
   }
@@ -247,10 +292,13 @@
         edit.type='button';edit.className='ghost mt-gym-edit-history';
         edit.textContent='✎ Corriger la salle de cette séance';
         edit.onclick=()=>{
-          const name=prompt('Nom de la salle pour cette séance :',first.gym_name||'');
-          if(name===null)return;
-          rows.forEach(r=>r.gym_name=name.trim());
-          save();renderHistory();openWorkoutDetail(key);
+          promptGymSelection(name=>{
+            rows.forEach(r=>r.gym_name=name);
+            (state.sessions||[]).forEach(summary=>{
+              if((summary.title||'')+'|'+(summary.start||'')===key)summary.gym_name=name;
+            });
+            save();renderHistory();openWorkoutDetail(key);
+          },first.gym_name||DEFAULT_GYM);
         };
         body.appendChild(edit);
       }
@@ -261,6 +309,13 @@
 
   const style=document.createElement('style');
   style.textContent=`
+    .mt-gym-choice-card{max-width:420px}
+    .mt-gym-options{display:grid;gap:9px;margin-top:16px}
+    .mt-gym-option{display:flex;align-items:center;gap:10px;padding:13px;border:1px solid #475569;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer}
+    .mt-gym-option:has(input:checked){border-color:#38bdf8;background:rgba(56,189,248,.11)}
+    .mt-gym-option input{accent-color:#38bdf8;flex:0 0 auto;width:18px;height:18px}
+    .mt-gym-choice-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:9px;margin-top:20px}
+    .mt-gym-choice-actions button{min-height:43px}
     .mt-gym-current{display:block;margin-top:7px;margin-bottom:5px;padding:7px 10px;
       font-size:11px;text-align:left;max-width:100%;white-space:normal;color:#93c5fd}
     .mt-gym-modal-card label{display:block;font-weight:800;font-size:12px;margin:12px 0 6px}
