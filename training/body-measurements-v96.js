@@ -99,6 +99,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     view.querySelector('details').open=true;
   }
   // Comparaison locale : aucune mensuration n'est integree au code publie.
+  let lastKnownLatest='';
   function renderComparison(rows){
     const ordered=[...rows].sort((a,b)=>a.date.localeCompare(b.date));
     const dates=ordered.map(x=>x.date);
@@ -110,7 +111,8 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     const options=dates.map(date=>'<option value="'+date+'">'+esc(date.split('-').reverse().join('/'))+'</option>').join('');
     fromEl.innerHTML=options;toEl.innerHTML=options;
     fromEl.value=dates.includes(oldFrom)?oldFrom:(dates[0]||'');
-    toEl.value=dates.includes(oldTo)?oldTo:(dates[dates.length-1]||'');
+    toEl.value=dates.includes(oldTo)&&oldTo!==lastKnownLatest?oldTo:(dates[dates.length-1]||'');
+    lastKnownLatest=dates[dates.length-1]||'';
     if(!metricEl.options.length){
       metricEl.innerHTML=FIELDS.map(([key,label,unit])=>'<option value="'+key+'">'+esc(label)+(unit?' ('+esc(unit)+')':'')+'</option>').join('');
     }
@@ -212,7 +214,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     if(!validDate(date)){alert('Choisis une date valide.');return;}
     const previous=read().find(x=>x.date===date);
     if(previous&&!previous.deleted&&!confirm('Remplacer les donnees du '+date+' par celles du formulaire ?'))return;
-    const record={date,source:'Saisie manuelle',updatedAt:Date.now()};
+    const record={date,source:previous?.source==='RENPHO + ruban'?'RENPHO + ruban':'Saisie manuelle',updatedAt:Date.now()};
     FIELDS.forEach(([key])=>{const value=number(form.querySelector('[data-mtb="'+key+'"]').value);if(value!==null)record[key]=value;});
     if(Object.keys(record).length<4){alert('Indique au moins une mesure.');return;}
     if(saveRecord(record))alert('Bilan enregistre sur cet appareil. La sauvegarde privee sera synchronisee si Google est connecte.');
