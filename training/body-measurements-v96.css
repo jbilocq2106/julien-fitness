@@ -23,3 +23,25 @@
 .mtb-entry-actions button{font-size:11px;padding:8px}
 @media(max-width:410px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))}.bottom-nav button{padding:8px 2px;font-size:10px}.mtb-kpis strong{font-size:16px}}
 @media(min-width:411px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* Comparaison des bilans : affichage compact sur mobile */
+#bodyMeasurementsView select{width:100%;min-width:0;background:#0e1727;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px}
+.mtb-compare-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.mtb-compare-controls label,.mtb-metric-label{display:block;color:var(--muted);font-size:12px;font-weight:700}
+.mtb-compare-controls select,.mtb-metric-label select{display:block;margin-top:6px}
+.mtb-group-title{font-size:14px;margin:15px 0 8px}
+.mtb-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mtb-table{border-collapse:collapse;width:100%;min-width:340px;font-size:11px;font-variant-numeric:tabular-nums}
+.mtb-table th,.mtb-table td{padding:8px 5px;border-bottom:1px solid var(--line);vertical-align:top;text-align:right}
+.mtb-table th:first-child{text-align:left}
+.mtb-table thead th{font-weight:700;color:var(--muted)}
+.mtb-table tbody th{font-weight:500;max-width:105px}
+.mtb-delta{font-weight:700}
+.mtb-metric-label{margin-top:16px}
+.mtb-chart-box{border:1px solid var(--line);border-radius:12px;padding:6px;margin-top:10px;background:#0e1727}
+#mtbTrend{display:block;width:100%;height:auto;overflow:visible}
+.mtb-gridline{stroke:var(--line);stroke-width:1}
+.mtb-axis{fill:var(--muted);font-size:9px}
+.mtb-trendline{fill:none;stroke:var(--accent,#60a5fa);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.mtb-trendpoint{fill:var(--accent,#60a5fa);stroke:#0e1727;stroke-width:1.5}
+@media(max-width:360px){.mtb-table{font-size:10px}.mtb-table th,.mtb-table td{padding:7px 3px}}
