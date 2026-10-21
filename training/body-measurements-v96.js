@@ -30,7 +30,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
   ];
   const FIELDS=[...MEASUREMENTS,...RENPHO];
   const KNOWN=new Set(FIELDS.map(item=>item[0]));
-  let user=null, syncing=false, pending=false, cloudStatus='Enregistre sur cet appareil.';
+  let user=null, syncing=false, pending=false, syncTimer=null, cloudStatus='Enregistre sur cet appareil.';
   const number=v=>{
     if(v===null||v===undefined||String(v).trim()==='')return null;
     const n=Number(String(v).replace(',','.'));
@@ -176,7 +176,6 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
   // Synchronisation dediee par date. Les donnees restent sous /users/{uid}/apps/mytraining.
   const firebaseApp=getApp('mytraining');
   const auth=getAuth(firebaseApp),db=getFirestore(firebaseApp);
-  let syncTimer=null;
   function queueSync(){clearTimeout(syncTimer);syncTimer=setTimeout(syncCloud,900);}
   async function syncCloud(){
     if(!user||!navigator.onLine){cloudStatus='Enregistre localement ; connexion Google necessaire pour synchroniser.';render();return;}
