@@ -22,7 +22,7 @@ const db = getFirestore(app);
 const PREF_KEYS = [
   'mt_show_rir', 'mt_exercise_feedback_v1', 'mt_exercise_replacements_v70',
   'mt_machine_settings_v1', 'mt_known_gym_locations_v1',
-  'mt_stats_approved_advice_v1'
+  'mt_stats_approved_advice_v1', 'mt_sandweiler_last_two_20261021_v1'
 ];
 const SIGNATURES_KEY = 'mt_cloud_workout_signatures_v1';
 const META_KEY = 'mt_cloud_meta_signature_v1';
@@ -178,6 +178,7 @@ function changedLocally(id, localSignature) {
 
 async function syncNow(pull = true) {
   if (!currentUser || !navigator.onLine) {
+    if (typeof window.mtBackfillBasicFitSandweiler === 'function') window.mtBackfillBasicFitSandweiler();
     status('Hors connexion : les données restent sauvegardées sur ce téléphone.');
     return;
   }
@@ -221,6 +222,9 @@ async function syncNow(pull = true) {
       } catch (error) { console.warn('Metadonnees distantes ignorees', error); }
     }
     if (imported) { persistWithoutCloud(); refreshViews(); }
+    // Effectuer le changement historique APRES avoir récupéré les séances
+    // distantes, mais AVANT le nouveau téléversement des groupes.
+    if (typeof window.mtBackfillBasicFitSandweiler === 'function') window.mtBackfillBasicFitSandweiler();
 
     const freshGroups = groups();
     for (const group of freshGroups.values()) {
@@ -249,6 +253,7 @@ async function syncNow(pull = true) {
     status(`Synchronisé ✓ — ${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}`);
   } catch (error) {
     console.warn('Synchronisation MyTraining', error);
+    if (typeof window.mtBackfillBasicFitSandweiler === 'function') window.mtBackfillBasicFitSandweiler();
     status('Synchronisation impossible pour le moment. Tes données locales sont conservées.');
   } finally {
     busy = false;
@@ -308,7 +313,10 @@ onAuthStateChanged(auth, user => {
   if (user) {
     status('Compte Google connecté. Vérification des sauvegardes…');
     syncNow(true);
-  } else status('Non connecté — tes séances restent enregistrées sur ce téléphone.');
+  } else {
+    if (typeof window.mtBackfillBasicFitSandweiler === 'function') window.mtBackfillBasicFitSandweiler();
+    status('Non connecté — tes séances restent enregistrées sur ce téléphone.');
+  }
 });
 window.addEventListener('online', () => syncNow(true));
 document.addEventListener('visibilitychange', () => {
