@@ -117,14 +117,16 @@
   }
 
   function monthRows(month, active, history) {
-    const imported = new Map();
-    const record = s => {
-      if (!s || !String(s.date || '').startsWith(month)) return;
-      imported.set([s.date, s.start, s.end, s.post].join('|'), s);
-    };
+    // Le mois actif remplace l'ancienne version archivee : ne pas doubler
+    // les vacations lorsque le PDF ou le planning personnel est modifie.
+    const currentRows = active.filter(s => s && String(s.date || '').startsWith(month));
     const archived = history[month]?.rows;
-    if (Array.isArray(archived)) archived.forEach(record);
-    active.forEach(record);
+    const sourceRows = currentRows.length ? currentRows : (Array.isArray(archived) ? archived : []);
+    const imported = new Map();
+    for (const s of sourceRows) {
+      if (!s || !String(s.date || '').startsWith(month)) continue;
+      imported.set([s.date, s.start, s.end, s.post].join('|'), s);
+    }
     let rows = [...imported.values()];
     for (const date of markedLeaveDays()) {
       if (!date.startsWith(month) || rows.some(row => row.date === date && isLeave(row))) continue;
@@ -275,6 +277,19 @@
   document.head.append(css);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(render, 0)); else setTimeout(render, 0);
   document.addEventListener('click', e => { if (e.target?.dataset?.tab === 'salary') setTimeout(render, 0); });
+  // Recalcul automatique, meme quand le changement vient d'un autre onglet.
+  const salaryKeys = new Set([
+    'myteam_shifts','myteam_planning_history','myteam_planning_meta',
+    'myteam_paid_leave_days_v1','myteam_salary_actuals',
+    'myteam_salary_base_net_v1','myteam_salary_leave_rate_v1','myteam_salary_xray'
+  ]);
   window.addEventListener('myteam-paid-leave-updated', render);
+  window.addEventListener('myteam-planning-updated', render);
+  window.addEventListener('storage', event => {
+    if (event.storageArea === localStorage && (!event.key || salaryKeys.has(event.key))) render();
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+  window.addEventListener('pageshow', render);
+  window.MyTeamNotifyPlanningChanged = () => window.dispatchEvent(new Event('myteam-planning-updated'));
   window.MyTeamRenderSalary = render;
 })();
