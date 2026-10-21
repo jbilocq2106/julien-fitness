@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "updated": "2026-10-21",
   "weekly_note": "4 séances habituelles S1–S4 + séance spéciale S5 à la demande • S5 hors roulement • aucun soulevé de terre",
   "sessions": [
@@ -842,19 +842,19 @@
           "sets": [
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 10
             },
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 12
             },
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 12
             }
           ],
           "rest": 75,
-          "note": "Banc à 45° ; coudes fixes, mouvement contrôlé et 1–2 répétitions en réserve."
+          "note": "Charges de départ proposées par estimation (pas de performance confirmée sur ce mouvement précis). Banc à 45° ; 1–2 répétitions en réserve. Si trop lourd ou technique imparfaite, réduire."
         },
         {
           "name": "Extension triceps corde",
@@ -884,19 +884,19 @@
           "sets": [
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 12
             },
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 14
             },
             {
               "reps": "10–12",
-              "weight": null
+              "weight": 14
             }
           ],
           "rest": 75,
-          "note": "Prise neutre ; travailler biceps, brachial et brachio-radial, sans élan."
+          "note": "Historique connu : jusqu'à 16 kg par haltère (03/08/2026), répétitions non vérifiées. Départ 12/14/14 kg ; tenter 16 kg uniquement si 14 kg passent proprement sans élan et avec 1–2 répétitions en réserve."
         },
         {
           "name": "Extension triceps barre V (poulie haute)",
