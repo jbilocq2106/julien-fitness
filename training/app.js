@@ -590,8 +590,10 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
 
   const changes=recalculateProgressionFromWorkout(w);
   state.sessions.unshift({title,start:start.toISOString(),end:end.toISOString(),completedSets,completedCardio,exerciseOrder:w.exercises.map(e=>e.name)});
-  const ids=state.program.sessions.map(s=>s.id),idx=ids.indexOf(w.id);
-  state.nextSessionId=ids[(idx+1)%ids.length];
+  // Les séances spéciales à la demande ne perturbent jamais la rotation S1–S4.
+  const ids=state.program.sessions.filter(s=>/^S[1-4]$/.test(s.id)).map(s=>s.id);
+  const idx=ids.indexOf(w.id);
+  if(idx>=0)state.nextSessionId=ids[(idx+1)%ids.length];
   state.activeWorkout=null;save();clearInterval(workoutTick);applyProgressionOverrides();renderProgram();renderHome();showView('homeView');
 
   if(changes.length){
