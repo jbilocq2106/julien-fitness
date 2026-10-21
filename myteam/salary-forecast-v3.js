@@ -157,7 +157,8 @@
     const actual = actuals[month] && Number.isFinite(Number(actuals[month].net)) ? actuals[month] : null;
     const available = !!actual || source.rows.length > 0;
     const calc = available ? estimate(source.rows) : null;
-    return { ...source, actual, calc, available, net: actual ? Number(actual.net) : calc?.net, gross: actual && Number.isFinite(Number(actual.gross)) ? Number(actual.gross) : calc?.gross };
+    const holidayCompDue=month==='2026-11'&&!source.rows.some(s=>s.date==='2026-11-01'&&!isLeave(s));
+    return { ...source, actual, calc, available, holidayCompDue, net: actual ? Number(actual.net) : calc?.net, gross: actual && Number.isFinite(Number(actual.gross)) ? Number(actual.gross) : calc?.gross };
   }
 
   function ensureSection() {
@@ -218,6 +219,7 @@
         <div class="mt-salary-gross">${available ? `${amount(data.gross)} brut ${actual ? 'réel' : 'estimé'}` : 'Planning de ce mois non disponible'}</div>
         <div class="mt-salary-source">${source}${selectedMonth >= '2026-11' ? ' · CDE prévu' : ''}</div>
       </div>
+      ${data.holidayCompDue ? `<p class="muted" style="padding:12px;border:1px solid #51627a;border-radius:10px"><strong>Toussaint — dimanche 1er novembre 2026 :</strong> jour férié légal non travaillé. Droit à 1 jour de congé compensatoire en nature, à poser ultérieurement. Ce jour n'ajoute ni 8 heures travaillées ni supplément férié à la paie de novembre. Le congé doit normalement être pris sous trois mois (report possible jusqu'en mars 2027 pour nécessité de service). Il ne remplace pas tes congés annuels.</p>` : ''}
       ${paymentSplitHtml(data, selectedMonth, baseNet, amount)}
       <label class="mt-salary-base-edit">Virement net de base estimé (modifiable)<input id="mt-salary-base-net" type="number" min="100" max="10000" step="0.01" value="${baseNet.toFixed(2)}" inputmode="decimal"><small>Moyenne des virements de juillet, août et septembre : 2 925,42 €. Elle varie légèrement d’un mois à l’autre.</small></label>
       <label class="mt-salary-base-edit">Indemnité de congé supplémentaire par heure (brut, modifiable)<input id="mt-salary-leave-rate" type="number" min="0" max="100" step="0.0001" value="${leaveHourRate().toFixed(4)}" inputmode="decimal"><small>Référence septembre : 4,0789 €/h (16 h = 65,26 € brut). Ce taux peut changer ; les 8 h de congé marquées remplacent la vacation prévue.</small></label>
