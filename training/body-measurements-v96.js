@@ -188,9 +188,9 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
       const row=live().find(x=>x.date===b.dataset.mtbdelete);
       if(row&&confirm('Supprimer la mesure du '+row.date+' de cet appareil et de la synchronisation ?')){
         saveRecord({date:row.date,deleted:true,updatedAt:Date.now()});
-        renderComparison(rows);
-  }
+      }
     });
+    renderComparison(rows);
   }
   function updateHome(){
     const home=document.getElementById('homeView');
