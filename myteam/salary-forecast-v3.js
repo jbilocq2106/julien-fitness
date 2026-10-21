@@ -85,7 +85,8 @@
           sunday += overlap(a, b, d1, d2);
         }
         if (holidaySet.has(rDate(date))) {
-          const d1 = new Date(date); d1.setHours(0, 0, 0, 0);
+          // CCT securite 2026-2027, article 22 : férié de 06 h à 06 h le lendemain.
+          const d1 = new Date(date); d1.setHours(6, 0, 0, 0);
           const d2 = new Date(d1); d2.setDate(d2.getDate() + 1);
           holiday += overlap(a, b, d1, d2);
         }
@@ -219,7 +220,7 @@
         <div class="mt-salary-gross">${available ? `${amount(data.gross)} brut ${actual ? 'réel' : 'estimé'}` : 'Planning de ce mois non disponible'}</div>
         <div class="mt-salary-source">${source}${selectedMonth >= '2026-11' ? ' · CDE prévu' : ''}</div>
       </div>
-      ${data.holidayCompDue ? `<p class="muted" style="padding:12px;border:1px solid #51627a;border-radius:10px"><strong>Toussaint — dimanche 1er novembre 2026 :</strong> jour férié légal non travaillé. Droit à 1 jour de congé compensatoire en nature, à poser ultérieurement. Ce jour n'ajoute ni 8 heures travaillées ni supplément férié à la paie de novembre. Le congé doit normalement être pris sous trois mois (report possible jusqu'en mars 2027 pour nécessité de service). Il ne remplace pas tes congés annuels.</p>` : ''}
+      ${data.holidayCompDue ? `<p class="muted" style="padding:12px;border:1px solid #51627a;border-radius:10px"><strong>Toussaint — dimanche 1er novembre 2026 :</strong> jour férié légal non travaillé. Droit à 1 jour de congé compensatoire en nature, à poser ultérieurement. Ce jour n'ajoute pas 8 heures au mois. Attention : la vacation du 2 novembre à 05 h peut inclure 1 heure majorée dans la plage conventionnelle du férié (dimanche 06 h à lundi 06 h) ; vérifier le taux exact sur la fiche de paie. Le congé doit normalement être pris sous trois mois (report possible jusqu'en mars 2027 pour nécessité de service). Il ne remplace pas tes congés annuels.</p>` : ''}
       ${paymentSplitHtml(data, selectedMonth, baseNet, amount)}
       <label class="mt-salary-base-edit">Virement net de base estimé (modifiable)<input id="mt-salary-base-net" type="number" min="100" max="10000" step="0.01" value="${baseNet.toFixed(2)}" inputmode="decimal"><small>Moyenne des virements de juillet, août et septembre : 2 925,42 €. Elle varie légèrement d’un mois à l’autre.</small></label>
       <label class="mt-salary-base-edit">Indemnité de congé supplémentaire par heure (brut, modifiable)<input id="mt-salary-leave-rate" type="number" min="0" max="100" step="0.0001" value="${leaveHourRate().toFixed(4)}" inputmode="decimal"><small>Référence septembre : 4,0789 €/h (16 h = 65,26 € brut). Ce taux peut changer ; les 8 h de congé marquées remplacent la vacation prévue.</small></label>
@@ -228,7 +229,7 @@
         <div><span>Dimanche</span><b>${actual?.sunH != null ? hm(Number(actual.sunH) * 60) : hm(c?.sunday)} · + ${amount(actual?.sunGross ?? c?.sunGross)}</b></div>
         <div><span>Nuit (22 h – 6 h)</span><b>${actual ? (actual.nightH == null ? 'Heures non détaillées' : hm(Number(actual.nightH) * 60)) : hm(c?.night)} · + ${amount(actual?.nightGross ?? c?.nightGross)}</b></div>
         <div><span>Prime de fonction / CDE</span><b>${actual ? (actual.chefDays == null ? 'Jours non détaillés' : `${actual.chefDays} jours`) : `${c?.chefDays ?? 0} jours`} · + ${amount(actual?.chefGross ?? c?.chefGross)}</b></div>
-        ${(actual?.holidayGross ?? c?.holidayGross) > 0 ? `<div><span>Fériés 🇱🇺 (200 % selon fiche)</span><b>${actual ? (actual.holidayH == null ? '' : `${hm(Number(actual.holidayH) * 60)} · `) : `${hm(c?.holiday)} · `}+ ${amount(actual?.holidayGross ?? c?.holidayGross)}</b></div>` : ''}
+        ${(actual?.holidayGross ?? c?.holidayGross) > 0 ? `<div><span>Fériés 🇱🇺 (supplément estimé selon fiche)</span><b>${actual ? (actual.holidayH == null ? '' : `${hm(Number(actual.holidayH) * 60)} · `) : `${hm(c?.holiday)} · `}+ ${amount(actual?.holidayGross ?? c?.holidayGross)}</b></div>` : ''}
         ${(actual?.otGross ?? c?.otGross) > 0 ? `<div><span>Heures supplémentaires</span><b>+ ${amount(actual?.otGross ?? c?.otGross)}</b></div>` : ''}
         <div><span>🏖️ Congés payés ${hm(actual?.leaveH != null ? Number(actual.leaveH) * 60 : c?.leaveMinutes ?? 0)}</span><b>+ ${amount(actual?.leaveGross ?? c?.leaveGross ?? 0)} brut</b></div>
         <div><span>Prime RX / X-ray</span><b>+ ${amount(actual?.xrayGross ?? c?.xrayGross)}</b></div></div>` : ''}
