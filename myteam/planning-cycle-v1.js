@@ -117,7 +117,6 @@
     // Ne jamais additionner les mois stockes : le total suit le mois affiche.
     const paidLeaveDates = new Set([...leaveDays()].filter(date => date.startsWith(monthKey)));
     let workMinutes=0, storedLeaveDates=new Set(), actualRowsCount=0;
-    const storedDays=[];
     for(let day=1;day<=daysCount;day++){
       const date=iso(year,monthIndex,day);
       for(const row of officialRows(date)){
@@ -126,7 +125,7 @@
         const declared=Number(row.plannedMinutes);
         if(row.plannedMinutes!==undefined&&row.plannedMinutes!==null&&Number.isFinite(declared)&&declared>=0&&declared<=1440){
           workMinutes+=declared;
-        }else if(/^\\d\\d:\\d\\d$/.test(String(row.start||''))&&/^\\d\\d:\\d\\d$/.test(String(row.end||''))){
+        }else if(/^\d\d:\d\d$/.test(String(row.start||''))&&/^\d\d:\d\d$/.test(String(row.end||''))){
           const [aH,aM]=row.start.split(':').map(Number),[bH,bM]=row.end.split(':').map(Number);
           let duration=(bH*60+bM)-(aH*60+aM);
           if(duration<0)duration+=1440;
