@@ -78,10 +78,10 @@
     box.innerHTML='<h2>Mes heures</h2><label for="mt-hours-month" style="display:block;margin-bottom:12px;font-weight:750">Mois consulté</label>'+
       '<select id="mt-hours-month" style="width:100%;background:#27364c;border:1px solid #50647d;color:white;border-radius:10px;font-size:16px;padding:12px;margin-bottom:12px">'+options+'</select>'+
       '<div class="card">'+
-      (!hasRows&&!c.leaveDays?'<p class="muted">Aucun poste enregistré pour ce mois. Le roulement théorique ne remplace pas le planning officiel.</p>':
+      (!hasRows&&!c.leaveDays&&!c.credit?'<p class="muted">Aucun poste enregistré pour ce mois. Le roulement théorique ne remplace pas le planning officiel.</p>':
         '<p><strong>Total comptabilisé : '+fmt(c.total)+'</strong></p>'+
         '<p>Heures travaillées : <b>'+fmt(c.worked)+'</b></p>'+
-        '<p>Congés payés : <b>'+fmt(c.leaveMinutes)+'</b> ('+c.leaveDays+' jour(s) × 8 h)</p>'+
+        '<p>Congés payés : <b>'+fmt(c.leaveMinutes)+'</b> ('+c.leaveDays+' jour(s) × 8 h)</p>'+ (c.credit?'<p>1er novembre, férié comptabilisé : <b>+8 h</b></p>':'')+
         '<hr style="border:0;border-top:1px solid #41536a;margin:14px 0">'+
         '<p><b>🌙 Nuit — 22 h à 6 h</b><br>'+fmt(c.night)+'</p>'+
         '<p><b>☀️ Dimanche — dimanche 6 h à lundi 6 h</b><br>'+fmt(c.sunday)+'</p>'+
