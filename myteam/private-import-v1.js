@@ -147,31 +147,5 @@
     if(imported&&status)status.textContent='Planning G4S intégré localement sur ce téléphone.';
     if(importError&&status)status.textContent='Import du planning impossible : '+importError;
 
-    let rows=[];try{const data=JSON.parse(localStorage.getItem('myteam_shifts')||'[]');if(Array.isArray(data))rows=data}catch{}
-    let meta={};try{meta=JSON.parse(localStorage.getItem('myteam_planning_meta')||'{}')||{}}catch{}
-    if(rows.length){
-      const total=rows.reduce((sum,x)=>sum+minutes(x.start,x.end),0);
-      const cats=categoryMinutes(rows);
-      const hours=document.querySelector('#hours');
-      if(hours){
-        const title=meta.label||'Planning chargé';
-        const source=meta.source||'Données enregistrées localement';
-        hours.innerHTML=`<h2>Mes heures</h2>
-          <div class="card">
-            <strong>${title} : ${fmt(total)}</strong>
-            <p class="muted">${source}</p>
-            <p><b>🌙 Heures de nuit (22h → 6h)</b><br>${fmt(cats.night)}</p>
-            <p><b>☀️ Heures du dimanche (dim. 6h → lun. 6h)</b><br>${fmt(cats.sunday)}</p>
-            <p><b>🌙☀️ Dont nuit + dimanche</b><br>${fmt(cats.nightSunday)}</p>
-            <p><b>👔 Chef d’équipe</b><br>${fmt(cats.chef)}</p>
-            <p><b>🎓 Formation</b><br>${fmt(cats.training)}</p>
-            <p class="muted">Les catégories peuvent se chevaucher : par exemple une heure peut être à la fois « nuit » et « dimanche ».</p>
-          </div>`;
-      }
-      const planning=document.querySelector('#planning .card .muted');
-      if(planning&&!document.querySelector('#planning-local-note')){
-        const p=document.createElement('p');p.id='planning-local-note';p.className='muted';p.textContent=(meta.label||'Planning')+' • '+fmt(total)+' • stockage local';planning.after(p);
-      }
-    }
   });
 })();
