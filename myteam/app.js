@@ -5,6 +5,17 @@
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const fmtDate=v=>{if(!v)return '?';const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}/${m[2]}`:v};
   const deletedNames=()=>{try{const d=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');return new Set(Array.isArray(d)?d:[])}catch{return new Set()}};
+  // Migration : annuler uniquement le retrait de KRIEG, qui reste en Team 3.
+  // À exécuter avant le chargement de l'éditeur agents.
+  try{
+    const k='myteam_deleted_agents_v1';
+    const entries=JSON.parse(localStorage.getItem(k)||'[]');
+    if(Array.isArray(entries)){
+      const filtered=entries.filter(name=>String(name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase()!=='krieg');
+      if(filtered.length!==entries.length)localStorage.setItem(k,JSON.stringify(filtered));
+    }
+  }catch(error){console.warn('Migration statut KRIEG non appliquée',error)}
+
   const INTERVIEWS_KEY='myteam_leave_agent_interviews_v1';
   const leaveInterviewStates=()=>{
     try{
@@ -174,7 +185,7 @@
       await load('./hours-v1.js?v=20261021-4');
       await load('./salary-forecast-v3.js?v=20261021-4');
       await load('./agents-migration-v3.js?v=20261023-1');
-      await load('./roster-v6.js?v=20261023-1');
+      await load('./roster-v6.js?v=20261023-2');
       const visitsCss=document.createElement('link');
       visitsCss.rel='stylesheet';visitsCss.href='./post-visits-v1.css?v=20261019-1';
       document.head.append(visitsCss);
