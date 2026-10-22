@@ -65,7 +65,7 @@
   function openMore(){
     const primary=new Set(navItems.map(x=>x[0]));
     $('mt-more-links').innerHTML=Array.from(topNav.querySelectorAll('button[data-tab]'))
-      .filter(b=>!primary.has(b.dataset.tab))
+      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true')
       .map(b=>`<button type="button" data-mt-other="${esc(b.dataset.tab)}">${esc(b.textContent.trim())}</button>`).join('');
     shade.hidden=false;more.hidden=false;
     mobileNav.querySelector('[data-mt-open=more]').setAttribute('aria-expanded','true');
