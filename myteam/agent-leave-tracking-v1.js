@@ -12,10 +12,25 @@
  const formatDate=value=> /^\d{4}-\d{2}-\d{2}$/.test(String(value||''))?value.split('-').reverse().join('/'): '—';
  const read=()=>{try{const r=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(r)?r.filter(x=>x&&typeof x==='object'&&typeof x.id==='string'&&typeof x.agent==='string'):[]}catch{return []}};
  const save=r=>{try{localStorage.setItem(KEY,JSON.stringify(r));return true}catch{return false}};
- const cdeLabels={todo:'À faire',sent:'Envoyée au chef'};
- const chefLabels={pending:'En attente',approved:'Validée',rejected:'Refusée'};
- const filingLabels={no:'Non déposée',yes:'Déposée'};
- const gesperLabels={none:'Non déposée',pending:'En attente',approved:'Accordée',rejected:'Refusée'};
+ const cdeLabels={unknown:'À confirmer',todo:'À faire',sent:'Envoyée au chef'};
+ const chefLabels={unknown:'À confirmer',pending:'En attente',approved:'Validée',rejected:'Refusée'};
+ const filingLabels={unknown:'À confirmer',no:'Non déposée',yes:'Déposée'};
+ const gesperLabels={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accordée',rejected:'Refusée'};
+ const sourceLabels={agent:"Déclaré par l’agent",email:"Mail / message consulté",gesper:"Consultation MyGesper",mixed:"Informations croisées"};
+ const tracked=[
+   ['from','Début de congé'],['to','Fin de congé'],
+   ['cdeRequest','Demande au chef'],['cdeSentAt','Date de demande au chef'],
+   ['chefStatus','Réponse du chef'],['chefStatusAt','Date de réponse du chef'],
+   ['gesperFiled','Dépôt MyGesper'],['gesperFiledAt','Date de dépôt MyGesper'],
+   ['gesperStatus','Réponse MyGesper'],['gesperStatusAt','Date de réponse MyGesper'],
+   ['note','Note'],['source','Origine des informations'],['collectedOn','Date du recueil']
+ ];
+ const displayValue=(key,val)=>{
+   const dict={cdeRequest:cdeLabels,chefStatus:chefLabels,gesperFiled:filingLabels,gesperStatus:gesperLabels,source:sourceLabels}[key];
+   if(dict)return dict[val]||'Non renseigné';
+   if(/At$/.test(key)||key==='from'||key==='to'||key==='collectedOn')return val?formatDate(val):'Non connue';
+   return val?String(val):'Non renseigné';
+ };
  const normalize=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('fr');
  const css=document.createElement('style');css.id='mt-agent-leave-style';
  css.textContent=[
@@ -43,6 +58,17 @@
  '#mt-agent-leaves .mtal-warning{color:#f8ca98;font-size:12px;line-height:1.5}',
  '#mt-agent-leaves .mtal-smsg{font-size:12px;line-height:1.4;min-height:18px;color:#bdeccb}',
  '#mt-agent-leaves .mtal-muted{color:#b8c9d9;font-size:12px}',
+ '#mt-agent-leaves .mtal-interview{margin:12px 0 15px;padding:12px;background:#192c40;border-radius:11px;border:1px solid #4a6481}',
+ '#mt-agent-leaves .mtal-interview summary{cursor:pointer;font-size:13px;font-weight:800}',
+ '#mt-agent-leaves .mtal-interview ol{font-size:12px;line-height:1.6;padding-left:19px;color:#d3e1ee}',
+ '#mt-agent-leaves .mtal-audit{margin:10px 0;padding:10px 12px;background:#152538;border-radius:9px;border:1px solid #46617b}',
+ '#mt-agent-leaves .mtal-audit summary{font-size:12px;cursor:pointer;font-weight:750}',
+ '#mt-agent-leaves .mtal-event{padding:10px 0;border-bottom:1px solid #38506a;font-size:12px;line-height:1.5}',
+ '#mt-agent-leaves .mtal-event:last-child{border-bottom:0}',
+ '#mt-agent-leaves .mtal-event time{color:#b6cde5}',
+ '#mt-agent-leaves .mtal-event ul{padding-left:18px;margin:6px 0}',
+ '#mt-agent-leaves .mtal-old-note{font-size:11px;color:#f6d1a9}',
+ '#mt-agent-leaves .mtal-archived{opacity:.77;border-left:3px solid #9aa7b5;padding-left:9px}',
  '#mt-leave-photo .mtal-overview{margin-top:18px;border-top:1px solid #637d98;padding-top:13px}',
  '#mt-leave-photo .mtal-overview h3{margin:0 0 5px}',
  '#mt-leave-photo .mtal-overview-row{padding:9px 0;border-top:1px solid #445e79;font-size:12px;line-height:1.45}',
@@ -55,30 +81,41 @@
  panel.innerHTML=[
  '<h3>🏖️ Demandes de congés</h3><p id="mtal-agent-name" class="mtal-help"></p>',
  '<p id="mtal-stats" class="mtal-count"></p>',
- '<button id="mtal-new" class="mtal-action" type="button">+ Nouvelle demande</button>',
+ '<details class="mtal-interview"><summary>Questions à poser à l’agent pour reconstituer les demandes</summary>',
+ '<ol><li>Quelles périodes de congés as-tu demandées pour les prochains mois ? Une fiche par période.</li>',
+ '<li>Quand as-tu fait chaque demande au chef d’équipe ? Si tu ne sais plus : date non connue.</li>',
+ '<li>Quand le chef d’équipe t’a-t-il répondu, et était-ce positif, négatif ou toujours en attente ?</li>',
+ '<li>Après accord, as-tu déposé sur MyGesper ? À quelle date ?</li>',
+ '<li>Quelle réponse as-tu reçue de MyGesper et quand ? Si c’est toujours en attente, le noter.</li>',
+ '</ol><p class="mtal-help">Saisie rétrospective : une réponse orale de l’agent ne remplace pas une confirmation administrative. Laisser les dates inconnues vides et les statuts à confirmer.</p></details>',
+ '<button id="mtal-new" class="mtal-action" type="button">+ Ajouter une demande (ancienne ou nouvelle)</button>',
  '<div id="mtal-editor" class="mtal-form" hidden><h4 id="mtal-editor-title">Nouvelle demande de congés</h4>',
  '<form id="mtal-form">',
  '<div class="mtal-grid"><label>Du (inclus)<input type="date" name="from" required></label>',
  '<label>Au (inclus)<input type="date" name="to" required></label></div>',
  '<div class="mtal-grid"><label>Demande au chef d’équipe<select name="cdeRequest">',
- '<option value="todo">À faire</option><option value="sent">Envoyée</option></select></label>',
- '<label>Date d’envoi au chef<input type="date" name="cdeSentAt"></label></div>',
+ '<option value="unknown">À confirmer</option><option value="todo">À faire</option><option value="sent">Envoyée</option></select></label>',
+ '<label>Date de demande au chef (si connue)<input type="date" name="cdeSentAt"></label></div>',
  '<div class="mtal-grid"><label>Décision du chef d’équipe<select name="chefStatus">',
- '<option value="pending">En attente</option><option value="approved">Validée</option><option value="rejected">Refusée</option></select></label>',
- '<label>Date de décision du chef<input type="date" name="chefStatusAt"></label></div>',
+ '<option value="unknown">À confirmer</option><option value="pending">En attente</option><option value="approved">Validée</option><option value="rejected">Refusée</option></select></label>',
+ '<label>Date de réponse du chef (si connue)<input type="date" name="chefStatusAt"></label></div>',
  '<div class="mtal-grid"><label>Dépôt sur MyGesper<select name="gesperFiled">',
- '<option value="no">Non déposée</option><option value="yes">Déposée</option></select></label>',
- '<label>Date de dépôt MyGesper<input type="date" name="gesperFiledAt"></label></div>',
+ '<option value="unknown">À confirmer</option><option value="no">Non déposée</option><option value="yes">Déposée</option></select></label>',
+ '<label>Date de dépôt MyGesper (si connue)<input type="date" name="gesperFiledAt"></label></div>',
  '<div class="mtal-grid"><label>Statut MyGesper<select name="gesperStatus">',
- '<option value="none">Non déposée</option><option value="pending">En attente</option><option value="approved">Accordée</option><option value="rejected">Refusée</option></select></label>',
- '<label>Date de décision MyGesper<input type="date" name="gesperStatusAt"></label></div>',
- '<label>Note de suivi (facultative, sans motif personnel)<textarea name="note" maxlength="700" placeholder="Ex. mail transmis, réponse reçue, précision administrative"></textarea></label>',
+ '<option value="unknown">À confirmer</option><option value="none">Non déposée</option><option value="pending">En attente</option><option value="approved">Accordée</option><option value="rejected">Refusée</option></select></label>',
+ '<label>Date de réponse MyGesper (si connue)<input type="date" name="gesperStatusAt"></label></div>',
+ '<div class="mtal-grid"><label>Information recueillie auprès de<select name="source">',
+ '<option value="agent">Déclaration de l’agent</option><option value="email">Mail ou message vérifié</option>',
+ '<option value="gesper">MyGesper consulté</option><option value="mixed">Informations croisées</option></select></label>',
+ '<label>Date de collecte / entretien<input name="collectedOn" type="date"></label></div>',
+ '<label>Note de suivi (facultative, sans motif personnel)<textarea name="note" maxlength="700" placeholder="Ex. informations déclarées, pièces à demander, réponse à confirmer"></textarea></label>',
  '<p id="mtal-consistency" class="mtal-warning"></p>',
  '<div class="mtal-actions"><button type="submit" class="mtal-action" id="mtal-save">Enregistrer</button>',
  '<button type="button" id="mtal-cancel">Annuler</button></div></form></div>',
  '<p class="mtal-smsg" id="mtal-message" role="status"></p>',
  '<div id="mtal-history"></div>',
- '<p class="mtal-help">Ces statuts sont saisis manuellement et ne constituent pas une confirmation de MyGesper. Aucun congé ni planning officiel n’est modifié par ce formulaire.</p>'
+ '<p class="mtal-help">Historique de reconstitution privé, avec traçabilité des mises à jour. La déclaration de l’agent ne vaut pas validation du chef ni confirmation MyGesper. Les dates non connues restent vides. Aucune demande n’est envoyée automatiquement.</p>'
  ].join('');
  summary.after(panel);
 
@@ -99,7 +136,7 @@
    if(!safeAgent())return;
    if(item){
      editing=item.id;
-     ['from','to','cdeRequest','cdeSentAt','chefStatus','chefStatusAt','gesperFiled','gesperFiledAt','gesperStatus','gesperStatusAt','note'].forEach(k=>{
+     ['from','to','cdeRequest','cdeSentAt','chefStatus','chefStatusAt','gesperFiled','gesperFiledAt','gesperStatus','gesperStatusAt','note','source','collectedOn'].forEach(k=>{
        const input=form.elements.namedItem(k);
        if(input)input.value=String(item[k]??'');
      });
@@ -107,6 +144,7 @@
      $('mtal-save').textContent='Enregistrer les modifications';
    }else{
      resetEditor();editor.hidden=false;
+     form.elements.namedItem('collectedOn').value=today();
      editing='';
    }
    editor.hidden=false;dirty=false;checkConsistency();
@@ -115,9 +153,9 @@
  function checkConsistency(){
    const values=Object.fromEntries(new FormData(form));
    const warnings=[];
-   if(values.cdeRequest==='todo' && values.chefStatus!=='pending')warnings.push('Une décision du chef est indiquée alors que la demande n’est pas marquée comme envoyée.');
-   if(values.gesperFiled==='no' && values.gesperStatus!=='none')warnings.push('Le statut MyGesper nécessite de marquer la demande comme déposée.');
-   if(values.gesperFiled==='yes' && values.gesperStatus==='none')warnings.push('Indique le statut MyGesper après dépôt (en attente, accordée ou refusée).');
+   if(values.cdeRequest==='todo' && ['approved','rejected'].includes(values.chefStatus))warnings.push('Vérifier : décision du chef saisie mais demande indiquée non envoyée.');
+   if(values.gesperFiled==='no' && ['pending','approved','rejected'].includes(values.gesperStatus))warnings.push('Vérifier : réponse MyGesper saisie mais dépôt indiqué non effectué.');
+   if(values.gesperFiled==='yes' && values.gesperStatus==='none')warnings.push('Vérifier : dépôt effectué, mais statut MyGesper indiqué non déposé.');
    $('mtal-consistency').textContent=warnings.join(' ');
    return warnings;
  }
@@ -134,39 +172,91 @@
    $('mtal-agent-name').textContent='Fiche de '+agent+' · demandes, validations et réponses MyGesper';
    const rows=read().filter(r=>normalize(r.agent)===normalize(agent))
      .sort((a,b)=>String(b.from||'').localeCompare(String(a.from||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
-   const accepted=rows.filter(r=>r.gesperStatus==='approved').length;
-   const pending=rows.filter(r=>r.gesperStatus!=='approved'&&r.gesperStatus!=='rejected').length;
-   $('mtal-stats').textContent=rows.length+' demande(s) · '+accepted+' accordée(s) MyGesper · '+pending+' à suivre';
+   const accepted=rows.filter(r=>!r.archived&&r.gesperStatus==='approved').length;
+   const pending=rows.filter(r=>!r.archived&&r.gesperStatus!=='approved'&&r.gesperStatus!=='rejected').length;
+   const visibleRows=rows.filter(r=>!r.archived);
+   $('mtal-stats').textContent=visibleRows.length+' demande(s) actives · '+accepted+' accordée(s) MyGesper · '+pending+' à suivre · '+rows.filter(r=>r.archived).length+' archivée(s)';
    history.replaceChildren();
    if(!rows.length){
      const p=document.createElement('p');p.className='mtal-muted';
      p.textContent='Aucune demande enregistrée pour cet agent.';history.append(p);
    }
    rows.forEach(r=>{
-     const container=document.createElement('article');container.className='mtal-item';
+     const container=document.createElement('article');container.className='mtal-item'+(r.archived?' mtal-archived':'');
      const heading=document.createElement('strong');
      heading.textContent=formatDate(r.from)+' → '+formatDate(r.to);
      container.append(heading);
+     if(r.archived){const state=document.createElement('p');state.className='mtal-old-note';state.textContent='Demande archivée — conservée pour historique';container.append(state);}
      const steps=document.createElement('div');steps.className='mtal-steps';
      steps.append(
-       step('Demande au chef : '+(cdeLabels[r.cdeRequest]||'À faire')+(r.cdeSentAt?' · '+formatDate(r.cdeSentAt):''),r.cdeRequest==='sent'?'done':'warn'),
-       step('Chef d’équipe : '+(chefLabels[r.chefStatus]||'En attente')+(r.chefStatusAt?' · '+formatDate(r.chefStatusAt):''),r.chefStatus==='approved'?'done':r.chefStatus==='rejected'?'no':'warn'),
-       step('MyGesper : '+(filingLabels[r.gesperFiled]||'Non déposée')+(r.gesperFiledAt?' · '+formatDate(r.gesperFiledAt):''),r.gesperFiled==='yes'?'done':'warn'),
-       step('Statut MyGesper : '+(gesperLabels[r.gesperStatus]||'Non déposée')+(r.gesperStatusAt?' · '+formatDate(r.gesperStatusAt):''),r.gesperStatus==='approved'?'done':r.gesperStatus==='rejected'?'no':'warn')
+       step('Demande au chef : '+(cdeLabels[r.cdeRequest]||'À confirmer')+(r.cdeSentAt?' · '+formatDate(r.cdeSentAt):''),r.cdeRequest==='sent'?'done':'warn'),
+       step('Chef d’équipe : '+(chefLabels[r.chefStatus]||'À confirmer')+(r.chefStatusAt?' · '+formatDate(r.chefStatusAt):''),r.chefStatus==='approved'?'done':r.chefStatus==='rejected'?'no':'warn'),
+       step('MyGesper : '+(filingLabels[r.gesperFiled]||'À confirmer')+(r.gesperFiledAt?' · '+formatDate(r.gesperFiledAt):''),r.gesperFiled==='yes'?'done':'warn'),
+       step('Statut MyGesper : '+(gesperLabels[r.gesperStatus]||'À confirmer')+(r.gesperStatusAt?' · '+formatDate(r.gesperStatusAt):''),r.gesperStatus==='approved'?'done':r.gesperStatus==='rejected'?'no':'warn')
      );
      container.append(steps);
+     const source=document.createElement('p');
+     source.className='mtal-muted';
+     source.textContent='Source : '+(sourceLabels[r.source]||'Non précisée')+(r.collectedOn?' · Recueilli le '+formatDate(r.collectedOn):'');
+     container.append(source);
      if(r.note){const note=document.createElement('p');note.textContent=r.note;container.append(note);}
+     const events=Array.isArray(r.events)?r.events:[];
+     const audit=document.createElement('details');audit.className='mtal-audit';
+     const auditSummary=document.createElement('summary');
+     auditSummary.textContent='Historique des saisies et changements ('+events.length+')';
+     audit.append(auditSummary);
+     if(!events.length){
+       const p=document.createElement('p');p.className='mtal-old-note';
+       p.textContent='Fiche enregistrée avant la mise en place du journal de modifications. Les changements antérieurs ne sont pas reconstituables automatiquement.';
+       audit.append(p);
+     }else{
+       events.slice().reverse().forEach(ev=>{
+         const item=document.createElement('div');item.className='mtal-event';
+         const heading=document.createElement('strong');
+         heading.textContent=ev.kind==='create'?'Historique initial saisi':ev.kind==='archive'?'Demande archivée':ev.kind==='restore'?'Demande réactivée':'Fiche mise à jour';
+         const time=document.createElement('time');
+         time.textContent=' · enregistré le '+(ev.at?new Date(ev.at).toLocaleString('fr-FR'):'date inconnue');
+         item.append(heading,time);
+         const origin=document.createElement('p');
+         origin.textContent='Source : '+(sourceLabels[ev.source]||'Non précisée')+(ev.collectedOn?' · recueilli le '+formatDate(ev.collectedOn):'');
+         item.append(origin);
+         if(Array.isArray(ev.changes)&&ev.changes.length){
+           const changes=document.createElement('ul');
+           ev.changes.forEach(change=>{
+             const li=document.createElement('li');
+             li.textContent=change.label+' : '+change.before+' → '+change.after;
+             changes.append(li);
+           });
+           item.append(changes);
+         } else if(ev.kind==='create') {
+           const p=document.createElement('p');p.textContent='Demande ajoutée à l’historique.';item.append(p);
+         }
+         audit.append(item);
+       });
+     }
+     container.append(audit);
      const footer=document.createElement('div');footer.className='mtal-actions';
      const edit=document.createElement('button');edit.type='button';edit.textContent='Modifier';
      edit.onclick=()=>openEditor(r);
-     const del=document.createElement('button');del.type='button';del.textContent='Supprimer';
-     del.onclick=()=>{
-       if(!confirm('Supprimer cette demande enregistrée pour '+agent+' ?'))return;
-       if(!save(read().filter(item=>item.id!==r.id))){message.textContent='Impossible de supprimer : stockage indisponible.';return;}
-       if(editing===r.id)resetEditor();message.textContent='Demande supprimée localement.';
+     const archive=document.createElement('button');archive.type='button';
+     archive.textContent=r.archived?'Réactiver':'Archiver';
+     archive.onclick=()=>{
+       if(!confirm(r.archived?'Réactiver cette demande ?':'Archiver cette demande sans supprimer son historique ?'))return;
+       const rowsNow=read(),existing=rowsNow.find(item=>item.id===r.id);
+       if(!existing){message.textContent='Cette demande a été modifiée ailleurs. Actualise.';return;}
+       const kind=existing.archived?'restore':'archive';
+       const updated={...existing,archived:!existing.archived,updatedAt:new Date().toISOString(),
+         events:[...(Array.isArray(existing.events)?existing.events:[]),{
+           at:new Date().toISOString(),kind,source:existing.source||'agent',collectedOn:today(),changes:[]
+         }]};
+       if(!save(rowsNow.map(item=>item.id===r.id?updated:item))){
+         message.textContent='Archivage impossible : stockage indisponible.';return;
+       }
+       if(editing===r.id)resetEditor();
+       message.textContent=updated.archived?'Demande archivée avec son historique.':'Demande réactivée.';
        drawHistory();renderLeaveOverview();
      };
-     footer.append(edit,del);container.append(footer);history.append(container);
+     footer.append(edit,archive);container.append(footer);history.append(container);
    });
  }
  function changeAgent(){
@@ -199,9 +289,8 @@
    }
    const duration=Math.round((Date.parse(to+'T12:00:00Z')-Date.parse(from+'T12:00:00Z'))/86400000);
    if(duration>370){message.textContent='Une demande ne peut pas dépasser 371 jours.';return;}
-   if(checkConsistency().length){
-     message.textContent='Corrige les incohérences de statut indiquées sous le formulaire.';return;
-   }
+   // En reconstitution, une information peut rester incohérente tant qu'elle n'est pas vérifiée.
+   // Le formulaire avertit mais ne fabrique pas de réponse administrative.
    const list=read();
    const old=editing?list.find(r=>r.id===editing):null;
    if(editing&&(!old||normalize(old.agent)!==normalize(agent))){
@@ -212,17 +301,23 @@
    const item={
      ...fields,
      agent,from,to,id:key,
-     cdeRequest:['todo','sent'].includes(fields.cdeRequest)?fields.cdeRequest:'todo',
-     chefStatus:['pending','approved','rejected'].includes(fields.chefStatus)?fields.chefStatus:'pending',
-     gesperFiled:['no','yes'].includes(fields.gesperFiled)?fields.gesperFiled:'no',
-     gesperStatus:['none','pending','approved','rejected'].includes(fields.gesperStatus)?fields.gesperStatus:'none',
+     cdeRequest:['unknown','todo','sent'].includes(fields.cdeRequest)?fields.cdeRequest:'unknown',
+     chefStatus:['unknown','pending','approved','rejected'].includes(fields.chefStatus)?fields.chefStatus:'unknown',
+     gesperFiled:['unknown','no','yes'].includes(fields.gesperFiled)?fields.gesperFiled:'unknown',
+     gesperStatus:['unknown','none','pending','approved','rejected'].includes(fields.gesperStatus)?fields.gesperStatus:'unknown',
      note:String(fields.note||'').trim().slice(0,700),
+     source:Object.hasOwn(sourceLabels,fields.source)?fields.source:'agent',
+     collectedOn:fields.collectedOn||today(),
+     archived:old?.archived===true,
      createdAt:old?.createdAt||now,updatedAt:now
    };
-   if(item.cdeRequest==='todo')item.cdeSentAt='';
-   if(item.chefStatus==='pending')item.chefStatusAt='';
-   if(item.gesperFiled==='no')item.gesperFiledAt='';
-   if(item.gesperStatus==='none'||item.gesperStatus==='pending')item.gesperStatusAt='';
+   const changes=tracked.filter(([field])=>!old||String(old[field]??'')!==String(item[field]??''))
+     .map(([field,label])=>({field,label,before:old?displayValue(field,old[field]):'Non renseigné',after:displayValue(field,item[field])}));
+   const previousEvents=old&&Array.isArray(old.events)?old.events:[];
+   item.events=[...previousEvents];
+   if(!old||changes.length){
+     item.events.push({at:now,kind:old?'update':'create',source:item.source,collectedOn:item.collectedOn,changes});
+   }
    const newRows=old?list.map(r=>r.id===key?item:r):[...list,item];
    if(!save(newRows)){message.textContent='Enregistrement impossible : stockage indisponible.';return;}
    resetEditor();drawHistory();renderLeaveOverview();
@@ -230,9 +325,9 @@
  };
  function renderLeaveOverview(){
    const box=$('mtal-leave-overview');if(!box)return;
-   const rows=read().sort((a,b)=>String(a.from||'').localeCompare(String(b.from||'')));
-   const now=today();const relevant=rows.filter(r=>r.to>=now||r.gesperStatus==='none'||r.gesperStatus==='pending').slice(0,40);
-   const pending=rows.filter(r=>r.gesperStatus==='pending').length;
+   const rows=read().filter(r=>!r.archived).sort((a,b)=>String(a.from||'').localeCompare(String(b.from||'')));
+   const now=today();const relevant=rows.filter(r=>r.to>=now||!['approved','rejected'].includes(r.gesperStatus)).slice(0,40);
+   const pending=rows.filter(r=>r.gesperStatus==='pending'||r.gesperStatus==='unknown'||r.gesperStatus==='none').length;
    const approved=rows.filter(r=>r.gesperStatus==='approved').length;
    const refused=rows.filter(r=>r.gesperStatus==='rejected').length;
    const recap=$('mtal-overview-summary');
@@ -246,7 +341,7 @@
      status.textContent='Chef : '+(chefLabels[r.chefStatus]||'En attente')+' · MyGesper : '+(gesperLabels[r.gesperStatus]||'Non déposée');
      div.append(bold,status);box.append(div);
    });
-   if(rows.length>relevant.length){const extra=document.createElement('p');extra.className='mtal-muted';extra.textContent='Liste limitée aux 40 demandes à suivre. Ouvre la fiche d’un agent pour son historique complet.';box.append(extra);}
+   if(rows.length>relevant.length){const extra=document.createElement('p');extra.className='mtal-muted';extra.textContent='Les demandes clôturées plus anciennes et les archives restent consultables dans la fiche de chaque agent.';box.append(extra);}
  }
  // En complément du tableau photo, afficher la synthèse sans modifier ses pièces jointes.
  function mountOverview(){
