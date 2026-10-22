@@ -159,7 +159,6 @@
      input.dispatchEvent(new Event('input',{bubbles:true}));
      input.dispatchEvent(new Event('change',{bubbles:true}));
      refresh();
-     input.focus();
    };
    input.addEventListener('input',refresh);
    input.addEventListener('change',refresh);
