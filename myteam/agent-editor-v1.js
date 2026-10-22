@@ -6,8 +6,8 @@
   const deletedSet=new Set(deletedNames);
 
   const baseNames=new Set([
-    'ADAM Manon','BORGESE Myriam','DAL FARRA Shirley',"D'AVERSI Margaux",'DIELS Elisa','GAGNANT Deborah','GARCIA Maeva','LUCK Océane','OUINNE Melyse','WILTGEN Ophélie',
-    'BERAUT Geoffrey','BIGONI-HOUDUSSE Alexandre','BILOCQ Julien','BURG Jeremy','CLESEUR Noah','DORRION Albert','FREZAL Joey','HENRAT Corentin','HUMMEL Aurelien','JACOTEZ Tim','MATEI Vitor','PANATO Joey','SANDSTROM Mike','SCARPINO Loic','STASIAK Valentin','TUMMINELLI Attilio','WILLEMS Jeremy'
+    'ADAM Manon','BORGESE Myriam','DAL FARRA Shirley','DIELS Elisa','GAGNANT Deborah','GARCIA Maeva','LUCK Océane','OUINNE Melyse','WILTGEN Ophélie',
+    'BERAUT Geoffrey','BIGONI-HOUDUSSE Alexandre','BILOCQ Julien','BURG Jeremy','CLESEUR Noah','DORRION Albert','FREZAL Joey','HENRAT Corentin','HUMMEL Aurelien','JACOTEZ Tim','JACQUINET Thomas','MARGINALE Marie-Joseph','MATEI Vitor','PANATO Joey','SANDSTROM Mike','SCARPINO Loic','STASIAK Valentin','TUMMINELLI Attilio','WILLEMS Jeremy'
   ]);
 
   const prestationSeed=[
