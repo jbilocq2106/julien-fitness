@@ -164,7 +164,7 @@
       try{await load('./cloud-sync-private-v1.js?v=3')}catch(error){console.error('Synchronisation privée indisponible :',error)}
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}
       try{await load('./leave-board-photo-v1.js?v=20261018-1')}catch(error){console.error('Tableau des congés indisponible :',error)}
-      try{await load('./agent-leave-tracking-v1.js?v=20261022-2')}catch(error){console.error('Suivi des congés par agent indisponible :',error)}
+      try{await load('./agent-leave-tracking-v1.js?v=20261022-3')}catch(error){console.error('Suivi des congés par agent indisponible :',error)}
       try{await load('./bureau-planning-errors-v1.js?v=20261022-1')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
     }
   })();
