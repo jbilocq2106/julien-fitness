@@ -153,4 +153,5 @@
    ['pariftools',!!$('mt-ws-parif-advanced')]
  ];
  secondary.forEach(([id,ready])=>{const button=tab(id);if(ready&&button)button.dataset.deskSecondary='true'});
+ if($('mt-bureau')&&!$('mt-bureau').classList.contains('hidden'))tab('mt-bureau')?.click();
 })();
