@@ -173,8 +173,8 @@
       document.querySelector('.voice-box')?.remove();
       await load('./hours-v1.js?v=20261021-4');
       await load('./salary-forecast-v3.js?v=20261021-4');
-      await load('./agents-migration-v3.js?v=5');
-      await load('./roster-v6.js?v=20261018-3');
+      await load('./agents-migration-v3.js?v=20261023-1');
+      await load('./roster-v6.js?v=20261023-1');
       const visitsCss=document.createElement('link');
       visitsCss.rel='stylesheet';visitsCss.href='./post-visits-v1.css?v=20261019-1';
       document.head.append(visitsCss);
