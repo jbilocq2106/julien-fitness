@@ -75,6 +75,16 @@
  '#mt-agent-leaves .mtal-event ul{padding-left:18px;margin:6px 0}',
  '#mt-agent-leaves .mtal-old-note{font-size:11px;color:#f6d1a9}',
  '#mt-agent-leaves .mtal-archived{opacity:.77;border-left:3px solid #9aa7b5;padding-left:9px}',
+ '#mt-agent-leaves .mtal-date-clear{margin:0;min-height:35px;padding:5px 12px;justify-self:start;background:#3d536c;border:1px solid #6c809b;border-radius:9px;color:#fff;font-size:12px;font-weight:750}',
+ '#mt-agent-leaves .mtal-date-label{font-size:11px;color:#b8c9d9;font-weight:450}',
+ '#mtal-recap{max-width:950px;margin:0 auto}',
+ '#mtal-recap h2{margin:0 0 6px}',
+ '#mtal-recap label{display:grid;gap:8px;font-weight:750;margin:12px 0;font-size:13px}',
+ '#mtal-recap select,#mtal-recap textarea{width:100%;min-height:48px;border-radius:10px;background:#111d2d;border:1px solid #7488a1;color:#fff;padding:12px;font:inherit}',
+ '#mtal-recap textarea{min-height:420px;font-family:system-ui,Arial;line-height:1.5;resize:vertical;white-space:pre-wrap}',
+ '#mtal-recap .mtal-recap-actions{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}',
+ '#mtal-recap .mtal-recap-actions button{background:#30628d;min-height:46px}',
+ '#mtal-recap p{line-height:1.5;color:#c5d4e6;font-size:13px}',
  '#mt-leave-photo .mtal-overview{margin-top:18px;border-top:1px solid #637d98;padding-top:13px}',
  '#mt-leave-photo .mtal-overview h3{margin:0 0 5px}',
  '#mt-leave-photo .mtal-overview-row{padding:9px 0;border-top:1px solid #445e79;font-size:12px;line-height:1.45}',
@@ -99,8 +109,8 @@
  '<form id="mtal-form">',
  '<p class="mtal-help">Renseigne les dates et les réponses connues. Tu pourras compléter ou corriger plus tard sans perdre l’historique.</p>',
  '<h4 class="mtal-section-title">1 — Période demandée</h4>',
- '<div class="mtal-grid"><label>Du (inclus)<input type="date" name="from" required></label>',
- '<label>Au (inclus)<input type="date" name="to" required></label></div>',
+ '<div class="mtal-grid"><label>Du (inclus)<input type="date" name="from"></label>',
+ '<label>Au (inclus)<input type="date" name="to"></label></div>',
  '<h4 class="mtal-section-title">2 — Demande au chef d’équipe</h4>',
  '<div class="mtal-grid"><label>Demande au chef d’équipe<select name="cdeRequest">',
  '<option value="unknown">À confirmer</option><option value="todo">À faire</option><option value="sent">Envoyée</option></select></label>',
@@ -135,6 +145,29 @@
 
  let editing='',boundAgent='',dirty=false;
  const editor=$('mtal-editor'),form=$('mtal-form'),history=$('mtal-history'),message=$('mtal-message');
+ // Bouton explicite pour retirer n'importe quelle date, même sur Android.
+ form.querySelectorAll('input[type="date"]').forEach(input=>{
+   const clear=document.createElement('button');
+   clear.type='button';clear.className='mtal-date-clear';
+   clear.textContent='Effacer cette date';
+   const indicator=document.createElement('span');
+   indicator.className='mtal-date-label';
+   const refresh=()=>{indicator.textContent=input.value?'Date : '+formatDate(input.value):'Date non renseignée';};
+   input.after(clear,indicator);
+   clear.onclick=()=>{
+     input.value='';
+     input.dispatchEvent(new Event('input',{bubbles:true}));
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+     refresh();
+     input.focus();
+   };
+   input.addEventListener('input',refresh);
+   input.addEventListener('change',refresh);
+   refresh();
+ });
+ function refreshDateIndicators(){
+   form.querySelectorAll('input[type="date"]').forEach(input=>input.dispatchEvent(new Event('change',{bubbles:false})));
+ }
  const activeName=()=>select.value.trim();
  function safeAgent(){
    const name=activeName();
@@ -145,6 +178,7 @@
    $('mtal-editor-title').textContent='Nouvelle demande de congés';
    $('mtal-save').textContent='Enregistrer';
    $('mtal-consistency').textContent='';
+   refreshDateIndicators();
  }
  function openEditor(item){
    if(!safeAgent())return;
@@ -161,7 +195,7 @@
      form.elements.namedItem('collectedOn').value=today();
      editing='';
    }
-   editor.hidden=false;dirty=false;updateRefusalBlock();checkConsistency();
+   editor.hidden=false;dirty=false;updateRefusalBlock();checkConsistency();refreshDateIndicators();
    editor.scrollIntoView({block:'nearest',behavior:'smooth'});
  }
  function updateRefusalBlock(){
@@ -201,7 +235,7 @@
    rows.forEach(r=>{
      const container=document.createElement('article');container.className='mtal-item'+(r.archived?' mtal-archived':'');
      const heading=document.createElement('strong');
-     heading.textContent=formatDate(r.from)+' → '+formatDate(r.to);
+     heading.textContent=(r.from?formatDate(r.from):'Début inconnu')+' → '+(r.to?formatDate(r.to):'Fin inconnue');
      container.append(heading);
      if(r.archived){const state=document.createElement('p');state.className='mtal-old-note';state.textContent='Demande archivée — conservée pour historique';container.append(state);}
      const steps=document.createElement('div');steps.className='mtal-steps';
@@ -301,12 +335,27 @@
    e.preventDefault();const agent=safeAgent();if(!agent){message.textContent='Sélectionne un agent.';return;}
    const fields=Object.fromEntries(new FormData(form));
    const from=String(fields.from||''),to=String(fields.to||'');
-   const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&new Date(v+'T12:00:00').toISOString().slice(0,10)===v;
-   if(!validDate(from)||!validDate(to)||to<from){
-     message.textContent='Vérifie les dates de début et de fin.';return;
+   const validDate=v=>{
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;
+     const [y,m,d]=v.split('-').map(Number);
+     const dt=new Date(y,m-1,d,12);
+     return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;
+   };
+   if((from&&!validDate(from))||(to&&!validDate(to))){
+     message.textContent='Une date de période est invalide. Vérifie les champs « Du » et « Au », ou efface la date concernée.';
+     return;
    }
-   const duration=Math.round((Date.parse(to+'T12:00:00Z')-Date.parse(from+'T12:00:00Z'))/86400000);
-   if(duration>370){message.textContent='Une demande ne peut pas dépasser 371 jours.';return;}
+   if(from&&to&&to<from){
+     message.textContent='La fin du congé est avant le début : corrige la date « Au », ou efface-la si elle est inconnue.';
+     form.elements.namedItem('to').focus();return;
+   }
+   if(from&&to){
+     const duration=(Date.UTC(...to.split('-').map(Number).map((n,i)=>i===1?n-1:n))-Date.UTC(...from.split('-').map(Number).map((n,i)=>i===1?n-1:n)))/86400000;
+     if(duration>370){message.textContent='La période dépasse 371 jours. Vérifie les dates.';return;}
+   }
+   if(!from&&!to&&fields.cdeRequest==='unknown'&&fields.chefStatus==='unknown'&&fields.gesperFiled==='unknown'&&fields.gesperStatus==='unknown'&&!String(fields.note||'').trim()){
+     message.textContent='Renseigne au moins une date, une étape de la demande ou une note pour enregistrer ce brouillon.';return;
+   }
    // En reconstitution, une information peut rester incohérente tant qu'elle n'est pas vérifiée.
    // Le formulaire avertit mais ne fabrique pas de réponse administrative.
    const list=read();
@@ -340,7 +389,7 @@
    const newRows=old?list.map(r=>r.id===key?item:r):[...list,item];
    if(!save(newRows)){message.textContent='Enregistrement impossible : stockage indisponible.';return;}
    resetEditor();drawHistory();renderLeaveOverview();
-   message.textContent='Demande enregistrée pour '+agent+'. Aucun envoi à MyGesper effectué.';
+   message.textContent=(from&&to?'Demande':'Demande incomplète / brouillon')+' enregistrée pour '+agent+'. Aucun envoi à MyGesper effectué.';
  };
  function renderLeaveOverview(){
    const box=$('mtal-leave-overview');if(!box)return;
