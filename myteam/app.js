@@ -206,7 +206,7 @@
       console.error(err)
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
-      try{await load('./mobile-shell-v1.js?v=20261022-1')}catch(error){console.error('Navigation mobile indisponible :',error)}
+      try{await load('./mobile-shell-v1.js?v=20261023-5')}catch(error){console.error('Navigation mobile indisponible :',error)}
       try{await load('./today-operations-v1.js?v=20261019-1')}catch(error){console.error('Suivi quotidien indisponible :',error)}
       try{await load('./mobile-polish-v1.js?v=20261018-1')}catch(error){console.error('Fiches mobiles indisponibles :',error)}
       try{await load('./secure-backup-v1.js?v=20261020-2')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
@@ -215,7 +215,8 @@
       try{await load('./leave-board-photo-v1.js?v=20261018-1')}catch(error){console.error('Tableau des congés indisponible :',error)}
       try{await load('./agent-leave-tracking-v1.js?v=20261023-1')}catch(error){console.error('Suivi des congés par agent indisponible :',error)}
       try{await load('./leave-recap-v1.js?v=20261023-1')}catch(error){console.error('Récapitulatif des congés indisponible :',error)}
-      try{await load('./bureau-planning-errors-v1.js?v=20261023-1')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
+      try{await load('./bureau-planning-errors-v1.js?v=20261023-5')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
+      try{await load('./workspaces-v1.js?v=20261023-5')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
     }
   })();
 })();
