@@ -40,12 +40,13 @@
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents'],['visits','✅','Visites']];
+  const navItems=[['mt-bureau','▦','Bureau'],['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents']];
   const NAV_ORDER_KEY='myteam_mobile_nav_order_v1';
   const navDefinitions=[...navItems,['more','☰','Plus']];
   const defaults=navDefinitions.map(item=>item[0]);
   const storedOrder=read(NAV_ORDER_KEY,[]);
-  const order=[...new Set([...(Array.isArray(storedOrder)?storedOrder.filter(id=>defaults.includes(id)):[]),...defaults])];
+  const saved=Array.isArray(storedOrder)?storedOrder.filter(id=>defaults.includes(id)):[];
+  const order=saved.includes('mt-bureau')?[...new Set([...saved,...defaults])]:['mt-bureau',...new Set([...saved,...defaults.filter(id=>id!=='mt-bureau')])];
   const mobileNav=document.createElement('nav');
   mobileNav.id='mt-mobile-nav';mobileNav.setAttribute('aria-label','Navigation principale');
   mobileNav.innerHTML=order.map(id=>{
