@@ -2,19 +2,20 @@
   if(typeof agentProfiles==='undefined'||typeof renderAgents!=='function')return;
 
   const SEED_KEY='myteam_team_roster_current_v2';
-  // Ajustement de la liste active : suppression explicite de 2 agents sans
+  // Ajustement de la liste active : retrait explicite de D'Aversi sans
   // re-importation ultérieure depuis d'anciens plannings ou la photo initiale.
   // Les archives de demandes de congés sont conservées dans leur stockage séparé.
   const DELETED_KEY='myteam_deleted_agents_v1';
-  const removedNormalized=new Set(['krieg','daversimargaux']);
+  const removedNormalized=new Set(['daversimargaux']);
   const normalizeRemoved=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
   try{
     const existingDeleted=JSON.parse(localStorage.getItem(DELETED_KEY)||'[]');
     const deleted=new Set(Array.isArray(existingDeleted)?existingDeleted.filter(x=>typeof x==='string'):[]);
+    // Correction du 23/10 : KRIEG reste bien dans l'équipe 3.
+    for(const name of deleted){if(normalizeRemoved(name)==='krieg')deleted.delete(name);}
     for(const name of Object.keys(agentProfiles)){
       if(removedNormalized.has(normalizeRemoved(name)))deleted.add(name);
     }
-    deleted.add('KRIEG');
     deleted.add("D'AVERSI Margaux");
     const content=JSON.stringify([...deleted]);
     if(localStorage.getItem(DELETED_KEY)!==content)localStorage.setItem(DELETED_KEY,content);
@@ -43,7 +44,7 @@
       ['SEBRIER Kevin','M'],['FRANCESCHINI','F'],['DOSIL','M'],['MALAINHO','M'],['TERRIEN','F'],['DA SILVA MARTINS','F'],['MIANO Marie','F'],['CLAREN','M'],['DA ROCHA','M'],['BODEVING Patrick','M'],['FRANGIAMORE','M'],['FROUSSART Lucas','M'],['DURAND','M'],['YOVE Rénaldo','M'],['ALI VELOU','M'],['FRIESS SCHAEFFER Killian','M'],['GUGLIETTI','M'],["KOUAHO N'TAKPE Come Landry",'M'],['VERDIN Romain','M'],['SERJANTU Andrian','M'],['KIZILDAG','F'],['MARINI Katia','F'],['FROSIO','F'],['CHOUMAKER','F']
     ],
     3:[
-      ['PILLA','M'],['TRIPODI Adrien','M'],['CAIROL','F'],['SAUTEZ Jerome','M'],['HAUDIQUET','F'],['MOURON','F'],['THIBAUD','F'],['MOUDEBER Ryan','M'],['NETO','M'],['FELTEN Laurent','M'],['MAILLOT Jean Gabriel Axel','M'],['KIRSCHTETTER Teddy','M'],['DOS SANTOS MARTINS Anabela','F'],['LEBRUN Celine','F'],['VILLI','M'],['BRIDELANCE Damien','M'],['REHAMNIA','M'],['DURLI','M'],['GUFFROY','M'],['KESSLER Jordan','M'],['BEHARI','M'],['LECLERE','M'],['FINCK Carole','F'],['HANCE Clotilde','F']
+      ['PILLA','M'],['TRIPODI Adrien','M'],['CAIROL','F'],['SAUTEZ Jerome','M'],['HAUDIQUET','F'],['MOURON','F'],['THIBAUD','F'],['MOUDEBER Ryan','M'],['NETO','M'],['FELTEN Laurent','M'],['MAILLOT Jean Gabriel Axel','M'],['KIRSCHTETTER Teddy','M'],['DOS SANTOS MARTINS Anabela','F'],['LEBRUN Celine','F'],['VILLI','M'],['BRIDELANCE Damien','M'],['REHAMNIA','M'],['KRIEG','M'],['DURLI','M'],['GUFFROY','M'],['KESSLER Jordan','M'],['BEHARI','M'],['LECLERE','M'],['FINCK Carole','F'],['HANCE Clotilde','F']
     ],
     4:team4
   };
