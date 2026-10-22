@@ -134,16 +134,19 @@
     if (selector) setTimeout(() => document.querySelector(selector)?.scrollIntoView({behavior:'smooth',block:'start'}), 90);
     else window.scrollTo(0,0);
   }
+  // Bureau : un point d'entrée par espace, les sous-fonctions restent accessibles à l'intérieur.
   const categoryItems = [
     ['Activité quotidienne', [
-      ['parif', '📷', 'Plan PARIF'], ['today', '☀️', "Aujourd'hui"],
-      ['planning', '🗓️', 'Mon planning'], ['planning-errors', '⚠️', 'Erreurs planning'],
+      ['today', '☀️', "Aujourd'hui"], ['parif', '📷', 'Plan PARIF'],
+      ['planning', '🗓️', 'Mon planning'], ['team', '👥', 'Agents'],
+      ['leave', '🏖️', 'Congés'], ['consignes', '📋', 'Consignes'],
       ['visits', '✅', 'Visites sur poste'], ['main-courante', '📝', 'Main courante']
     ]],
-    ['Équipe et management', [
-      ['team', '👥', 'Agents'], ['leave', '🏖️', 'Congés'], ['mtal-recap', '📝', 'Récap congés'],
-      ['interviews', '🗣️', 'Entretiens'], ['consignes-link', '📋', 'Consignes'],
-      ['manager', '🛡️', 'Manager'], ['prestation', '📑', 'Fiche de prestation']
+    ['Suivi et encadrement', [
+      ['planning-errors', '⚠️', 'Erreurs planning'],
+      ['mt-management-workspace', '🤝', 'Management'],
+      ['prestation', '📑', 'Fiche de prestation'],
+      ['history', '📚', 'Historique']
     ]],
     ['Mes outils', [
       ['salary', '💶', 'Salaire'], ['hours', '🕒', 'Mes heures'],
@@ -151,8 +154,7 @@
     ]]
   ];
   const aliases = {
-    'main-courante': { target:'today', selector:'#mt-ops-host .mt-ops-box:first-child' },
-    'consignes-link': { target:'today', selector:'#mt-ops-host .mt-ops-box:last-child' }
+    'main-courante': { target:'today', selector:'#mt-ops-host .mt-ops-box:first-child' }
   };
   const makeTile = (id, icon, label, note) => {
     const shortcut = aliases[id];
@@ -194,7 +196,7 @@
       });
       if (grid.children.length) groups.append(heading,grid);
     });
-    const extras = Array.from(nav.querySelectorAll('button[data-tab]')).filter(b => !included.has(b.dataset.tab));
+    const extras = Array.from(nav.querySelectorAll('button[data-tab]')).filter(b => !included.has(b.dataset.tab) && b.dataset.deskSecondary !== 'true' && !['mtal-recap','manager','interviews','pariftools'].includes(b.dataset.tab));
     if (extras.length) {
       const heading = document.createElement('h3');
       heading.className = 'mtb-section-title';
