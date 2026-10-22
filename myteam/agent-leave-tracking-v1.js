@@ -23,6 +23,7 @@
    ['chefStatus','Réponse du chef'],['chefStatusAt','Date de réponse du chef'],
    ['gesperFiled','Dépôt MyGesper'],['gesperFiledAt','Date de dépôt MyGesper'],
    ['gesperStatus','Réponse MyGesper'],['gesperStatusAt','Date de réponse MyGesper'],
+   ['gesperRefusalReason','Motif de refus MyGesper'],
    ['note','Note'],['source','Origine des informations'],['collectedOn','Date du recueil']
  ];
  const displayValue=(key,val)=>{
@@ -58,6 +59,11 @@
  '#mt-agent-leaves .mtal-warning{color:#f8ca98;font-size:12px;line-height:1.5}',
  '#mt-agent-leaves .mtal-smsg{font-size:12px;line-height:1.4;min-height:18px;color:#bdeccb}',
  '#mt-agent-leaves .mtal-muted{color:#b8c9d9;font-size:12px}',
+ '#mt-agent-leaves [hidden]{display:none!important}',
+ '#mt-agent-leaves .mtal-section-title{font-size:14px;font-weight:850;margin:16px 0 8px;padding:8px 10px;border-left:4px solid #d9874b;background:#263f59;border-radius:7px}',
+ '#mt-agent-leaves .mtal-refusal{padding:12px;background:#422e32;border:1px solid #af6b6b;border-radius:12px;margin:12px 0}',
+ '#mt-agent-leaves .mtal-refusal label{margin:0}',
+ '#mt-agent-leaves .mtal-header-action{display:block;width:100%;margin:12px 0;font-size:15px}',
  '#mt-agent-leaves .mtal-interview{margin:12px 0 15px;padding:12px;background:#192c40;border-radius:11px;border:1px solid #4a6481}',
  '#mt-agent-leaves .mtal-interview summary{cursor:pointer;font-size:13px;font-weight:800}',
  '#mt-agent-leaves .mtal-interview ol{font-size:12px;line-height:1.6;padding-left:19px;color:#d3e1ee}',
@@ -81,6 +87,7 @@
  panel.innerHTML=[
  '<h3>🏖️ Demandes de congés</h3><p id="mtal-agent-name" class="mtal-help"></p>',
  '<p id="mtal-stats" class="mtal-count"></p>',
+ '<button id="mtal-new" class="mtal-action mtal-header-action" type="button">+ Ajouter une demande de congés</button>',
  '<details class="mtal-interview"><summary>Questions à poser à l’agent pour reconstituer les demandes</summary>',
  '<ol><li>Quelles périodes de congés as-tu demandées pour les prochains mois ? Une fiche par période.</li>',
  '<li>Quand as-tu fait chaque demande au chef d’équipe ? Si tu ne sais plus : date non connue.</li>',
@@ -88,23 +95,30 @@
  '<li>Après accord, as-tu déposé sur MyGesper ? À quelle date ?</li>',
  '<li>Quelle réponse as-tu reçue de MyGesper et quand ? Si c’est toujours en attente, le noter.</li>',
  '</ol><p class="mtal-help">Saisie rétrospective : une réponse orale de l’agent ne remplace pas une confirmation administrative. Laisser les dates inconnues vides et les statuts à confirmer.</p></details>',
- '<button id="mtal-new" class="mtal-action" type="button">+ Ajouter une demande (ancienne ou nouvelle)</button>',
  '<div id="mtal-editor" class="mtal-form" hidden><h4 id="mtal-editor-title">Nouvelle demande de congés</h4>',
  '<form id="mtal-form">',
+ '<p class="mtal-help">Renseigne les dates et les réponses connues. Tu pourras compléter ou corriger plus tard sans perdre l’historique.</p>',
+ '<h4 class="mtal-section-title">1 — Période demandée</h4>',
  '<div class="mtal-grid"><label>Du (inclus)<input type="date" name="from" required></label>',
  '<label>Au (inclus)<input type="date" name="to" required></label></div>',
+ '<h4 class="mtal-section-title">2 — Demande au chef d’équipe</h4>',
  '<div class="mtal-grid"><label>Demande au chef d’équipe<select name="cdeRequest">',
  '<option value="unknown">À confirmer</option><option value="todo">À faire</option><option value="sent">Envoyée</option></select></label>',
  '<label>Date de demande au chef (si connue)<input type="date" name="cdeSentAt"></label></div>',
+ '<h4 class="mtal-section-title">3 — Réponse du chef d’équipe</h4>',
  '<div class="mtal-grid"><label>Décision du chef d’équipe<select name="chefStatus">',
  '<option value="unknown">À confirmer</option><option value="pending">En attente</option><option value="approved">Validée</option><option value="rejected">Refusée</option></select></label>',
  '<label>Date de réponse du chef (si connue)<input type="date" name="chefStatusAt"></label></div>',
+ '<h4 class="mtal-section-title">4 — Dépôt sur MyGesper</h4>',
  '<div class="mtal-grid"><label>Dépôt sur MyGesper<select name="gesperFiled">',
  '<option value="unknown">À confirmer</option><option value="no">Non déposée</option><option value="yes">Déposée</option></select></label>',
  '<label>Date de dépôt MyGesper (si connue)<input type="date" name="gesperFiledAt"></label></div>',
+ '<h4 class="mtal-section-title">5 — Réponse MyGesper</h4>',
  '<div class="mtal-grid"><label>Statut MyGesper<select name="gesperStatus">',
  '<option value="unknown">À confirmer</option><option value="none">Non déposée</option><option value="pending">En attente</option><option value="approved">Accordée</option><option value="rejected">Refusée</option></select></label>',
  '<label>Date de réponse MyGesper (si connue)<input type="date" name="gesperStatusAt"></label></div>',
+ '<div id="mtal-refusal-block" class="mtal-refusal" hidden><label>Motif du refus MyGesper (si connu)<textarea name="gesperRefusalReason" maxlength="1000" placeholder="Motif communiqué par MyGesper, sans données médicales ni informations personnelles"></textarea></label></div>',
+ '<h4 class="mtal-section-title">6 — Notes et vérification</h4>',
  '<div class="mtal-grid"><label>Information recueillie auprès de<select name="source">',
  '<option value="agent">Déclaration de l’agent</option><option value="email">Mail ou message vérifié</option>',
  '<option value="gesper">MyGesper consulté</option><option value="mixed">Informations croisées</option></select></label>',
@@ -136,7 +150,7 @@
    if(!safeAgent())return;
    if(item){
      editing=item.id;
-     ['from','to','cdeRequest','cdeSentAt','chefStatus','chefStatusAt','gesperFiled','gesperFiledAt','gesperStatus','gesperStatusAt','note','source','collectedOn'].forEach(k=>{
+     ['from','to','cdeRequest','cdeSentAt','chefStatus','chefStatusAt','gesperFiled','gesperFiledAt','gesperStatus','gesperStatusAt','gesperRefusalReason','note','source','collectedOn'].forEach(k=>{
        const input=form.elements.namedItem(k);
        if(input)input.value=String(item[k]??'');
      });
@@ -147,8 +161,11 @@
      form.elements.namedItem('collectedOn').value=today();
      editing='';
    }
-   editor.hidden=false;dirty=false;checkConsistency();
+   editor.hidden=false;dirty=false;updateRefusalBlock();checkConsistency();
    editor.scrollIntoView({block:'nearest',behavior:'smooth'});
+ }
+ function updateRefusalBlock(){
+   $('mtal-refusal-block').hidden=form.elements.namedItem('gesperStatus').value!=='rejected';
  }
  function checkConsistency(){
    const values=Object.fromEntries(new FormData(form));
@@ -159,8 +176,8 @@
    $('mtal-consistency').textContent=warnings.join(' ');
    return warnings;
  }
- form.addEventListener('input',()=>{dirty=true;checkConsistency()});
- form.addEventListener('change',()=>{dirty=true;checkConsistency()});
+ form.addEventListener('input',()=>{dirty=true;updateRefusalBlock();checkConsistency()});
+ form.addEventListener('change',()=>{dirty=true;updateRefusalBlock();checkConsistency()});
  function step(text,condition){
    const line=document.createElement('div');line.className='mtal-step '+(condition||'');
    line.textContent=text;return line;
@@ -199,6 +216,7 @@
      source.className='mtal-muted';
      source.textContent='Source : '+(sourceLabels[r.source]||'Non précisée')+(r.collectedOn?' · Recueilli le '+formatDate(r.collectedOn):'');
      container.append(source);
+     if(r.gesperStatus==='rejected'&&r.gesperRefusalReason){const reason=document.createElement('p');reason.textContent='Motif du refus MyGesper : '+r.gesperRefusalReason;container.append(reason);}
      if(r.note){const note=document.createElement('p');note.textContent=r.note;container.append(note);}
      const events=Array.isArray(r.events)?r.events:[];
      const audit=document.createElement('details');audit.className='mtal-audit';
@@ -305,6 +323,7 @@
      chefStatus:['unknown','pending','approved','rejected'].includes(fields.chefStatus)?fields.chefStatus:'unknown',
      gesperFiled:['unknown','no','yes'].includes(fields.gesperFiled)?fields.gesperFiled:'unknown',
      gesperStatus:['unknown','none','pending','approved','rejected'].includes(fields.gesperStatus)?fields.gesperStatus:'unknown',
+     gesperRefusalReason:fields.gesperStatus==='rejected'?String(fields.gesperRefusalReason||'').trim().slice(0,1000):'',
      note:String(fields.note||'').trim().slice(0,700),
      source:Object.hasOwn(sourceLabels,fields.source)?fields.source:'agent',
      collectedOn:fields.collectedOn||today(),
