@@ -141,7 +141,7 @@
       ['visits', '✅', 'Visites sur poste'], ['main-courante', '📝', 'Main courante']
     ]],
     ['Équipe et management', [
-      ['team', '👥', 'Agents'], ['leave', '🏖️', 'Congés'],
+      ['team', '👥', 'Agents'], ['leave', '🏖️', 'Congés'], ['mtal-recap', '📝', 'Récap congés'],
       ['interviews', '🗣️', 'Entretiens'], ['consignes-link', '📋', 'Consignes'],
       ['manager', '🛡️', 'Manager'], ['prestation', '📑', 'Fiche de prestation']
     ]],
