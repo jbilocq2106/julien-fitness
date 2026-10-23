@@ -4,7 +4,7 @@
   'use strict';
 
   const GYMS_KEY='mt_known_gym_locations_v1';
-  const GYM_OPTIONS=['Basic-Fit Sandweiler','Basic-Fit Yutz','Basic-Fit Thionville'];
+  const GYM_OPTIONS=['Basic-Fit Sandweiler','Basic-Fit Yutz','Basic-Fit Thionville','Maison'];
   const DEFAULT_GYM=GYM_OPTIONS[0];
   const SANDWEILER_BACKFILL_KEY='mt_sandweiler_last_two_20261021_v1';
   let pendingGymChoice='';
@@ -84,8 +84,8 @@
     modal.innerHTML=`
       <div class="modal-card mt-gym-choice-card">
         <div class="eyebrow">SALLE D’ENTRAÎNEMENT</div>
-        <h2 id="mtGymSelectionTitle">Dans quel Basic-Fit ?</h2>
-        <p class="muted">Sandweiler est proposé par défaut. Confirme ou choisis Yutz ou Thionville.</p>
+        <h2 id="mtGymSelectionTitle">Lieu de la séance</h2>
+        <p class="muted">Sandweiler est proposé par défaut. Choisis aussi Yutz, Thionville ou Maison.</p>
         <div id="mtGymChoices" class="mt-gym-options" role="radiogroup" aria-label="Choisir le Basic-Fit">
           ${GYM_OPTIONS.map((name,index)=>`<label class="mt-gym-option">
             <input type="radio" name="mtGymSelection" value="${name}" ${index===0?'checked':''}>
@@ -210,10 +210,24 @@
     if(!pendingGymChoice&&!workout.gymName)locate(workout);
   }
 
-  function promptBeforeStart(begin,testMode){
+  function promptBeforeStart(begin,testMode,sessionId=''){
     if(testMode)return begin();
     if(state.activeWorkout){
       alert('Une séance est déjà en cours. Termine-la ou annule-la avant d’en démarrer une autre.');
+      return;
+    }
+    // Les séances à domicile ne demandent pas de choisir un Basic-Fit et n'activent pas le GPS.
+    if(sessionId==='S7'){
+      pendingGymChoice='Maison';
+      try{
+        begin();
+        const workout=state.activeWorkout;
+        if(workout&&!workout.testMode){
+          workout.gymName='Maison';
+          workout.gymDetection='home';
+          save();renderWorkout();
+        }
+      }finally{pendingGymChoice='';}
       return;
     }
     promptGymSelection(chosen=>{
@@ -234,7 +248,7 @@
   if(typeof startWorkout==='function'){
     const previousStart=startWorkout;
     startWorkout=function(...args){
-      return promptBeforeStart(()=>previousStart(...args),!!args[1]);
+      return promptBeforeStart(()=>previousStart(...args),!!args[1],args[0]);
     };
     window.startWorkout=startWorkout;
   }
