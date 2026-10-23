@@ -67,11 +67,13 @@
      if(team.includes(selected))picker.value=selected;
      const rows=read('myteam_agent_leave_requests_v1',[]);
      const active=Array.isArray(rows)?rows.filter(x=>x&&!x.archived):[];
-     const follow=active.filter(x=>!['approved','rejected'].includes(x.gesperStatus)).length;
+     const follow=active.filter(x=>!['validated','rejected'].includes(x.gesperStatus)).length;
+     const accepted=active.filter(x=>x.gesperStatus==='approved').length;
+     const validated=active.filter(x=>x.gesperStatus==='validated').length;
      const asked=read('myteam_leave_agent_interviews_v1',{});
      const count=team.filter(name=>asked?.[name]?.done===true).length;
-     $('mt-leave-workspace-count').textContent=active.length+' demande(s) suivie(s) · '+follow+
-       ' à confirmer · '+count+'/'+team.length+' agents interrogés (Team 4)';
+     $('mt-leave-workspace-count').textContent=active.length+' demande(s) suivie(s) · '+accepted+
+       ' acceptée(s) non validée(s) · '+validated+' validée(s) · '+follow+' à suivre · '+count+'/'+team.length+' agents interrogés (Team 4)';
    };
    const showAgent=(name,interviews)=>{
      open('team');
