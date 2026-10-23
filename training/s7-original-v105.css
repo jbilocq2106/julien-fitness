@@ -1,7 +1,7 @@
 /* 8 photographies originales : positions des vignettes dans la planche 4x2. */
 .mt-s7-exact-cell{
  display:block!important; flex:0 0 auto;
- background-image:url('images/s7-original-photos.avif?v=1');
+ background-image:var(--mt-s7-original-photo-url, none);
  background-size:400% 200%; background-repeat:no-repeat;
  background-color:#1c2a3a; border-radius:10px;
  border:1px solid #47617c; aspect-ratio:3/4;
@@ -28,3 +28,7 @@
  .mt-s7-exact-thumb.mt-s7-thumb{width:78px!important;min-width:78px!important;height:104px!important}
  .mt-s7-exact-workout-photo.mt-s7-workout-photo{width:min(100%,210px)!important}
 }
+/* Les photos remplacent les anciennes miniatures en séance et en agrandissement. */
+.mt-s7-thumb.mt-s7-exact-cell{width:90px!important;min-width:90px!important;height:120px!important;aspect-ratio:3/4!important}
+.mt-s7-workout-photo.mt-s7-exact-cell{width:min(100%,240px)!important;height:auto!important;aspect-ratio:3/4!important;max-height:none!important;margin:0 auto}
+.mt-s7-image-expanded.mt-s7-exact-cell{width:min(86vw,360px)!important;height:auto!important;aspect-ratio:3/4!important;max-height:65vh!important;margin:0 auto}
