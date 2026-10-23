@@ -16,7 +16,7 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./myteam-192-hd.png?v=1",
+      "src": "./myteam-192-hd.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
