@@ -97,7 +97,12 @@
         .ad-filters{display:flex;gap:7px;overflow:auto;padding-bottom:10px}.ad-filter{white-space:nowrap;padding:9px 11px;border-radius:999px;background:#27364c;color:#fff;border:0;font-weight:750}.ad-filter.active{background:#e76b24}
         #ad-list{display:grid;gap:8px}.ad-row{width:100%;display:flex;align-items:stretch;justify-content:space-between;gap:7px;text-align:left;padding:7px 9px;border-radius:14px;border:1px solid #3b4e66;background:#26354a;color:#fff}.ad-open{display:flex;align-items:center;justify-content:space-between;flex:1;min-width:0;gap:7px;padding:7px;background:transparent;border:0;border-radius:10px;color:inherit;text-align:left;cursor:pointer}.ad-open:focus-visible,.ad-leave-check:focus-within{outline:2px solid #ffb473;outline-offset:2px}.ad-name{font-weight:800;min-width:0;overflow-wrap:anywhere}.ad-row.female .ad-name{color:#ff7fbd}.ad-tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.ad-tag{padding:5px 8px;border-radius:999px;background:#1f7a4d;font-size:11px;font-weight:850}.ad-tag.pending{background:#665126}.ad-sick{background:#9d2f36}.ad-arrow{font-size:20px;color:#aebacc}.ad-empty{padding:16px;text-align:center;border-radius:12px;background:#202e42;color:#aebacc}
         .ad-wa-mark{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:46px;align-self:center;padding:0;border:1px solid #728298;border-radius:12px;background:#34445a;color:#abb8c6;cursor:pointer;transition:background .12s,color .12s}
-        .ad-wa-mark.is-member{background:#1f9e5c;border-color:#35c87b;color:#fff}
+        .ad-wa-mark.is-member{background:#1f9e5c;border-color:#35c87b;color:#fff;position:relative}
+        .ad-wa-mark.is-member:after{content:'🔒';font-size:12px;position:absolute;right:-5px;bottom:-5px;border-radius:50%;background:#111928;border:1px solid #86deb0;padding:2px}
+        .ad-wa-mark:disabled{opacity:1;cursor:default}
+        .ad-wa-detail{margin:10px 0 14px;padding:12px;border:1px solid #497a64;background:#173a31;border-radius:12px}
+        .ad-wa-detail p{margin:4px 0 10px;line-height:1.5;font-size:13px;color:#e2efe9}
+        .ad-wa-unlock{padding:10px 12px;background:#344e5c;border:1px solid #6d9a89;border-radius:9px;min-height:42px}
         .ad-wa-mark:focus-visible{outline:3px solid #f4c290;outline-offset:2px}
         .ad-wa-info{margin:0 0 8px;color:#b9d8c5;font-size:12px;line-height:1.5}
         .ad-leave-check{display:flex;align-items:center;justify-content:center;flex:0 0 95px;gap:5px;min-height:53px;padding:5px 4px;border-left:1px solid #526681;color:#cbd7e5;cursor:pointer;user-select:none}.ad-leave-check input{appearance:auto!important;width:21px!important;height:21px!important;flex:0 0 21px;accent-color:#47c895;cursor:pointer}.ad-check-text{font-size:11px;line-height:1.25;font-weight:800}.ad-leave-check.is-done{color:#93f0c0}.ad-interview-info{margin:2px 0 9px;color:#c8d6e6;font-size:12px;line-height:1.5}
@@ -151,13 +156,13 @@
       heading.textContent=`Team ${team} — ordre alphabétique`;
       count.textContent=`${all.length} agents • ${women} F • ${men} H${pending?` • ${pending} à compléter`:''}`;
       box.querySelector('#ad-interview-info').textContent=`Suivi congés : ${askedCount}/${all.length} agents interrogés · ${all.length-askedCount} restant(s). Coche après l’échange ; la date est conservée. La coche ne vaut pas validation des congés.`;
-      box.querySelector('#ad-wa-info').textContent=`Groupe WhatsApp : ${waCount}/${all.length} présences confirmées · ${all.length-waCount} à vérifier. Icône verte = confirmé manuellement ; grise = non vérifié.`;
+      box.querySelector('#ad-wa-info').textContent=`Groupe WhatsApp : ${waCount}/${all.length} présences confirmées · ${all.length-waCount} à vérifier. Icône verte + cadenas = présence confirmée et verrouillée ; grise = à vérifier. Pour corriger : ouvrir la fiche de l’agent.`;
       list.innerHTML=visible.length?visible.map(a=>`<div class="ad-row${a.gender==='F'?' female':''}">
         <button type="button" class="ad-open" data-ad-name="${esc(a.name)}" aria-label="Ouvrir la fiche de ${esc(a.name)}">
           <span class="ad-name">${esc(a.name)}</span>
           <span class="ad-tags">${a.rx===true?'<span class="ad-tag">RX</span>':''}${a.piste===true?'<span class="ad-tag">PISTE</span>':''}${(typeof a.rx!=='boolean'||typeof a.piste!=='boolean')?'<span class="ad-tag pending">À compléter</span>':''}${a.sickActive?`<span class="ad-tag ad-sick">🩺 ${fmtDate(a.sickEnd)}</span>`:''}<span class="ad-arrow">›</span></span>
         </button>
-        <button type="button" class="ad-wa-mark${isWhatsappMember(a.name)?' is-member':''}" data-ad-whatsapp="${esc(a.name)}" aria-pressed="${isWhatsappMember(a.name)}" aria-label="${isWhatsappMember(a.name)?'Présence confirmée':'Confirmer la présence'} dans le groupe WhatsApp : ${esc(a.name)}" title="${isWhatsappMember(a.name)?'Présent dans le groupe WhatsApp · confirmation manuelle le '+(members[a.name]?.checkedOn||'date inconnue'):'Présence dans le groupe WhatsApp non vérifiée'}">
+        <button type="button" class="ad-wa-mark${isWhatsappMember(a.name)?' is-member':''}" data-ad-whatsapp="${esc(a.name)}" aria-pressed="${isWhatsappMember(a.name)}" ${isWhatsappMember(a.name)?'disabled':''} aria-label="${isWhatsappMember(a.name)?'Présence confirmée et verrouillée':'Confirmer la présence'} dans le groupe WhatsApp : ${esc(a.name)}" title="${isWhatsappMember(a.name)?'Présence WhatsApp verrouillée · confirmation manuelle le '+(members[a.name]?.checkedOn||'date inconnue')+' · correction depuis la fiche agent':'Présence dans le groupe WhatsApp non vérifiée'}">
           ${WA_ICON}
         </button>
         <label class="ad-leave-check${isAsked(a.name)?' is-done':''}" title="${isAsked(a.name)?'Interrogé le '+fmtDate(interviewed[a.name].date):'Agent non interrogé pour les congés'}">
@@ -167,8 +172,8 @@
       </div>`).join(''):'<div class="ad-empty">Aucun agent dans ce filtre.</div>';
       list.querySelectorAll('[data-ad-whatsapp]').forEach(button=>button.onclick=()=>{
         const name=button.dataset.adWhatsapp,states=whatsappMembers();
-        if(states[name]?.member===true)delete states[name];
-        else states[name]={member:true,checkedOn:dayKey()};
+        if(states[name]?.member===true)return; // Une confirmation ne peut être retirée ici.
+        states[name]={member:true,checkedOn:dayKey()};
         try{localStorage.setItem(WHATSAPP_KEY,JSON.stringify(states));draw();}
         catch{
           button.title='Enregistrement WhatsApp impossible : stockage indisponible';
@@ -205,8 +210,56 @@
     box.querySelectorAll('[data-ad-team]').forEach(b=>b.classList.toggle('active',Number(b.dataset.adTeam)===team));
     box.querySelectorAll('[data-ad-filter]').forEach(b=>b.classList.toggle('active',b.dataset.adFilter===filter));
     draw();
+    setupWhatsappDetail();
   }
 
+  // La correction volontaire d'une confirmation verrouillée se fait uniquement
+  // depuis la fiche de l'agent, après une confirmation explicite.
+  function setupWhatsappDetail(){
+    const select=document.querySelector('#agent-select');
+    const detail=document.querySelector('#agent-detail');
+    const heading=document.querySelector('#agent-title');
+    if(!select||!detail||!heading||detail.querySelector('#ad-wa-detail'))return;
+    const panel=document.createElement('div');
+    panel.id='ad-wa-detail';panel.className='ad-wa-detail';panel.hidden=true;
+    const info=document.createElement('p');
+    const action=document.createElement('button');
+    action.type='button';action.className='ad-wa-unlock';
+    action.textContent='Corriger la confirmation WhatsApp';
+    panel.append(info,action);
+    heading.after(panel);
+    const refresh=()=>{
+      const agent=select.value,entry=whatsappMembers()[agent];
+      panel.hidden=!agent;
+      if(!agent)return;
+      if(entry?.member===true){
+        info.textContent='WhatsApp : présence confirmée et verrouillée'+
+          (entry.checkedOn?' le '+fmtDate(entry.checkedOn):'')+
+          '. Pour retirer une confirmation erronée, utilise le bouton ci-dessous.';
+        action.hidden=false;
+      }else{
+        info.textContent='WhatsApp : présence non confirmée. Utilise l’icône grise dans la liste pour la confirmer et la verrouiller.';
+        action.hidden=true;
+      }
+    };
+    action.onclick=()=>{
+      const name=select.value;
+      const members=whatsappMembers();
+      if(!name||members[name]?.member!==true)return;
+      if(!confirm('Retirer la confirmation verrouillée de présence WhatsApp pour '+name+' ? Cette correction nécessitera une nouvelle validation depuis la liste.'))return;
+      delete members[name];
+      try{
+        localStorage.setItem(WHATSAPP_KEY,JSON.stringify(members));
+        refresh();
+        renderDirectAgents();
+      }catch{
+        info.textContent='Impossible de corriger la confirmation : enregistrement local indisponible.';
+      }
+    };
+    select.addEventListener('change',refresh);
+    new MutationObserver(refresh).observe(heading,{childList:true,characterData:true,subtree:true});
+    refresh();
+  }
   window.renderMyTeamAgentList=renderDirectAgents;
 
   (async()=>{
