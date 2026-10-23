@@ -17,6 +17,14 @@
   }catch(error){console.warn('Migration statut KRIEG non appliquée',error)}
 
   const INTERVIEWS_KEY='myteam_leave_agent_interviews_v1';
+  const WHATSAPP_KEY='myteam_whatsapp_group_members_v1';
+  const whatsappMembers=()=>{
+    try{
+      const value=JSON.parse(localStorage.getItem(WHATSAPP_KEY)||'{}');
+      return value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+    }catch{return {}}
+  };
+  const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="23" height="23" fill="currentColor"><path d="M12.04 2a9.96 9.96 0 0 0-8.56 15.08L2 22.7l5.76-1.51A9.98 9.98 0 1 0 12.04 2zm0 18.16c-1.62 0-3.21-.44-4.6-1.27l-.33-.2-3.43.9.92-3.34-.22-.34a8.12 8.12 0 0 1-1.25-4.36A8.89 8.89 0 1 1 12.04 20.16zm4.83-6.43c-.26-.13-1.52-.75-1.76-.84-.24-.09-.41-.13-.59.13-.17.26-.67.84-.82 1.01-.15.17-.3.2-.56.07-.26-.13-1.1-.4-2.09-1.28-.78-.69-1.3-1.54-1.45-1.8-.15-.26-.01-.4.11-.53l.39-.46c.13-.15.17-.26.26-.43.09-.17.04-.33-.02-.46-.06-.13-.59-1.42-.81-1.94-.21-.5-.43-.43-.59-.44h-.5c-.18 0-.46.07-.7.33-.24.26-.92.9-.92 2.19 0 1.29.94 2.53 1.07 2.71.13.17 1.85 2.82 4.48 3.96.63.27 1.12.43 1.5.55.63.2 1.2.17 1.65.1.5-.07 1.52-.62 1.74-1.22.22-.6.22-1.12.15-1.22-.06-.11-.23-.17-.49-.3z"/></svg>';
   const leaveInterviewStates=()=>{
     try{
       const raw=JSON.parse(localStorage.getItem(INTERVIEWS_KEY)||'{}');
@@ -88,6 +96,10 @@
         #ad-search{width:100%;padding:13px 14px;border-radius:12px;border:1px solid #61748b;background:#111928;color:#fff;font:inherit;margin:6px 0 10px}
         .ad-filters{display:flex;gap:7px;overflow:auto;padding-bottom:10px}.ad-filter{white-space:nowrap;padding:9px 11px;border-radius:999px;background:#27364c;color:#fff;border:0;font-weight:750}.ad-filter.active{background:#e76b24}
         #ad-list{display:grid;gap:8px}.ad-row{width:100%;display:flex;align-items:stretch;justify-content:space-between;gap:7px;text-align:left;padding:7px 9px;border-radius:14px;border:1px solid #3b4e66;background:#26354a;color:#fff}.ad-open{display:flex;align-items:center;justify-content:space-between;flex:1;min-width:0;gap:7px;padding:7px;background:transparent;border:0;border-radius:10px;color:inherit;text-align:left;cursor:pointer}.ad-open:focus-visible,.ad-leave-check:focus-within{outline:2px solid #ffb473;outline-offset:2px}.ad-name{font-weight:800;min-width:0;overflow-wrap:anywhere}.ad-row.female .ad-name{color:#ff7fbd}.ad-tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.ad-tag{padding:5px 8px;border-radius:999px;background:#1f7a4d;font-size:11px;font-weight:850}.ad-tag.pending{background:#665126}.ad-sick{background:#9d2f36}.ad-arrow{font-size:20px;color:#aebacc}.ad-empty{padding:16px;text-align:center;border-radius:12px;background:#202e42;color:#aebacc}
+        .ad-wa-mark{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:46px;align-self:center;padding:0;border:1px solid #728298;border-radius:12px;background:#34445a;color:#abb8c6;cursor:pointer;transition:background .12s,color .12s}
+        .ad-wa-mark.is-member{background:#1f9e5c;border-color:#35c87b;color:#fff}
+        .ad-wa-mark:focus-visible{outline:3px solid #f4c290;outline-offset:2px}
+        .ad-wa-info{margin:0 0 8px;color:#b9d8c5;font-size:12px;line-height:1.5}
         .ad-leave-check{display:flex;align-items:center;justify-content:center;flex:0 0 95px;gap:5px;min-height:53px;padding:5px 4px;border-left:1px solid #526681;color:#cbd7e5;cursor:pointer;user-select:none}.ad-leave-check input{appearance:auto!important;width:21px!important;height:21px!important;flex:0 0 21px;accent-color:#47c895;cursor:pointer}.ad-check-text{font-size:11px;line-height:1.25;font-weight:800}.ad-leave-check.is-done{color:#93f0c0}.ad-interview-info{margin:2px 0 9px;color:#c8d6e6;font-size:12px;line-height:1.5}
         @media(max-width:420px){.ad-row{padding:5px;gap:4px}.ad-leave-check{flex-basis:86px}.ad-check-text{font-size:10px}.ad-open{gap:5px;padding:6px}.ad-tag{font-size:10px;padding:4px 6px}}
       </style>
@@ -106,8 +118,11 @@
         <button class="ad-filter" data-ad-filter="unknown" type="button">Qualifications à compléter</button>
         <button class="ad-filter" data-ad-filter="toask" type="button">Congés : à interroger</button>
         <button class="ad-filter" data-ad-filter="asked" type="button">Congés : interrogés</button>
+        <button class="ad-filter" data-ad-filter="waconfirmed" type="button">WhatsApp : confirmés</button>
+        <button class="ad-filter" data-ad-filter="watocheck" type="button">WhatsApp : à vérifier</button>
       </div>
       <p id="ad-interview-info" class="ad-interview-info" role="status"></p>
+      <p id="ad-wa-info" class="ad-wa-info" role="status"></p>
       <div id="ad-list"></div>`;
       const first=section.querySelector('p');
       if(first)first.before(box);else section.prepend(box);
@@ -120,12 +135,15 @@
     const draw=()=>{
       const all=currentRoster(team);
       const interviewed=leaveInterviewStates();
+      const members=whatsappMembers();
       const isAsked=name=>interviewed[name]?.done===true;
+      const isWhatsappMember=name=>members[name]?.member===true;
       const askedCount=all.filter(a=>isAsked(a.name)).length;
+      const waCount=all.filter(a=>isWhatsappMember(a.name)).length;
       const q=(search.value||'').trim().toLocaleLowerCase('fr');
       const visible=all.filter(a=>{
         const searchOk=!q||a.name.toLocaleLowerCase('fr').includes(q);
-        const filterOk=filter==='all'||(filter==='rx'&&a.rx===true)||(filter==='piste'&&a.piste===true)||(filter==='unknown'&&(typeof a.rx!=='boolean'||typeof a.piste!=='boolean'))||(filter==='asked'&&isAsked(a.name))||(filter==='toask'&&!isAsked(a.name));
+        const filterOk=filter==='all'||(filter==='rx'&&a.rx===true)||(filter==='piste'&&a.piste===true)||(filter==='unknown'&&(typeof a.rx!=='boolean'||typeof a.piste!=='boolean'))||(filter==='asked'&&isAsked(a.name))||(filter==='toask'&&!isAsked(a.name))||(filter==='waconfirmed'&&isWhatsappMember(a.name))||(filter==='watocheck'&&!isWhatsappMember(a.name));
         return searchOk&&filterOk;
       });
       const women=all.filter(a=>a.gender==='F').length,men=all.filter(a=>a.gender==='M').length;
@@ -133,16 +151,30 @@
       heading.textContent=`Team ${team} — ordre alphabétique`;
       count.textContent=`${all.length} agents • ${women} F • ${men} H${pending?` • ${pending} à compléter`:''}`;
       box.querySelector('#ad-interview-info').textContent=`Suivi congés : ${askedCount}/${all.length} agents interrogés · ${all.length-askedCount} restant(s). Coche après l’échange ; la date est conservée. La coche ne vaut pas validation des congés.`;
+      box.querySelector('#ad-wa-info').textContent=`Groupe WhatsApp : ${waCount}/${all.length} présences confirmées · ${all.length-waCount} à vérifier. Icône verte = confirmé manuellement ; grise = non vérifié.`;
       list.innerHTML=visible.length?visible.map(a=>`<div class="ad-row${a.gender==='F'?' female':''}">
         <button type="button" class="ad-open" data-ad-name="${esc(a.name)}" aria-label="Ouvrir la fiche de ${esc(a.name)}">
           <span class="ad-name">${esc(a.name)}</span>
           <span class="ad-tags">${a.rx===true?'<span class="ad-tag">RX</span>':''}${a.piste===true?'<span class="ad-tag">PISTE</span>':''}${(typeof a.rx!=='boolean'||typeof a.piste!=='boolean')?'<span class="ad-tag pending">À compléter</span>':''}${a.sickActive?`<span class="ad-tag ad-sick">🩺 ${fmtDate(a.sickEnd)}</span>`:''}<span class="ad-arrow">›</span></span>
+        </button>
+        <button type="button" class="ad-wa-mark${isWhatsappMember(a.name)?' is-member':''}" data-ad-whatsapp="${esc(a.name)}" aria-pressed="${isWhatsappMember(a.name)}" aria-label="${isWhatsappMember(a.name)?'Présence confirmée':'Confirmer la présence'} dans le groupe WhatsApp : ${esc(a.name)}" title="${isWhatsappMember(a.name)?'Présent dans le groupe WhatsApp · confirmation manuelle le '+(members[a.name]?.checkedOn||'date inconnue'):'Présence dans le groupe WhatsApp non vérifiée'}">
+          ${WA_ICON}
         </button>
         <label class="ad-leave-check${isAsked(a.name)?' is-done':''}" title="${isAsked(a.name)?'Interrogé le '+fmtDate(interviewed[a.name].date):'Agent non interrogé pour les congés'}">
           <input type="checkbox" data-ad-interview="${esc(a.name)}" aria-label="Interrogé pour les congés : ${esc(a.name)}" ${isAsked(a.name)?'checked':''}>
           <span class="ad-check-text">${isAsked(a.name)?'Interrogé ✓':'À interroger'}${isAsked(a.name)&&interviewed[a.name].date?'<br>'+fmtDate(interviewed[a.name].date):''}</span>
         </label>
       </div>`).join(''):'<div class="ad-empty">Aucun agent dans ce filtre.</div>';
+      list.querySelectorAll('[data-ad-whatsapp]').forEach(button=>button.onclick=()=>{
+        const name=button.dataset.adWhatsapp,states=whatsappMembers();
+        if(states[name]?.member===true)delete states[name];
+        else states[name]={member:true,checkedOn:dayKey()};
+        try{localStorage.setItem(WHATSAPP_KEY,JSON.stringify(states));draw();}
+        catch{
+          button.title='Enregistrement WhatsApp impossible : stockage indisponible';
+          box.querySelector('#ad-wa-info').textContent='Impossible d’enregistrer la présence WhatsApp sur cet appareil.';
+        }
+      });
       list.querySelectorAll('[data-ad-interview]').forEach(box=>box.onchange=()=>{
         const name=box.dataset.adInterview;
         const state=leaveInterviewStates();
