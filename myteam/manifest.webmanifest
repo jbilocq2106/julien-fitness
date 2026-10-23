@@ -22,7 +22,7 @@
       "purpose": "any"
     },
     {
-      "src": "./myteam-512-hd.png?v=1",
+      "src": "./myteam-512-hd.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
