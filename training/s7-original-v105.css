@@ -1,0 +1,30 @@
+/* 8 photographies originales : positions des vignettes dans la planche 4x2. */
+.mt-s7-exact-cell{
+ display:block!important; flex:0 0 auto;
+ background-image:url('images/s7-original-photos.avif?v=1');
+ background-size:400% 200%; background-repeat:no-repeat;
+ background-color:#1c2a3a; border-radius:10px;
+ border:1px solid #47617c; aspect-ratio:3/4;
+}
+.mt-s7-home-photo-strip .mt-s7-exact-home,.mt-s7-photo-grid .mt-s7-exact-home{
+ width:100%;height:auto;border:0;border-radius:10px 10px 0 0;
+}
+.mt-s7-exact-thumb.mt-s7-thumb{width:90px!important;min-width:90px!important;height:120px!important}
+.mt-s7-exact-workout .exercise-guide{grid-template-columns:minmax(0,1fr) auto!important}
+.mt-s7-exact-workout .exercise-visual{display:none!important}
+.mt-s7-exact-workout-photo.mt-s7-workout-photo{
+ width:min(100%,240px)!important;height:auto!important;max-height:none!important;
+ aspect-ratio:3/4!important;margin:0 auto;
+}
+.mt-s7-exact-fullsize{width:min(86vw,360px);height:auto;max-height:65vh;margin:0 auto}
+.mt-s7-big-img{display:flex;justify-content:center}
+.mt-s7-workout-image .mt-s7-photo-button{
+ display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px
+}
+.mt-s7-workout-image .mt-s7-photo-button>span{position:static!important;align-self:flex-end}
+.mt-s7-home-photo-strip figure,.mt-s7-photo-grid figure{display:flex;flex-direction:column}
+.mt-s7-home-photo-strip figcaption,.mt-s7-photo-grid figcaption{flex:0 0 auto}
+@media(max-width:420px){
+ .mt-s7-exact-thumb.mt-s7-thumb{width:78px!important;min-width:78px!important;height:104px!important}
+ .mt-s7-exact-workout-photo.mt-s7-workout-photo{width:min(100%,210px)!important}
+}
