@@ -1,0 +1,31 @@
+/* S7 bras maison — visuels et supersets, mobile-first */
+.mt-s7-hidden{display:none!important}
+.mt-s7-program-row{align-items:center!important}
+.mt-s7-thumb{display:block;width:104px;min-width:104px;height:74px;object-fit:cover;border:1px solid #456482;border-radius:10px;background:#122438}
+.mt-s7-program-row .program-exercise-main{min-width:0}
+.mt-s7-pair-step{display:inline-block!important;width:max-content;margin-top:5px!important;padding:4px 7px;background:#1e4078;color:#d6e9ff!important;border-radius:8px;font-size:10px!important;font-weight:800}
+.mt-s7-ss-guide{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 11px;margin:14px 0 5px;border:1px solid #386aaa;background:linear-gradient(120deg,#133052,#102238);border-radius:12px}
+.mt-s7-ss-guide strong{color:#f4f9ff;font-size:13px}
+.mt-s7-ss-guide span{color:#cbdcf3;font-size:11px}
+.mt-s7-ss-guide small{flex-basis:100%;color:#95c6ff;font-weight:700;font-size:11px}
+.mt-s7-workout-image{margin:4px 0 12px}
+.mt-s7-photo-button{display:block;position:relative;width:100%;padding:0;overflow:hidden;border:1px solid #365f85;border-radius:12px;background:#0c1a2b;cursor:zoom-in;text-align:left}
+.mt-s7-workout-photo{display:block;width:100%;max-height:260px;aspect-ratio:2/1;object-fit:contain}
+.mt-s7-photo-button span{position:absolute;bottom:8px;right:8px;background:#091e36e6;color:#eff6ff;border-radius:7px;font-size:11px;font-weight:700;padding:5px 8px}
+.mt-s7-cues{padding:10px 2px 0;color:#cbd5e1;font-size:12px;line-height:1.55}
+.mt-s7-active-pair{display:block;background:#153d65;color:#d8efff;padding:9px 10px;border-radius:9px;font-weight:700;font-size:11px;line-height:1.4;margin:5px 0 8px}
+.mt-s7-preparation{border-color:#2f577f}
+.mt-s7-preparation summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800;color:#e0f2fe;font-size:14px}
+.mt-s7-preparation summary::-webkit-details-marker{display:none}
+.mt-s7-prep-description,.mt-s7-prep-hint{font-size:12px;color:#aebed2;line-height:1.5;margin:12px 0}
+.mt-s7-check{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid #2b3950;font-size:12px;line-height:1.4}
+.mt-s7-check input{width:18px;height:18px;accent-color:#38bdf8;flex:0 0 auto;margin:0}
+.mt-s7-check.checked span{text-decoration:line-through;opacity:.55}
+.mt-s7-fullscreen{display:none;position:fixed;inset:0;z-index:999999;background:#000d;align-items:center;justify-content:center;padding:15px}
+.mt-s7-fullscreen.open{display:flex}
+.mt-s7-overlay-card{width:min(700px,100%);max-height:92vh;overflow:auto;padding:14px;background:#111e30;border:1px solid #456482;border-radius:18px;color:#f8fafc}
+.mt-s7-overlay-card h3{font-size:18px;margin:12px 0}
+.mt-s7-close{display:block;margin-left:auto;background:#193858;border:1px solid #456482;color:#fff;border-radius:9px;padding:10px 14px}
+.mt-s7-image-expanded{display:block;width:100%;height:auto;border-radius:12px}
+.mt-s7-overlay-card ul{padding-left:22px;color:#cbd5e1;font-size:13px;line-height:1.6}
+@media(max-width:440px){.mt-s7-thumb{width:86px;min-width:86px;height:65px}.mt-s7-program-row .program-row-badges{flex:0 0 auto}.mt-s7-active-pair{font-size:10px}.mt-s7-photo-button span{font-size:10px}}
