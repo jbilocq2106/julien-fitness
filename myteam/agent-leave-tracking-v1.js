@@ -104,6 +104,7 @@
  '#mt-agent-leaves .mtal-quick-save{width:100%;min-height:45px;background:#d56f31;color:#fff;margin-top:8px;font-weight:850}',
  '#mt-agent-leaves .mtal-quick-status{font-size:12px;line-height:1.5;min-height:16px;color:#d5e9f8}',
  '#mtal-agent-mygesper{width:100%;min-height:44px;margin:10px 0;background:#2c664f;color:#fff;font-weight:800;border:1px solid #52aa86;border-radius:10px}',
+ '#mtal-agent-mygesper[hidden]{display:none!important}',
  '@media(max-width:540px){#mt-agent-leaves .mtal-quick-grid{grid-template-columns:1fr}}',
  '#mt-agent-leaves .mtal-item strong{display:block;font-size:14px}',
  '#mt-agent-leaves .mtal-steps{display:grid;gap:5px;font-size:12px;line-height:1.45;margin:8px 0}',
@@ -464,7 +465,7 @@
          }
          const isDate=v=>{
            if(!v)return true;
-           if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(v))return false;
+           if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;
            const [y,m,d]=v.split('-').map(Number),dt=new Date(y,m-1,d,12);
            return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;
          };
