@@ -1,7 +1,7 @@
 {
-  "version": 12,
-  "updated": "2026-10-21",
-  "weekly_note": "4 séances habituelles S1–S4 + séance spéciale S5 à la demande • S5 hors roulement • aucun soulevé de terre",
+  "version": 13,
+  "updated": "2026-10-23",
+  "weekly_note": "4 séances habituelles S1–S4 + S5 bras-abdos à la demande + S6 haut du corps Thionville du 23/10/2026 • séances spéciales hors roulement • aucun soulevé de terre",
   "sessions": [
     {
       "id": "S1",
@@ -1070,6 +1070,214 @@
           ],
           "rest": 0,
           "note": "5,2 km/h • 3 % • 25–30 min • allure permettant de parler ; limiter à 0–2 % en cas de gêne aux mollets. Ajuster selon fatigue."
+        }
+      ]
+    },
+    {
+      "id": "S6",
+      "name": "Séance du 23/10 — Haut du corps Thionville (sans poulies)",
+      "focus": "Pecs • dos • épaules • bras • gainage • haltères, poids du corps et machines assistées uniquement",
+      "day_hint": "Vendredi 23/10/2026 • Basic-Fit Thionville • séance spéciale hors roulement",
+      "exercises": [
+        {
+          "name": "Tractions assistées",
+          "sets": [
+            {
+              "reps": "8–10",
+              "weight": null
+            },
+            {
+              "reps": "8–10",
+              "weight": null
+            },
+            {
+              "reps": "8–10",
+              "weight": null
+            }
+          ],
+          "rest": 90,
+          "note": "Machine assistée autorisée : régler l'aide pour conserver environ 2 répétitions en réserve. Plus d'assistance = exercice plus facile. Pas de poulie classique.",
+          "coachOrder": 1
+        },
+        {
+          "name": "Développé incliné haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": 16
+            },
+            {
+              "reps": "10–12",
+              "weight": 16
+            },
+            {
+              "reps": "10–12",
+              "weight": 16
+            }
+          ],
+          "rest": 90,
+          "note": "Banc à 30° (15–30° selon confort). Historique : jusqu'à 18 kg/haltère. À Thionville, prendre le poids disponible le plus proche sans sacrifier la technique.",
+          "coachOrder": 2
+        },
+        {
+          "name": "Rowing haltère unilatéral",
+          "sets": [
+            {
+              "reps": "10–12/bras",
+              "weight": 16
+            },
+            {
+              "reps": "10–12/bras",
+              "weight": 18
+            },
+            {
+              "reps": "10–12/bras",
+              "weight": 18
+            }
+          ],
+          "rest": 90,
+          "note": "Un bras en appui sur un banc plat, dos neutre et sans rotation du tronc. Historique : 20 kg déjà pratiqués ; adapter aux haltères disponibles.",
+          "coachOrder": 3
+        },
+        {
+          "name": "Pompes au sol ou mains sur banc",
+          "sets": [
+            {
+              "reps": "10–15",
+              "weight": 0
+            },
+            {
+              "reps": "10–15",
+              "weight": 0
+            }
+          ],
+          "rest": 60,
+          "note": "Pompes au sol ou sur banc si nécessaire ; corps gainé, coudes légèrement rentrés. Garder 2 répétitions en réserve.",
+          "coachOrder": 4
+        },
+        {
+          "name": "Élévations latérales haltères",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 6
+            },
+            {
+              "reps": "12–15",
+              "weight": 6
+            }
+          ],
+          "rest": 60,
+          "note": "6 kg par haltère proposés d'après les séances précédentes. Monter jusqu'à hauteur d'épaules, sans hausser les trapèzes.",
+          "coachOrder": 5
+        },
+        {
+          "name": "Dips assistés",
+          "sets": [
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "note": "Machine assistée autorisée, amplitude confortable, buste plutôt vertical. Ne pas forcer si l'épaule gêne. Pas d'extension triceps au-dessus de la tête.",
+          "coachOrder": 6
+        },
+        {
+          "name": "Curl incliné haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": 10
+            },
+            {
+              "reps": "10–12",
+              "weight": 12
+            }
+          ],
+          "rest": 75,
+          "note": "Dossier à 45° ; charges de départ provisoires, choisir l'haltère inférieur si l'écart de poids à Thionville est trop grand. 1–2 répétitions en réserve.",
+          "coachOrder": 7
+        },
+        {
+          "name": "Curl marteau haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": 12
+            },
+            {
+              "reps": "10–12",
+              "weight": 14
+            }
+          ],
+          "rest": 75,
+          "note": "Déjà monté jusqu'à 16 kg/haltère auparavant ; 12 puis 14 kg sont des objectifs prudents. Sans élan ni compensation du dos.",
+          "coachOrder": 8
+        },
+        {
+          "name": "Planche RKC",
+          "sets": [
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            },
+            {
+              "reps": "20–30 s",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "Gainage intense mais court : fessiers et abdominaux contractés, lombaires neutres. Compte à rebours prolongeable.",
+          "coachOrder": 9
+        },
+        {
+          "name": "Planche latérale",
+          "sets": [
+            {
+              "reps": "25–35 s/côté",
+              "weight": 0
+            },
+            {
+              "reps": "25–35 s/côté",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "Obliques ; aligner tête, épaules et bassin. Arrêter si tension douloureuse au cou ou à l'épaule.",
+          "coachOrder": 10
+        },
+        {
+          "name": "Dead bug + expiration complète",
+          "sets": [
+            {
+              "reps": "8–10/côté",
+              "weight": 0
+            },
+            {
+              "reps": "8–10/côté",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "Garder les lombaires stables et expirer lentement à chaque extension du bras et de la jambe opposés.",
+          "coachOrder": 11
+        },
+        {
+          "name": "Tapis incliné",
+          "sets": [
+            {
+              "reps": "15–20 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "Fin facultative : 5,0–5,5 km/h, pente 2–5 %, effort modéré. Si mollets sensibles, réduire à 0–2 % ou arrêter. Saisir les paramètres réels après la séance.",
+          "coachOrder": 12
         }
       ]
     }
