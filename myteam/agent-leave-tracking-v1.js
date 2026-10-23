@@ -174,6 +174,74 @@
 
  let editing='',boundAgent='',dirty=false;
  const editor=$('mtal-editor'),form=$('mtal-form'),history=$('mtal-history'),message=$('mtal-message');
+ // Sélection d'une période sur un seul calendrier, premier appui = début, second = fin.
+ const fromField=form.elements.namedItem('from'),toField=form.elements.namedItem('to');
+ let rangeMonth=today().slice(0,7);
+ const isoDate=(year,month,day)=>year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+ const renderRangeCalendar=()=>{
+   const [year,month]=rangeMonth.split('-').map(Number);
+   const firstDay=new Date(year,month-1,1,12);
+   const title=new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'}).format(firstDay);
+   $('mtal-cal-month').textContent=title.charAt(0).toLocaleUpperCase('fr')+title.slice(1);
+   const grid=$('mtal-cal-days');grid.replaceChildren();
+   for(const heading of ['L','M','M','J','V','S','D']){
+     const span=document.createElement('span');span.className='mtal-cal-week';span.textContent=heading;grid.append(span);
+   }
+   const offset=(firstDay.getDay()+6)%7;
+   for(let gap=0;gap<offset;gap++){
+     const span=document.createElement('span');span.className='mtal-cal-empty';span.setAttribute('aria-hidden','true');grid.append(span);
+   }
+   const days=new Date(year,month,0).getDate();
+   const start=fromField.value,end=toField.value,current=today();
+   for(let day=1;day<=days;day++){
+     const iso=isoDate(year,month,day);
+     const btn=document.createElement('button');
+     btn.type='button';btn.className='mtal-cal-day';
+     btn.textContent=String(day);
+     btn.setAttribute('aria-label',new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(year,month-1,day,12)));
+     if(iso===start){btn.classList.add('start');btn.setAttribute('aria-pressed','true');}
+     if(iso===end){btn.classList.add('end');btn.setAttribute('aria-pressed','true');}
+     if(start&&end&&iso>start&&iso<end)btn.classList.add('in-range');
+     if(iso===current)btn.classList.add('today');
+     btn.onclick=()=>{
+       if(!fromField.value||toField.value||iso<fromField.value){
+         fromField.value=iso;toField.value='';
+       }else{
+         toField.value=iso;
+       }
+       fromField.dispatchEvent(new Event('change',{bubbles:true}));
+       toField.dispatchEvent(new Event('change',{bubbles:true}));
+       renderRangeCalendar();
+     };
+     grid.append(btn);
+   }
+   $('mtal-cal-from').textContent='Du : '+(start?formatDate(start):'non renseigné');
+   $('mtal-cal-to').textContent='Au : '+(end?formatDate(end):'non renseigné');
+   $('mtal-cal-hint').textContent=!start
+     ?'1. Appuie sur le premier jour du congé.'
+     :!end
+       ?'2. Appuie sur le dernier jour du congé, même s’il est sur le mois suivant.'
+       :'Période sélectionnée. Pour en choisir une autre, appuie sur un nouveau premier jour.';
+ };
+ const navigateRangeMonth=delta=>{
+   const [y,m]=rangeMonth.split('-').map(Number);
+   const next=new Date(y,m-1+delta,1,12);
+   rangeMonth=isoDate(next.getFullYear(),next.getMonth()+1,1).slice(0,7);
+   renderRangeCalendar();
+ };
+ $('mtal-cal-prev').onclick=()=>navigateRangeMonth(-1);
+ $('mtal-cal-next').onclick=()=>navigateRangeMonth(1);
+ $('mtal-cal-current').onclick=()=>{rangeMonth=today().slice(0,7);renderRangeCalendar();};
+ const clearRangeField=input=>{
+   input.value='';
+   input.dispatchEvent(new Event('change',{bubbles:true}));
+   renderRangeCalendar();
+ };
+ $('mtal-cal-clear-start').onclick=()=>clearRangeField(fromField);
+ $('mtal-cal-clear-end').onclick=()=>clearRangeField(toField);
+ fromField.addEventListener('change',renderRangeCalendar);
+ toField.addEventListener('change',renderRangeCalendar);
+ renderRangeCalendar();
  // Bouton explicite pour retirer n'importe quelle date, même sur Android.
  form.querySelectorAll('input[type="date"]').forEach(input=>{
    const clear=document.createElement('button');
@@ -207,6 +275,7 @@
    $('mtal-save').textContent='Enregistrer';
    $('mtal-consistency').textContent='';
    refreshDateIndicators();
+   rangeMonth=today().slice(0,7);renderRangeCalendar();
  }
  function openEditor(item){
    if(!safeAgent())return;
@@ -223,7 +292,8 @@
      form.elements.namedItem('collectedOn').value=today();
      editing='';
    }
-   editor.hidden=false;dirty=false;updateRefusalBlock();checkConsistency();refreshDateIndicators();
+   rangeMonth=String(item?.from||item?.to||today()).slice(0,7);
+   editor.hidden=false;dirty=false;updateRefusalBlock();checkConsistency();refreshDateIndicators();renderRangeCalendar();
    editor.scrollIntoView({block:'nearest',behavior:'smooth'});
  }
  function updateRefusalBlock(){
@@ -398,7 +468,7 @@
    const key=editing||((crypto.randomUUID&&crypto.randomUUID())||('leave-'+Date.now()+'-'+Math.random().toString(36).slice(2,9)));
    const now=new Date().toISOString();
    const item={
-     ...fields,
+     ...(old||{}),...fields,
      agent,from,to,id:key,
      cdeRequest:['unknown','todo','sent'].includes(fields.cdeRequest)?fields.cdeRequest:'unknown',
      chefStatus:['unknown','pending','approved','rejected'].includes(fields.chefStatus)?fields.chefStatus:'unknown',
