@@ -34,6 +34,33 @@
    return val?String(val):'Non renseigné';
  };
  const normalize=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('fr');
+ // Deux agents signalés dans un même dossier de refus. Ne pas attribuer
+ // de décision MyGesper ni de dates sans pièce confirmée.
+ function seedSharedLeaveReports(){
+   const group='suivi-commun-frezal-dal-farra-20261023';
+   const people=['FREZAL Joey','DAL FARRA Shirley'];
+   const records=read();let dirty=false;
+   const date='2026-10-23',timestamp=new Date().toISOString();
+   for(const agent of people){
+     if(records.some(r=>r.linkedGroup===group&&normalize(r.agent)===normalize(agent)))continue;
+     const note='Dossier commun avec '+people.filter(name=>name!==agent).join(', ')+
+       ' : mêmes demandes de congés et mêmes refus signalés. Périodes demandées, date et auteur des refus, motif et statut exact MyGesper à recueillir auprès des agents et à vérifier. Refus signalé ≠ refus confirmé dans MyGesper.';
+     records.push({
+       id:group+'-'+normalize(agent).replace(/[^a-z0-9]/g,'-'),
+       agent,from:'',to:'',
+       cdeRequest:'unknown',cdeSentAt:'',chefStatus:'unknown',chefStatusAt:'',
+       gesperFiled:'unknown',gesperFiledAt:'',gesperStatus:'unknown',
+       gesperStatusAt:'',gesperValidatedAt:'',gesperRefusalReason:'',
+       note,source:'manager',collectedOn:date,linkedGroup:group,
+       archived:false,createdAt:timestamp,updatedAt:timestamp,
+       events:[{at:timestamp,kind:'create',source:'manager',collectedOn:date,
+         changes:[{field:'note',label:'Note',before:'Non renseigné',after:note}]}]
+     });
+     dirty=true;
+   }
+   if(dirty&&!save(records))console.warn('MyTEAM : dossier congés partagé non enregistré (stockage indisponible).');
+ }
+ seedSharedLeaveReports();
  const css=document.createElement('style');css.id='mt-agent-leave-style';
  css.textContent=[
  '#mt-agent-leaves{margin:14px 0 16px;padding:15px;background:#20334c;border:1px solid #536d87;border-radius:15px}',
