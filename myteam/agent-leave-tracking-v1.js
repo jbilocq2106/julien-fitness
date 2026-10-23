@@ -15,7 +15,7 @@
  const cdeLabels={unknown:'À confirmer',todo:'À faire',sent:'Envoyée au chef'};
  const chefLabels={unknown:'À confirmer',pending:'En attente',approved:'Validée',rejected:'Refusée'};
  const filingLabels={unknown:'À confirmer',no:'Non déposée',yes:'Déposée'};
- const gesperLabels={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accordée',rejected:'Refusée'};
+ const gesperLabels={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accepté — non validé',validated:'Validé — confirmé',rejected:'Refusée'};
  const sourceLabels={agent:"Déclaré par l’agent",email:"Mail / message consulté",gesper:"Consultation MyGesper",mixed:"Informations croisées"};
  const tracked=[
    ['from','Début de congé'],['to','Fin de congé'],
@@ -23,6 +23,7 @@
    ['chefStatus','Réponse du chef'],['chefStatusAt','Date de réponse du chef'],
    ['gesperFiled','Dépôt MyGesper'],['gesperFiledAt','Date de dépôt MyGesper'],
    ['gesperStatus','Réponse MyGesper'],['gesperStatusAt','Date de réponse MyGesper'],
+   ['gesperValidatedAt','Date de validation définitive MyGesper'],
    ['gesperRefusalReason','Motif de refus MyGesper'],
    ['note','Note'],['source','Origine des informations'],['collectedOn','Date du recueil']
  ];
@@ -125,8 +126,10 @@
  '<label>Date de dépôt MyGesper (si connue)<input type="date" name="gesperFiledAt"></label></div>',
  '<h4 class="mtal-section-title">5 — Réponse MyGesper</h4>',
  '<div class="mtal-grid"><label>Statut MyGesper<select name="gesperStatus">',
- '<option value="unknown">À confirmer</option><option value="none">Non déposée</option><option value="pending">En attente</option><option value="approved">Accordée</option><option value="rejected">Refusée</option></select></label>',
+ '<option value="unknown">À confirmer</option><option value="none">Non déposée</option><option value="pending">En attente</option><option value="approved">Accepté (pas encore validé)</option><option value="validated">Validé (confirmé)</option><option value="rejected">Refusé</option></select></label>',
  '<label>Date de réponse MyGesper (si connue)<input type="date" name="gesperStatusAt"></label></div>',
+ '<p class="mtal-help"><strong>Accepté ≠ Validé.</strong> Accepté signifie que la demande n’est pas encore définitivement confirmée. Seul « Validé » indique que le congé est confirmé sur MyGesper.</p>',
+ '<div id="mtal-validation-block" hidden><label>Date de validation définitive sur MyGesper (si connue)<input name="gesperValidatedAt" type="date"></label></div>',
  '<div id="mtal-refusal-block" class="mtal-refusal" hidden><label>Motif du refus MyGesper (si connu)<textarea name="gesperRefusalReason" maxlength="1000" placeholder="Motif communiqué par MyGesper, sans données médicales ni informations personnelles"></textarea></label></div>',
  '<h4 class="mtal-section-title">6 — Notes et vérification</h4>',
  '<div class="mtal-grid"><label>Information recueillie auprès de<select name="source">',
@@ -183,7 +186,7 @@
    if(!safeAgent())return;
    if(item){
      editing=item.id;
-     ['from','to','cdeRequest','cdeSentAt','chefStatus','chefStatusAt','gesperFiled','gesperFiledAt','gesperStatus','gesperStatusAt','gesperRefusalReason','note','source','collectedOn'].forEach(k=>{
+     ['from','to','cdeRequest','cdeSentAt','chefStatus','chefStatusAt','gesperFiled','gesperFiledAt','gesperStatus','gesperStatusAt','gesperValidatedAt','gesperRefusalReason','note','source','collectedOn'].forEach(k=>{
        const input=form.elements.namedItem(k);
        if(input)input.value=String(item[k]??'');
      });
@@ -198,14 +201,17 @@
    editor.scrollIntoView({block:'nearest',behavior:'smooth'});
  }
  function updateRefusalBlock(){
-   $('mtal-refusal-block').hidden=form.elements.namedItem('gesperStatus').value!=='rejected';
+   const status=form.elements.namedItem('gesperStatus').value;
+   $('mtal-refusal-block').hidden=status!=='rejected';
+   $('mtal-validation-block').hidden=status!=='validated';
  }
  function checkConsistency(){
    const values=Object.fromEntries(new FormData(form));
    const warnings=[];
    if(values.cdeRequest==='todo' && ['approved','rejected'].includes(values.chefStatus))warnings.push('Vérifier : décision du chef saisie mais demande indiquée non envoyée.');
-   if(values.gesperFiled==='no' && ['pending','approved','rejected'].includes(values.gesperStatus))warnings.push('Vérifier : réponse MyGesper saisie mais dépôt indiqué non effectué.');
+   if(values.gesperFiled==='no' && ['pending','approved','validated','rejected'].includes(values.gesperStatus))warnings.push('Vérifier : réponse MyGesper saisie mais dépôt indiqué non effectué.');
    if(values.gesperFiled==='yes' && values.gesperStatus==='none')warnings.push('Vérifier : dépôt effectué, mais statut MyGesper indiqué non déposé.');
+   if(values.gesperStatus==='validated' && values.source==='agent')warnings.push('Vérifier dans MyGesper : la validation définitive est renseignée sur la seule déclaration de l’agent.');
    $('mtal-consistency').textContent=warnings.join(' ');
    return warnings;
  }
@@ -223,9 +229,10 @@
    const rows=read().filter(r=>normalize(r.agent)===normalize(agent))
      .sort((a,b)=>String(b.from||'').localeCompare(String(a.from||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
    const accepted=rows.filter(r=>!r.archived&&r.gesperStatus==='approved').length;
-   const pending=rows.filter(r=>!r.archived&&r.gesperStatus!=='approved'&&r.gesperStatus!=='rejected').length;
+   const validated=rows.filter(r=>!r.archived&&r.gesperStatus==='validated').length;
+   const pending=rows.filter(r=>!r.archived&&!['validated','rejected'].includes(r.gesperStatus)).length;
    const visibleRows=rows.filter(r=>!r.archived);
-   $('mtal-stats').textContent=visibleRows.length+' demande(s) actives · '+accepted+' accordée(s) MyGesper · '+pending+' à suivre · '+rows.filter(r=>r.archived).length+' archivée(s)';
+   $('mtal-stats').textContent=visibleRows.length+' demande(s) actives · '+accepted+' acceptée(s), non validée(s) · '+validated+' validée(s) MyGesper · '+pending+' à suivre · '+rows.filter(r=>r.archived).length+' archivée(s)';
    history.replaceChildren();
    if(!rows.length){
      const p=document.createElement('p');p.className='mtal-muted';
@@ -242,7 +249,7 @@
        step('Demande au chef : '+(cdeLabels[r.cdeRequest]||'À confirmer')+(r.cdeSentAt?' · '+formatDate(r.cdeSentAt):''),r.cdeRequest==='sent'?'done':'warn'),
        step('Chef d’équipe : '+(chefLabels[r.chefStatus]||'À confirmer')+(r.chefStatusAt?' · '+formatDate(r.chefStatusAt):''),r.chefStatus==='approved'?'done':r.chefStatus==='rejected'?'no':'warn'),
        step('MyGesper : '+(filingLabels[r.gesperFiled]||'À confirmer')+(r.gesperFiledAt?' · '+formatDate(r.gesperFiledAt):''),r.gesperFiled==='yes'?'done':'warn'),
-       step('Statut MyGesper : '+(gesperLabels[r.gesperStatus]||'À confirmer')+(r.gesperStatusAt?' · '+formatDate(r.gesperStatusAt):''),r.gesperStatus==='approved'?'done':r.gesperStatus==='rejected'?'no':'warn')
+       step('Statut MyGesper : '+(gesperLabels[r.gesperStatus]||'À confirmer')+(r.gesperStatusAt?' · réponse le '+formatDate(r.gesperStatusAt):'')+(r.gesperStatus==='validated'&&r.gesperValidatedAt?' · validé le '+formatDate(r.gesperValidatedAt):''),r.gesperStatus==='validated'?'done':r.gesperStatus==='rejected'?'no':'warn')
      );
      container.append(steps);
      const source=document.createElement('p');
@@ -370,7 +377,8 @@
      cdeRequest:['unknown','todo','sent'].includes(fields.cdeRequest)?fields.cdeRequest:'unknown',
      chefStatus:['unknown','pending','approved','rejected'].includes(fields.chefStatus)?fields.chefStatus:'unknown',
      gesperFiled:['unknown','no','yes'].includes(fields.gesperFiled)?fields.gesperFiled:'unknown',
-     gesperStatus:['unknown','none','pending','approved','rejected'].includes(fields.gesperStatus)?fields.gesperStatus:'unknown',
+     gesperStatus:['unknown','none','pending','approved','validated','rejected'].includes(fields.gesperStatus)?fields.gesperStatus:'unknown',
+     gesperValidatedAt:fields.gesperStatus==='validated'?String(fields.gesperValidatedAt||''):'',
      gesperRefusalReason:fields.gesperStatus==='rejected'?String(fields.gesperRefusalReason||'').trim().slice(0,1000):'',
      note:String(fields.note||'').trim().slice(0,700),
      source:Object.hasOwn(sourceLabels,fields.source)?fields.source:'agent',
@@ -393,12 +401,13 @@
  function renderLeaveOverview(){
    const box=$('mtal-leave-overview');if(!box)return;
    const rows=read().filter(r=>!r.archived).sort((a,b)=>String(a.from||'').localeCompare(String(b.from||'')));
-   const now=today();const relevant=rows.filter(r=>r.to>=now||!['approved','rejected'].includes(r.gesperStatus)).slice(0,40);
-   const pending=rows.filter(r=>r.gesperStatus==='pending'||r.gesperStatus==='unknown'||r.gesperStatus==='none').length;
-   const approved=rows.filter(r=>r.gesperStatus==='approved').length;
+   const now=today();const relevant=rows.filter(r=>r.to>=now||!['validated','rejected'].includes(r.gesperStatus)).slice(0,40);
+   const pending=rows.filter(r=>!['approved','validated','rejected'].includes(r.gesperStatus)).length;
+   const accepted=rows.filter(r=>r.gesperStatus==='approved').length;
+   const validated=rows.filter(r=>r.gesperStatus==='validated').length;
    const refused=rows.filter(r=>r.gesperStatus==='rejected').length;
    const recap=$('mtal-overview-summary');
-   if(recap)recap.textContent=rows.length+' demandes enregistrées · '+pending+' en attente MyGesper · '+approved+' accordées · '+refused+' refusées.';
+   if(recap)recap.textContent=rows.length+' demandes enregistrées · '+pending+' en attente · '+accepted+' acceptées, non validées · '+validated+' validées · '+refused+' refusées.';
    box.replaceChildren();
    if(!rows.length){const p=document.createElement('p');p.className='mtal-muted';p.textContent='Aucune demande suivie depuis les fiches agents.';box.append(p);return;}
    relevant.forEach(r=>{
