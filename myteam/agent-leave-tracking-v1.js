@@ -94,6 +94,17 @@
  '#mt-agent-leaves .mtal-actions button{min-height:43px}',
  '#mt-agent-leaves .mtal-item{padding:12px 0;border-top:1px solid #465d79}',
  '#mt-agent-leaves .mtal-item:first-child{border-top:0}',
+ '#mt-agent-leaves .mtal-quick-mygesper{background:#182f45;border:1px solid #4f7598;border-radius:11px;margin:11px 0;padding:11px}',
+ '#mt-agent-leaves .mtal-quick-mygesper h4{margin:0 0 6px;font-size:14px}',
+ '#mt-agent-leaves .mtal-quick-mygesper .mtal-help{margin-bottom:8px}',
+ '#mt-agent-leaves .mtal-quick-mygesper label{display:grid;gap:5px;margin:8px 0}',
+ '#mt-agent-leaves .mtal-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}',
+ '#mt-agent-leaves .mtal-quick-verify{display:flex!important;flex-direction:row;align-items:flex-start;gap:8px!important;border:1px solid #ce9561;background:#402e26;border-radius:9px;padding:10px}',
+ '#mt-agent-leaves .mtal-quick-verify input{width:20px!important;min-height:20px!important;height:20px;flex:none;accent-color:#3cab77}',
+ '#mt-agent-leaves .mtal-quick-save{width:100%;min-height:45px;background:#d56f31;color:#fff;margin-top:8px;font-weight:850}',
+ '#mt-agent-leaves .mtal-quick-status{font-size:12px;line-height:1.5;min-height:16px;color:#d5e9f8}',
+ '#mtal-agent-mygesper{width:100%;min-height:44px;margin:10px 0;background:#2c664f;color:#fff;font-weight:800;border:1px solid #52aa86;border-radius:10px}',
+ '@media(max-width:540px){#mt-agent-leaves .mtal-quick-grid{grid-template-columns:1fr}}',
  '#mt-agent-leaves .mtal-item strong{display:block;font-size:14px}',
  '#mt-agent-leaves .mtal-steps{display:grid;gap:5px;font-size:12px;line-height:1.45;margin:8px 0}',
  '#mt-agent-leaves .mtal-step{background:#243e59;border-left:3px solid #8397ae;border-radius:7px;padding:7px 9px}',
@@ -197,7 +208,15 @@
  '<div id="mtal-history"></div>',
  '<p class="mtal-help">Historique de reconstitution privé, avec traçabilité des mises à jour. La déclaration de l’agent ne vaut pas validation du chef ni confirmation MyGesper. Les dates non connues restent vides. Aucune demande n’est envoyée automatiquement.</p>'
  ].join('');
- summary.after(panel);
+ const jump=document.createElement('button');
+ jump.type='button';jump.id='mtal-agent-mygesper';
+ jump.textContent='🏖️ Gérer les statuts MyGesper de cet agent';
+ jump.onclick=()=>{
+   panel.scrollIntoView({behavior:'smooth',block:'start'});
+   const first=panel.querySelector('.mtal-quick-mygesper select');
+   if(first)setTimeout(()=>first.focus({preventScroll:true}),300);
+ };
+ summary.after(jump,panel);
 
  let editing='',boundAgent='',dirty=false;
  const editor=$('mtal-editor'),form=$('mtal-form'),history=$('mtal-history'),message=$('mtal-message');
@@ -347,6 +366,7 @@
  function drawHistory(){
    const agent=safeAgent();boundAgent=agent;
    panel.hidden=!agent;
+   jump.hidden=!agent;
    if(!agent)return;
    $('mtal-agent-name').textContent='Fiche de '+agent+' · demandes, validations et réponses MyGesper';
    const rows=read().filter(r=>normalize(r.agent)===normalize(agent))
@@ -381,6 +401,103 @@
      container.append(source);
      if(r.gesperStatus==='rejected'&&r.gesperRefusalReason){const reason=document.createElement('p');reason.textContent='Motif du refus MyGesper : '+r.gesperRefusalReason;container.append(reason);}
      if(r.note){const note=document.createElement('p');note.textContent=r.note;container.append(note);}
+     // Changement rapide MyGesper, directement dans la fiche de cet agent.
+     // Aucun effet sur MyGesper lui-même et aucune validation automatique.
+     if(!r.archived){
+       const quick=document.createElement('div');quick.className='mtal-quick-mygesper';
+       quick.innerHTML=[
+         '<h4>Modifier le statut MyGesper</h4>',
+         '<p class="mtal-help">Accepté = pas encore confirmé. Seul Validé signifie confirmation définitive dans MyGesper. Enregistrer ici ne modifie pas MyGesper.</p>',
+         '<label>Statut MyGesper<select class="mtal-q-status">',
+         '<option value="unknown">À confirmer</option><option value="none">Non déposée</option>',
+         '<option value="pending">En attente</option><option value="approved">Accepté — non validé</option>',
+         '<option value="validated">Validé — confirmé</option><option value="rejected">Refusé</option>',
+         '</select></label>',
+         '<div class="mtal-quick-grid">',
+         '<label>Date de réponse MyGesper (facultative)<input class="mtal-q-date" type="date"></label>',
+         '<label class="mtal-q-validation-date" hidden>Date de validation définitive (facultative)<input class="mtal-q-validated" type="date"></label>',
+         '</div>',
+         '<label class="mtal-q-reason-field" hidden>Motif du refus communiqué (facultatif)<textarea class="mtal-q-reason" maxlength="1000"></textarea></label>',
+         '<label>Origine de l’information<select class="mtal-q-source">',
+         '<option value="agent">Déclaration de l’agent</option><option value="email">Mail ou message consulté</option>',
+         '<option value="gesper">MyGesper consulté</option><option value="mixed">Informations croisées</option>',
+         '<option value="manager">Information du responsable (à vérifier)</option>',
+         '</select></label>',
+         '<label class="mtal-quick-verify" hidden><input class="mtal-q-confirm" type="checkbox"><span>J’ai vérifié dans MyGesper que ce congé est définitivement validé.</span></label>',
+         '<button class="mtal-quick-save" type="button">Enregistrer le statut MyGesper</button>',
+         '<p class="mtal-quick-status" role="status"></p>'
+       ].join('');
+       const statusInput=quick.querySelector('.mtal-q-status');
+       const dateInput=quick.querySelector('.mtal-q-date');
+       const validatedInput=quick.querySelector('.mtal-q-validated');
+       const reasonInput=quick.querySelector('.mtal-q-reason');
+       const sourceInput=quick.querySelector('.mtal-q-source');
+       const confirmInput=quick.querySelector('.mtal-q-confirm');
+       const messageInput=quick.querySelector('.mtal-quick-status');
+       statusInput.value=Object.hasOwn(gesperLabels,r.gesperStatus)?r.gesperStatus:'unknown';
+       dateInput.value=r.gesperStatusAt||'';
+       validatedInput.value=r.gesperValidatedAt||'';
+       reasonInput.value=r.gesperRefusalReason||'';
+       sourceInput.value=Object.hasOwn(sourceLabels,r.source)?r.source:'agent';
+       const reflect=()=>{
+         const status=statusInput.value;
+         quick.querySelector('.mtal-q-validation-date').hidden=status!=='validated';
+         quick.querySelector('.mtal-q-reason-field').hidden=status!=='rejected';
+         quick.querySelector('.mtal-quick-verify').hidden=status!=='validated';
+         if(status!=='validated')confirmInput.checked=false;
+       };
+       statusInput.onchange=()=>{messageInput.textContent='';reflect();};
+       reflect();
+       quick.querySelector('.mtal-quick-save').onclick=()=>{
+         if(!editor.hidden&&dirty){
+           messageInput.textContent='Un autre formulaire de congé comporte des modifications non enregistrées. Enregistre-les ou annule avant de modifier ce statut.';
+           return;
+         }
+         const status=statusInput.value;
+         const sources=sourceInput.value;
+         if(!Object.hasOwn(gesperLabels,status)||!Object.hasOwn(sourceLabels,sources)){
+           messageInput.textContent='Statut ou origine non reconnu.';return;
+         }
+         if(status==='validated'&&!confirmInput.checked){
+           messageInput.textContent='Pour « Validé », confirme d’abord que la validation définitive a bien été vérifiée dans MyGesper.';
+           return;
+         }
+         const isDate=v=>{
+           if(!v)return true;
+           if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(v))return false;
+           const [y,m,d]=v.split('-').map(Number),dt=new Date(y,m-1,d,12);
+           return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;
+         };
+         const responseAt=dateInput.value,validationAt=status==='validated'?validatedInput.value:'';
+         if(!isDate(responseAt)||!isDate(validationAt)){
+           messageInput.textContent='Vérifie les dates de réponse et de validation.';return;
+         }
+         const rowsNow=read();
+         const current=rowsNow.find(x=>x.id===r.id&&normalize(x.agent)===normalize(agent)&&!x.archived);
+         if(!current){messageInput.textContent='Cette demande a été modifiée ou archivée. Actualise la fiche.';return;}
+         const now=new Date().toISOString();
+         const next={
+           ...current,gesperStatus:status,gesperStatusAt:responseAt,
+           gesperValidatedAt:validationAt,
+           gesperRefusalReason:status==='rejected'?reasonInput.value.trim().slice(0,1000):'',
+           source:sources,updatedAt:now
+         };
+         const changes=tracked.filter(([key])=>['gesperStatus','gesperStatusAt','gesperValidatedAt','gesperRefusalReason','source'].includes(key)&&
+           String(current[key]??'')!==String(next[key]??''))
+           .map(([field,label])=>({field,label,before:displayValue(field,current[field]),after:displayValue(field,next[field])}));
+         if(!changes.length){messageInput.textContent='Aucune modification à enregistrer.';return;}
+         next.events=[...(Array.isArray(current.events)?current.events:[]),{
+           at:now,kind:'update',source:sources,collectedOn:today(),changes
+         }];
+         if(!save(rowsNow.map(x=>x.id===r.id?next:x))){
+           messageInput.textContent='Enregistrement impossible : stockage indisponible.';return;
+         }
+         drawHistory();renderLeaveOverview();
+         try{window.MyTeamRefreshLeaveWorkspace?.()}catch{}
+         message.textContent='Statut MyGesper mis à jour pour '+agent+' · '+(gesperLabels[status]||status)+'. Historique conservé. Aucune modification envoyée à MyGesper.';
+       };
+       container.append(quick);
+     }
      const events=Array.isArray(r.events)?r.events:[];
      const audit=document.createElement('details');audit.className='mtal-audit';
      const auditSummary=document.createElement('summary');
