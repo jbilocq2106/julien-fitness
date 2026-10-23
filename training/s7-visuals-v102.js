@@ -91,18 +91,45 @@
       +'</svg>';
     return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
   }
+  const PHOTO_FOLDERS={
+    curl:'Close-Grip_EZ-Bar_Curl_with_Band',
+    pushdown:'Triceps_Pushdown_-_Rope_Attachment',
+    suspCurl:'Standing_Biceps_Cable_Curl',
+    pushup:'Push-Ups_-_Close_Triceps_Position',
+    hammer:'Hammer_Curls',
+    kickback:'Tricep_Dumbbell_Kickback',
+    row:'Suspended_Row',
+    wheel:'Ab_Roller'
+  };
+  const photoSrc=(key,index)=>'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/'+PHOTO_FOLDERS[key]+'/'+index+'.jpg';
+  // Photographies libres de droits Free Exercise DB.
+  // Pour quatre variantes avec élastiques/sangles, le support photographié peut différer ;
+  // les consignes du programme restent celles du matériel réel de l'utilisateur.
   const IMAGES={};
   Object.values(DETAILS).forEach(v=>{IMAGES[v.key]=graphic(v.key);});
   function imgEl(name,cls){
     const detail=DETAILS[name];
     if(!detail)return null;
-    const img=document.createElement('img');
-    img.className=cls;
-    img.src=IMAGES[detail.key];
-    img.alt='Démonstration du mouvement '+detail.short+' : départ et contraction';
-    img.loading='lazy';
-    img.decoding='async';
-    return img;
+    const pair=document.createElement('div');
+    pair.className=cls+' mt-s7-photo-pair';
+    pair.setAttribute('role','img');
+    pair.setAttribute('aria-label','Photos du mouvement '+detail.short+' : début et fin');
+    const count=cls==='mt-s7-thumb'?1:2;
+    for(let i=0;i<count;i++){
+      const photo=document.createElement('img');
+      photo.className='mt-s7-photo';
+      photo.src=photoSrc(detail.key,i);
+      photo.alt=detail.short+(i===0?' : position de départ':' : position contractée');
+      photo.loading='lazy';
+      photo.decoding='async';
+      photo.referrerPolicy='no-referrer';
+      photo.onerror=()=>{
+        photo.onerror=null;
+        photo.src=IMAGES[detail.key]; // Schéma de secours si la photo est bloquée.
+      };
+      pair.appendChild(photo);
+    }
+    return pair;
   }
   function supersetGuide(group){
     const s=SS[group];
@@ -168,6 +195,12 @@
           row.before(supersetGuide(e.superset));
       }
     });
+    if(!card.querySelector('.mt-s7-photo-credit')){
+      const credit=document.createElement('div');
+      credit.className='mt-s7-photo-credit';
+      credit.textContent='Photos : Free Exercise DB (domaine public). Pour les variantes à l’élastique ou aux sangles, le matériel photographié peut différer : suis les consignes de MyTraining.';
+      card.appendChild(credit);
+    }
     prep();
   }
   let overlay=null;
