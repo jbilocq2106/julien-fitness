@@ -17,7 +17,7 @@
   const stage={unknown:'À confirmer',todo:'À faire',sent:'Envoyée'};
   const chef={unknown:'À confirmer',pending:'En attente',approved:'Accordée',rejected:'Refusée'};
   const filing={unknown:'À confirmer',no:'Non déposée',yes:'Déposée'};
-  const gesper={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accordée',rejected:'Refusée'};
+  const gesper={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accepté — non validé',validated:'Validé — confirmé',rejected:'Refusée'};
   const sources={agent:"Déclaration de l'agent",email:'Mail ou message consulté',gesper:'MyGesper consulté',mixed:'Informations croisées'};
   const label=(dictionary,value)=>dictionary[value]||'À confirmer';
 
@@ -36,8 +36,9 @@
     '<label>Agent<select id="mtal-recap-agent"><option value="">Tous les agents avec demandes</option></select></label>',
     '<label>Afficher<select id="mtal-recap-filter">',
     '<option value="active">Demandes non archivées</option>',
-    '<option value="pending">À suivre / à confirmer</option>',
-    '<option value="approved">Accordées sur MyGesper</option>',
+    '<option value="pending">À suivre (y compris acceptées)</option>',
+    '<option value="approved">Acceptées, non validées</option>',
+    '<option value="validated">Validées sur MyGesper</option>',
     '<option value="rejected">Refusées sur MyGesper</option>',
     '<option value="archived">Archives</option>',
     '<option value="all">Tout, y compris les archives</option></select></label>',
@@ -79,8 +80,9 @@
   }
   const qualifies=r=>{
     if(filter.value==='active')return !r.archived;
-    if(filter.value==='pending')return !r.archived&&!['approved','rejected'].includes(r.gesperStatus);
+    if(filter.value==='pending')return !r.archived&&!['validated','rejected'].includes(r.gesperStatus);
     if(filter.value==='approved')return !r.archived&&r.gesperStatus==='approved';
+    if(filter.value==='validated')return !r.archived&&r.gesperStatus==='validated';
     if(filter.value==='rejected')return !r.archived&&r.gesperStatus==='rejected';
     if(filter.value==='archived')return !!r.archived;
     return true;
@@ -93,6 +95,7 @@
       '  Réponse du chef : '+label(chef,row.chefStatus)+' | Date : '+fmt(row.chefStatusAt),
       '  Dépôt sur MyGesper : '+label(filing,row.gesperFiled)+' | Date : '+fmt(row.gesperFiledAt),
       '  Réponse MyGesper : '+label(gesper,row.gesperStatus)+' | Date : '+fmt(row.gesperStatusAt),
+      ...(row.gesperStatus==='validated'?['  Validation définitive MyGesper : '+fmt(row.gesperValidatedAt)]:[]),
     ];
     if(row.gesperStatus==='rejected')lines.push('  Motif du refus : '+(row.gesperRefusalReason||'Non communiqué'));
     lines.push('  Informations : '+(sources[row.source]||'Source non précisée')+' | Recueillies le : '+fmt(row.collectedOn));
@@ -120,7 +123,7 @@
       items.forEach((r,index)=>parts.push('\n'+infoFor(r,index+1)));
     }
     textNode.value=parts.join('\n');
-    $('mtal-recap-count').textContent=rows.length+' demande(s) de '+groups.size+' agent(s) · '+rows.filter(r=>r.gesperStatus==='approved').length+' accordée(s) · '+rows.filter(r=>r.gesperStatus==='rejected').length+' refusée(s).';
+    $('mtal-recap-count').textContent=rows.length+' demande(s) de '+groups.size+' agent(s) · '+rows.filter(r=>r.gesperStatus==='approved').length+' acceptée(s), non validée(s) · '+rows.filter(r=>r.gesperStatus==='validated').length+' validée(s) · '+rows.filter(r=>r.gesperStatus==='rejected').length+' refusée(s).';
     $('mtal-recap-open-agent').disabled=!name;
   }
   function display(){
