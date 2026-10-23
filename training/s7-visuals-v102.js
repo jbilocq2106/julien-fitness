@@ -110,26 +110,18 @@
   function imgEl(name,cls){
     const detail=DETAILS[name];
     if(!detail)return null;
-    const pair=document.createElement('div');
-    pair.className=cls+' mt-s7-photo-pair';
-    pair.setAttribute('role','img');
-    pair.setAttribute('aria-label','Photos du mouvement '+detail.short+' : début et fin');
-    const count=cls==='mt-s7-thumb'?1:2;
-    for(let i=0;i<count;i++){
-      const photo=document.createElement('img');
-      photo.className='mt-s7-photo';
-      photo.src=photoSrc(detail.key,i);
-      photo.alt=detail.short+(i===0?' : position de départ':' : position contractée');
-      photo.loading='lazy';
-      photo.decoding='async';
-      photo.referrerPolicy='no-referrer';
-      photo.onerror=()=>{
-        photo.onerror=null;
-        photo.src=IMAGES[detail.key]; // Schéma de secours si la photo est bloquée.
-      };
-      pair.appendChild(photo);
-    }
-    return pair;
+    const order={curl:0,pushdown:1,suspCurl:2,pushup:3,hammer:4,kickback:5,row:6,wheel:7};
+    const i=order[detail.key];
+    const positions=['0% 0%','33.333% 0%','66.667% 0%','100% 0%','0% 100%','33.333% 100%','66.667% 100%','100% 100%'];
+    const el=document.createElement('div');
+    el.className='mt-s7-exact-cell '+cls+
+      (cls==='mt-s7-image-expanded'?' mt-s7-exact-fullsize':
+      cls==='mt-s7-workout-photo'?' mt-s7-exact-workout-photo':'');
+    el.style.backgroundPosition=positions[i];
+    el.setAttribute('role','img');
+    el.setAttribute('aria-label','Photographie originale : '+detail.short);
+    el.dataset.photoIndex=String(i);
+    return el;
   }
   function supersetGuide(group){
     const s=SS[group];
@@ -198,7 +190,7 @@
     if(!card.querySelector('.mt-s7-photo-credit')){
       const credit=document.createElement('div');
       credit.className='mt-s7-photo-credit';
-      credit.textContent='Photos : Free Exercise DB (domaine public). Pour les variantes à l’élastique ou aux sangles, le matériel photographié peut différer : suis les consignes de MyTraining.';
+      credit.textContent='Photos originales de la séance maison ; respecte les consignes de chaque mouvement.';
       card.appendChild(credit);
     }
     prep();
