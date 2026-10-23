@@ -68,31 +68,16 @@
     renderWorkout=updated;window.renderWorkout=updated;
   }
   document.addEventListener('click',e=>{if(e.target.closest('.mt-s7-photo-button'))full();});
-  async function loadExactOriginalPhotos(){
-    // Image AVIF originale stockée dans le dépôt. Extension .txt : chargement
-    // en octets, puis attribution du véritable type image/avif au navigateur.
-    try{
-      const response=await fetch('assets/s7-photo-sheet.txt?v=1',{cache:'no-store'});
-      if(!response.ok)throw new Error('Photo inaccessible ('+response.status+')');
-      const data=await response.arrayBuffer();
-      if(data.byteLength<5000)throw new Error('Photo absente ou incomplète');
-      const photoBlob=new Blob([data],{type:'image/avif'});
-      const photoUrl=URL.createObjectURL(photoBlob);
-      const probe=new Image();
-      probe.onload=()=>{
-        document.documentElement.style.setProperty('--mt-s7-original-photo-url','url("'+photoUrl+'")');
-        document.documentElement.dataset.s7Photos='ready';
-      };
-      probe.onerror=()=>{
-        URL.revokeObjectURL(photoUrl);
-        document.documentElement.dataset.s7Photos='error';
-        console.error('MyTraining : image originale non reconnue');
-      };
-      probe.src=photoUrl;
-    }catch(error){
+  function loadExactOriginalPhotos(){
+    // L'image est intégrée directement à MyTraining, sans requête externe.
+    const exact=window.MT_S7_ORIGINAL_PHOTO_SPRITE;
+    if(typeof exact!=='string'||!exact.startsWith('data:image/avif;base64,')){
       document.documentElement.dataset.s7Photos='error';
-      console.error('MyTraining : photos S7 indisponibles',error);
+      console.error('MyTraining : montage photographique S7 non chargé');
+      return;
     }
+    document.documentElement.style.setProperty('--mt-s7-original-photo-url','url("'+exact+'")');
+    document.documentElement.dataset.s7Photos='ready';
   }
-  home();program();workout();loadExactOriginalPhotos();
+  loadExactOriginalPhotos();home();program();workout();
 })();
