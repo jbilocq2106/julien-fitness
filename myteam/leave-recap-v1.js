@@ -18,7 +18,7 @@
   const chef={unknown:'À confirmer',pending:'En attente',approved:'Accordée',rejected:'Refusée'};
   const filing={unknown:'À confirmer',no:'Non déposée',yes:'Déposée'};
   const gesper={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accepté — non validé',validated:'Validé — confirmé',rejected:'Refusée'};
-  const sources={agent:"Déclaration de l'agent",email:'Mail ou message consulté',gesper:'MyGesper consulté',mixed:'Informations croisées'};
+  const sources={agent:"Déclaration de l'agent",email:'Mail ou message consulté',gesper:'MyGesper consulté',mixed:'Informations croisées',manager:'Information transmise par le responsable (à vérifier)'};
   const label=(dictionary,value)=>dictionary[value]||'À confirmer';
 
   const tab=document.createElement('button');
