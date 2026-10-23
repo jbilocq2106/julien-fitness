@@ -1,7 +1,7 @@
 {
-  "version": 13,
+  "version": 14,
   "updated": "2026-10-23",
-  "weekly_note": "4 séances habituelles S1–S4 + S5 bras-abdos à la demande + S6 haut du corps Thionville du 23/10/2026 • séances spéciales hors roulement • aucun soulevé de terre",
+  "weekly_note": "4 séances habituelles S1–S4 + S5 bras-abdos à la demande + S6 haut du corps Thionville du 23/10/2026 • séances spéciales hors roulement • aucun soulevé de terre + S7 congestion bras maison 30 min, hors roulement",
   "sessions": [
     {
       "id": "S1",
@@ -1278,6 +1278,176 @@
           "rest": 0,
           "note": "Fin facultative : 5,0–5,5 km/h, pente 2–5 %, effort modéré. Si mollets sensibles, réduire à 0–2 % ou arrêter. Saisir les paramètres réels après la séance.",
           "coachOrder": 12
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "name": "Séance maison — Bras congestion 30 min",
+      "focus": "Biceps + triceps en supersets • sangles et élastiques • roue abdominale • aucun appareil • hors roulement S1–S4",
+      "day_hint": "À la demande · Maison · 30 min · 3 min échauffement + 24 min bras + 3 min gainage",
+      "exercises": [
+        {
+          "name": "Échauffement bras / épaules à l'élastique",
+          "sets": [
+            {
+              "reps": "180 s",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "coachOrder": 1,
+          "note": "3 minutes : rotations épaules/poignets, tirages élastique légers, flexions/extensions des coudes. Aucun mouvement douloureux."
+        },
+        {
+          "name": "Curl biceps élastique — prise supination",
+          "superset": "A",
+          "sets": [
+            {
+              "reps": "18–25",
+              "weight": 0
+            },
+            {
+              "reps": "18–25",
+              "weight": 0
+            },
+            {
+              "reps": "18–25",
+              "weight": 0
+            }
+          ],
+          "rest": 20,
+          "coachOrder": 2,
+          "note": "Bloc A (≈8 min) : 3 tours curl puis triceps, sans pause entre les deux. Descente 2 s, coudes fixes, finir à 1–2 répétitions de l'échec technique."
+        },
+        {
+          "name": "Pushdown triceps à l'élastique (ancrage haut)",
+          "superset": "A",
+          "sets": [
+            {
+              "reps": "18–25",
+              "weight": 0
+            },
+            {
+              "reps": "18–25",
+              "weight": 0
+            },
+            {
+              "reps": "18–25",
+              "weight": 0
+            }
+          ],
+          "rest": 30,
+          "coachOrder": 3,
+          "note": "Fixer l'élastique à un ancrage stable en hauteur. Coudes proches du corps, tendre les bras sans cambrer. 30 s après la paire. Pas d'extension au-dessus de la tête."
+        },
+        {
+          "name": "Curl biceps aux sangles de suspension",
+          "superset": "B",
+          "sets": [
+            {
+              "reps": "10–15",
+              "weight": 0
+            },
+            {
+              "reps": "10–15",
+              "weight": 0
+            },
+            {
+              "reps": "10–15",
+              "weight": 0
+            }
+          ],
+          "rest": 20,
+          "coachOrder": 4,
+          "note": "Bloc B (≈9 min) : pencher le corps vers l'arrière, paumes vers le front, fléchir les coudes sans bouger les épaules. Ajuster l'inclinaison à la difficulté."
+        },
+        {
+          "name": "Pompes serrées (mains largeur d'épaules)",
+          "superset": "B",
+          "sets": [
+            {
+              "reps": "8–15",
+              "weight": 0
+            },
+            {
+              "reps": "8–15",
+              "weight": 0
+            },
+            {
+              "reps": "8–15",
+              "weight": 0
+            }
+          ],
+          "rest": 35,
+          "coachOrder": 5,
+          "note": "Coudes près du buste, pas de mains collées ; possible sur les genoux ou mains surélevées. 35 s après la paire. Arrêter en cas de douleur au poignet ou à l'épaule."
+        },
+        {
+          "name": "Curl marteau à l'élastique",
+          "superset": "C",
+          "sets": [
+            {
+              "reps": "15–20",
+              "weight": 0
+            },
+            {
+              "reps": "15–20",
+              "weight": 0
+            }
+          ],
+          "rest": 15,
+          "coachOrder": 6,
+          "note": "Bloc C (≈6–7 min), prise neutre paumes face à face, mouvement lent ; monter sans balancer le dos."
+        },
+        {
+          "name": "Kickback triceps à l'élastique",
+          "superset": "C",
+          "sets": [
+            {
+              "reps": "18–25",
+              "weight": 0
+            },
+            {
+              "reps": "18–25",
+              "weight": 0
+            }
+          ],
+          "rest": 25,
+          "coachOrder": 7,
+          "note": "Fixer la bande sous le pied ou à un point bas stable. Tronc incliné avec dos neutre, coude près du buste, étendre l'avant-bras. 25 s après la paire."
+        },
+        {
+          "name": "Rowing aux sangles de suspension",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
+              "weight": 0
+            }
+          ],
+          "rest": 20,
+          "coachOrder": 8,
+          "note": "Rappel dos et biceps : tirer la poitrine vers les poignées, garder le corps gainé. ≈2 min. Sangles correctement ancrées avant de tirer."
+        },
+        {
+          "name": "Roue abdominale à genoux",
+          "sets": [
+            {
+              "reps": "6–10",
+              "weight": 0
+            },
+            {
+              "reps": "6–10",
+              "weight": 0
+            }
+          ],
+          "rest": 30,
+          "coachOrder": 9,
+          "note": "Finisher ≈3 min : petite amplitude, bassin gainé, revenir sans creuser les lombaires. Si inconfort dans le dos : remplacer par dead bug 8 répétitions par côté."
         }
       ]
     }
