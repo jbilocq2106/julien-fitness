@@ -13,7 +13,7 @@
  const read=()=>{try{const r=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(r)?r.filter(x=>x&&typeof x==='object'&&typeof x.id==='string'&&typeof x.agent==='string'):[]}catch{return []}};
  const save=r=>{try{localStorage.setItem(KEY,JSON.stringify(r));return true}catch{return false}};
  const cdeLabels={unknown:'À confirmer',todo:'À faire',sent:'Envoyée au chef'};
- const chefLabels={unknown:'À confirmer',pending:'En attente',approved:'Validée',rejected:'Refusée'};
+ const chefLabels={unknown:'À confirmer',pending:'En attente',approved:'Accordée par le chef',rejected:'Refusée'};
  const filingLabels={unknown:'À confirmer',no:'Non déposée',yes:'Déposée'};
  const gesperLabels={unknown:'À confirmer',none:'Non déposée',pending:'En attente',approved:'Accepté — non validé',validated:'Validé — confirmé',rejected:'Refusée'};
  const sourceLabels={agent:"Déclaré par l’agent",email:"Mail / message consulté",gesper:"Consultation MyGesper",mixed:"Informations croisées"};
@@ -118,7 +118,7 @@
  '<label>Date de demande au chef (si connue)<input type="date" name="cdeSentAt"></label></div>',
  '<h4 class="mtal-section-title">3 — Réponse du chef d’équipe</h4>',
  '<div class="mtal-grid"><label>Décision du chef d’équipe<select name="chefStatus">',
- '<option value="unknown">À confirmer</option><option value="pending">En attente</option><option value="approved">Validée</option><option value="rejected">Refusée</option></select></label>',
+ '<option value="unknown">À confirmer</option><option value="pending">En attente</option><option value="approved">Accordée par le chef</option><option value="rejected">Refusée</option></select></label>',
  '<label>Date de réponse du chef (si connue)<input type="date" name="chefStatusAt"></label></div>',
  '<h4 class="mtal-section-title">4 — Dépôt sur MyGesper</h4>',
  '<div class="mtal-grid"><label>Dépôt sur MyGesper<select name="gesperFiled">',
