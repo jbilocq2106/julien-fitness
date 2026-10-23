@@ -436,7 +436,7 @@ function renderProgram(){
 }function startWorkout(id,testMode=false){
   const s=getSession(id); if(!s)return;
   const groups={};
-  s.exercises.forEach(e=>{if(e.superset)groups[e.superset]=false;});
+  s.exercises.forEach(e=>{if(e.superset)groups[e.superset]=s.id==='S7';});
   state.activeWorkout={
     id:s.id,name:s.name,started:Date.now(),testMode:!!testMode,supersetEnabled:groups,
     exercises:s.exercises.map(e=>({
