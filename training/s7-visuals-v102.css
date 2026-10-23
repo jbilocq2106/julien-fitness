@@ -29,3 +29,19 @@
 .mt-s7-image-expanded{display:block;width:100%;height:auto;border-radius:12px}
 .mt-s7-overlay-card ul{padding-left:22px;color:#cbd5e1;font-size:13px;line-height:1.6}
 @media(max-width:440px){.mt-s7-thumb{width:86px;min-width:86px;height:65px}.mt-s7-program-row .program-row-badges{flex:0 0 auto}.mt-s7-active-pair{font-size:10px}.mt-s7-photo-button span{font-size:10px}}
+
+/* V103 — deux photos réelles par exercice, une vignette en programme */
+.mt-s7-photo-pair{display:flex!important;align-items:stretch;justify-content:center;gap:3px;overflow:hidden;border:1px solid #456482;border-radius:10px;background:#101d30}
+.mt-s7-thumb.mt-s7-photo-pair{width:110px;min-width:110px;height:82px;display:flex!important}
+.mt-s7-photo-pair>.mt-s7-photo{display:block;flex:1;min-width:0;width:0;max-width:100%;height:100%;object-fit:cover;object-position:center center;background:#1b2837}
+.mt-s7-workout-photo.mt-s7-photo-pair{width:100%;height:260px;max-height:none;aspect-ratio:auto;gap:5px}
+.mt-s7-workout-photo .mt-s7-photo{object-fit:contain}
+.mt-s7-image-expanded.mt-s7-photo-pair{width:100%;height:330px;max-height:55vh}
+.mt-s7-image-expanded .mt-s7-photo{object-fit:contain}
+.mt-s7-photo-credit{font-size:10px;line-height:1.45;color:#a5b4c7;padding:12px 2px 2px}
+.mt-s7-photo-pair+.mt-s7-cues{padding-top:10px}
+@media(max-width:420px){
+ .mt-s7-thumb.mt-s7-photo-pair{width:88px;min-width:88px;height:70px}
+ .mt-s7-workout-photo.mt-s7-photo-pair{height:220px}
+ .mt-s7-image-expanded.mt-s7-photo-pair{height:270px}
+}
