@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const names=["Curl biceps élastique — prise supination","Pushdown triceps à l'élastique (ancrage haut)","Curl biceps aux sangles de suspension","Pompes serrées (mains largeur d'épaules)","Curl marteau à l'élastique","Kickback triceps à l'élastique","Rowing aux sangles de suspension","Roue abdominale à genoux"];
-  const labels=['Curl biceps','Pushdown triceps','Curl aux sangles','Pompes serrées','Curl marteau','Kickback triceps','Rowing sangles','Roue abdominale'];
+  const labels=['Curl supination','Pushdown triceps','Curl aux sangles','Pompes serrées','Curl marteau','Kickback triceps','Rowing sangles','Roue abdominale'];
   const pos=['0% 0%','33.333% 0%','66.667% 0%','100% 0%','0% 100%','33.333% 100%','66.667% 100%','100% 100%'];
   function photo(index,cls){
     const el=document.createElement('div');
