@@ -42,9 +42,10 @@
     const cards=[...document.querySelectorAll('#exerciseList .exercise')];
     state.activeWorkout.exercises.forEach((exercise,j)=>{
       const i=names.indexOf(exercise.name),card=cards[j];
-      if(i<0||!card)return;
+      if(!card)return;
       card.classList.add('mt-s7-exact-workout');
       card.querySelectorAll('.exercise-guide .exercise-visual').forEach(v=>v.remove());
+      if(i<0)return; // Échauffement : pas de schéma générique.
       const old=card.querySelector('.mt-s7-workout-image .mt-s7-photo-pair');
       if(old)old.replaceWith(photo(i,'mt-s7-exact-workout-photo mt-s7-workout-photo'));
     });
