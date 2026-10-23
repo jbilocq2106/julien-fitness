@@ -302,6 +302,7 @@
       try{await load('./leave-recap-v1.js?v=20261023-7')}catch(error){console.error('Récapitulatif des congés indisponible :',error)}
       try{await load('./bureau-planning-errors-v1.js?v=20261023-5')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
       try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
+      try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
     }
   })();
 })();
