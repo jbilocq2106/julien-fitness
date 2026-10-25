@@ -431,7 +431,7 @@
       const newItems=payload.records.map(r=>{
         const get=(field,max)=>String(r[field]||'').trim().slice(0,max);
         const id=get('id',120), date=get('date',10), agent=get('agent',100),issue=get('issue',1500);
-        if(!/^[a-z0-9_-]{8,120}$/i.test(id) || !/^20\\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])$/.test(date)
+        if(!/^[a-z0-9_-]{8,120}$/i.test(id) || !/^20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(date)
           || !agent || !issue)throw new Error('Champs manquants ou incorrects');
         const category=get('category',100);
         if(!accepted.includes(category))throw new Error('Catégorie invalide');
@@ -458,6 +458,7 @@
       history.replaceState(null,'',window.location.pathname+window.location.search);
     }
   }
+  const importRequested = window.location.hash.startsWith('#mtpe-import=');
   importFromHash();
-  if (!window.location.hash.startsWith('#mtpe-import=')) bureauTab.click();
+  if (!importRequested) bureauTab.click();
 })();
