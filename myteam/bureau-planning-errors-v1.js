@@ -86,7 +86,7 @@
     "<p id='mtpe-deadline' role='status' class='mtpe-warning'></p>",
     "<p id='mtpe-count' class='mtb-note'></p></div>",
     "<div class='card'><h3 id='mtpe-form-title'>Nouvelle anomalie</h3><form id='mtpe-form'>",
-    "<div class='mtpe-grid'><label>Date concernée<input name='date' type='date' required></label>",
+    "<label>Agent concerné<input name='agent' type='text' list='mtpe-agent-options' maxlength='100' placeholder='Nom et prénom de l’agent' required></label><datalist id='mtpe-agent-options'></datalist><div class='mtpe-grid'><label>Date concernée<input name='date' type='date' required></label>",
     "<label>Catégorie<select name='category'><option>Jour travaillé / repos</option><option>Horaires / durée</option><option>Poste / affectation</option><option>Congé / jour férié</option><option>Compteur d'heures / prime</option><option>Autre</option></select></label></div>",
     "<label>Poste / vacation (facultatif)<input name='post' maxlength='70' placeholder='Ex. E84 après-midi'></label>",
     "<label>Erreur constatée<textarea name='issue' maxlength='1500' required placeholder='Décris le planning reçu et ce qui te paraît incorrect'></textarea></label>",
@@ -285,7 +285,7 @@
       const head=document.createElement('div');
       head.className='mtpe-head';
       const title=document.createElement('strong');
-      title.textContent=(r.date?r.date.split('-').reverse().join('/'):'Date ?')+' · '+(r.category||'Autre')+(r.post?' · '+r.post:'');
+      title.textContent=(r.date?r.date.split('-').reverse().join('/'):'Date ?')+' · '+(r.agent?r.agent+' · ':'')+(r.category||'Autre')+(r.post?' · '+r.post:'');
       const state=document.createElement('span');
       state.className='mtpe-status'+(r.status==='Corrigé'?' done':'');
       state.textContent=r.status||'Brouillon';
@@ -307,7 +307,7 @@
       edit.onclick=()=>{
         monthInput.value=r.month;
         editId=r.id;updateDateBounds();
-        ['date','category','post','issue','request','status'].forEach(name=>{form.elements[name].value=r[name]||'';});
+        ['agent','date','category','post','issue','request','status'].forEach(name=>{form.elements[name].value=r[name]||'';});
         $('mtpe-form-title').textContent='Modifier cette anomalie';
         $('mtpe-save').textContent='Enregistrer les modifications';
         form.scrollIntoView({behavior:'smooth',block:'start'});
@@ -320,6 +320,7 @@
         if (!writeRecords(listNow)) {$('mtpe-message').textContent='Suppression impossible : stockage indisponible.';return;}
         if (editId===r.id) clearForm();
         renderErrors();
+        renderAgentErrors();
       };
       actions.append(edit,remove);row.append(actions);list.append(row);
     });
@@ -328,8 +329,8 @@
     event.preventDefault();
     const month=monthInput.value;
     const data={};
-    ['date','category','post','issue','request','status'].forEach(name=>{data[name]=String(form.elements[name].value||'').trim();});
-    if(!data.date.startsWith(month+'-')||!data.issue){$('mtpe-message').textContent='La date doit appartenir au mois concerné et la description est obligatoire.';return;}
+    ['agent','date','category','post','issue','request','status'].forEach(name=>{data[name]=String(form.elements[name].value||'').trim();});
+    if(!data.date.startsWith(month+'-')||!data.issue||!data.agent){$('mtpe-message').textContent='Agent, date du bon mois et description obligatoires.';return;}
     const list=records();
     const old=editId?list.find(r=>r.id===editId):null;
     if(editId&&!old){$('mtpe-message').textContent='La fiche a changé ou a été supprimée : réouvre-la avant modification.';return;}
@@ -339,13 +340,14 @@
     if (!writeRecords(updated)) {$('mtpe-message').textContent='Enregistrement impossible. Vérifie le stockage du téléphone.';return;}
     clearForm();
     renderErrors();
+    renderAgentErrors();
     $('mtpe-message').textContent='Anomalie enregistrée dans MyTEAM. Aucun message envoyé à la planification.';
   };
   $('mtpe-copy').onclick=async()=>{
     const items=records().filter(r=>r.month===monthInput.value).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     if(!items.length){$('mtpe-message').textContent='Aucune anomalie à copier.';return;}
     const lines=['Erreurs de planning — '+labelMonth(monthInput.value),'',...items.map((r,i)=>
-      (i+1)+'. '+r.date+' — '+r.category+(r.post?' ('+r.post+')':'')+'\n'+r.issue+
+      (i+1)+'. '+r.date+' — '+(r.agent?r.agent+' — ':'')+r.category+(r.post?' ('+r.post+')':'')+'\n'+r.issue+
       (r.request?'\nCorrection demandée : '+r.request:'')+'\nSuivi : '+r.status+'\n'
     )];
     try {await navigator.clipboard.writeText(lines.join('\n'));$('mtpe-message').textContent='Récapitulatif copié. Vérifie-le avant toute transmission.';}
@@ -353,5 +355,109 @@
   };
   updateDateBounds();
   renderErrors();
-  bureauTab.click();
+
+  // Le rattachement à un agent n'expose jamais de dossier nominatif dans le dépôt public.
+  const agentSelect = $('agent-select');
+  const agentDetail = $('agent-detail');
+  if (agentDetail && !$('mtpe-agent-records')) {
+    const block = document.createElement('div');
+    block.id = 'mtpe-agent-records';
+    block.style.cssText = 'margin:18px 0;padding:13px;border:1px solid #4c6a87;border-radius:12px;background:#17263a';
+    agentDetail.append(block);
+  }
+  function renderAgentErrors() {
+    const block = $('mtpe-agent-records');
+    const name = String(agentSelect?.value || '').trim();
+    if (!block) return;
+    block.replaceChildren();
+    const title = document.createElement('h4');
+    title.textContent = 'Problèmes de planning';
+    block.append(title);
+    const agentRecords = records().filter(r => name && String(r.agent || '').localeCompare(name, 'fr', {sensitivity:'base'}) === 0)
+      .sort((a,b) => String(b.date).localeCompare(String(a.date)));
+    if (!agentRecords.length) {
+      const empty = document.createElement('p');
+      empty.className = 'mtb-note';
+      empty.textContent = name ? 'Aucun problème de planning rattaché à cet agent.' : 'Sélectionne un agent.';
+      block.append(empty);
+      return;
+    }
+    agentRecords.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'mtpe-row';
+      const head = document.createElement('strong');
+      head.textContent = r.date.split('-').reverse().join('/')+' · '+r.post+' · '+r.status;
+      const body = document.createElement('p');
+      body.textContent = r.issue;
+      const ask = document.createElement('p');
+      ask.textContent = 'À vérifier : '+(r.request || '—');
+      const open = document.createElement('button');
+      open.type='button';
+      open.textContent='Ouvrir dans les erreurs de planning';
+      open.onclick=()=>{monthInput.value=r.month;onMonthChange();errorTab.click();};
+      item.append(head,body,ask,open);
+      block.append(item);
+    });
+  }
+  agentSelect?.addEventListener('change',renderAgentErrors);
+  function refreshAgentSuggestions() {
+    const list = $('mtpe-agent-options');
+    if(!list)return;
+    let profiles={};
+    try {profiles=JSON.parse(localStorage.getItem('myteam_agent_profiles_v1')||'{}')||{};}catch{}
+    list.replaceChildren();
+    Object.keys(profiles).sort((a,b)=>a.localeCompare(b,'fr')).forEach(name=>{
+      const opt=document.createElement('option');
+      opt.value=name;
+      list.append(opt);
+    });
+  }
+  form.elements.agent.addEventListener('focus',refreshAgentSuggestions);
+  refreshAgentSuggestions();
+  renderAgentErrors();
+
+  // Import depuis un fragment d'URL : le fragment n'est pas envoyé au serveur GitHub.
+  // Les informations sont conservées dans le stockage local existant, puis dans
+  // les sauvegardes chiffrées si la synchronisation privée est activée.
+  function importFromHash() {
+    const fragment=window.location.hash.slice(1);
+    const prefix='mtpe-import=';
+    if(!fragment.startsWith(prefix))return;
+    try {
+      const payload=JSON.parse(decodeURIComponent(fragment.slice(prefix.length)));
+      if(payload?.v!==1 || !Array.isArray(payload.records) || payload.records.length<1 || payload.records.length>10)
+        throw new Error('Format invalide');
+      const accepted=['Jour travaillé / repos','Horaires / durée','Poste / affectation','Congé / jour férié','Compteur d\'heures / prime','Autre'];
+      const newItems=payload.records.map(r=>{
+        const get=(field,max)=>String(r[field]||'').trim().slice(0,max);
+        const id=get('id',120), date=get('date',10), agent=get('agent',100),issue=get('issue',1500);
+        if(!/^[a-z0-9_-]{8,120}$/i.test(id) || !/^20\\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])$/.test(date)
+          || !agent || !issue)throw new Error('Champs manquants ou incorrects');
+        const category=get('category',100);
+        if(!accepted.includes(category))throw new Error('Catégorie invalide');
+        return {id,date,agent,month:date.slice(0,7),category,post:get('post',70),issue,
+          request:get('request',800),status:'Brouillon',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+      });
+      const existing=records();
+      const unseen=newItems.filter(r=>!existing.some(p=>p.id===r.id));
+      if(unseen.length && window.confirm('Ajouter '+unseen.length+' problème(s) de planning dans MyTEAM ?')) {
+        if(!writeRecords(existing.concat(unseen)))throw new Error('Stockage indisponible');
+        monthInput.value=unseen[0].month;
+        onMonthChange();
+        errorTab.click();
+        renderAgentErrors();
+        $('mtpe-message').textContent=unseen.length+' problème(s) enregistrés localement. Aucune transmission à la planification.';
+      } else if (!unseen.length) {
+        monthInput.value=newItems[0].month;onMonthChange();errorTab.click();
+        $('mtpe-message').textContent='Ces problèmes figurent déjà dans MyTEAM : aucun doublon ajouté.';
+      }
+    } catch (error) {
+      errorTab.click();
+      $('mtpe-message').textContent='Import impossible : '+error.message;
+    } finally {
+      history.replaceState(null,'',window.location.pathname+window.location.search);
+    }
+  }
+  importFromHash();
+  if (!window.location.hash.startsWith('#mtpe-import=')) bureauTab.click();
 })();
