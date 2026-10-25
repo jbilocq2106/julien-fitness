@@ -87,7 +87,7 @@
     "<p id='mtpe-count' class='mtb-note'></p></div>",
     "<div class='card'><h3 id='mtpe-form-title'>Nouvelle anomalie</h3><form id='mtpe-form'>",
     "<label>Agent concerné<input name='agent' type='text' list='mtpe-agent-options' maxlength='100' placeholder='Nom et prénom de l’agent' required></label><datalist id='mtpe-agent-options'></datalist><div class='mtpe-grid'><label>Date concernée<input name='date' type='date' required></label>",
-    "<label>Catégorie<select name='category'><option>Jour travaillé / repos</option><option>Horaires / durée</option><option>Poste / affectation</option><option>Congé / jour férié</option><option>Compteur d'heures / prime</option><option>Autre</option></select></label></div>",
+    "<label>Catégorie<select name='category'><option>Jour travaillé / repos</option><option>Horaires / durée</option><option>Poste / affectation</option><option>Congé / jour férié</option><option>Compteur d'heures / prime</option><option>Paie / suivi RH</option><option>Présence / absence annoncée</option><option>Autre</option></select></label></div>",
     "<label>Poste / vacation (facultatif)<input name='post' maxlength='70' placeholder='Ex. E84 après-midi'></label>",
     "<label>Erreur constatée<textarea name='issue' maxlength='1500' required placeholder='Décris le planning reçu et ce qui te paraît incorrect'></textarea></label>",
     "<label>Correction demandée (facultatif)<textarea name='request' maxlength='800' placeholder='Ce qu'il faudrait vérifier ou modifier'></textarea></label>",
@@ -95,6 +95,7 @@
     "<div class='mtpe-actions'><button type='submit' class='mtpe-primary' id='mtpe-save'>Enregistrer</button><button type='button' id='mtpe-reset'>Annuler / nouveau</button></div>",
     "</form><p class='mtb-note' id='mtpe-message' role='status'></p>",
     "<p class='mtb-note'>Suivi privé : aucune transmission à la planification et aucune modification automatique du planning officiel. Évite les informations de santé ou personnelles dans les descriptions.</p></div>",
+    "<div class='card'><h3>Importer un signalement privé</h3><p class='mtb-note'>Colle ici les fiches copiées depuis ChatGPT. Le contenu est traité sur cet appareil, sans être ajouté au code public de MyTEAM.</p><textarea id='mtpe-paste' style='width:100%;min-height:100px' placeholder='Colle les données des signalements ici'></textarea><div class='mtpe-actions'><button type='button' id='mtpe-paste-import' class='mtpe-primary'>Ajouter les signalements à MyTEAM</button></div><p id='mtpe-paste-status' class='mtb-note' role='status'></p></div>",
     "<div class='card'><h3>Historique et récapitulatif</h3>",
     "<div class='mtpe-actions'><button id='mtpe-copy' type='button'>Copier le récapitulatif du mois</button></div>",
     "<div id='mtpe-list'></div></div>"
@@ -371,7 +372,7 @@
     if (!block) return;
     block.replaceChildren();
     const title = document.createElement('h4');
-    title.textContent = 'Problèmes de planning';
+    title.textContent = 'Problèmes de planning et suivi administratif';
     block.append(title);
     const agentRecords = records().filter(r => name && String(r.agent || '').localeCompare(name, 'fr', {sensitivity:'base'}) === 0)
       .sort((a,b) => String(b.date).localeCompare(String(a.date)));
@@ -415,6 +416,39 @@
   form.elements.agent.addEventListener('focus',refreshAgentSuggestions);
   refreshAgentSuggestions();
   renderAgentErrors();
+  
+  // Import prive par collage : aucune donnee d'agent n'est codee dans le depot.
+  function importPastedReports() {
+    const status=$('mtpe-paste-status');
+    try {
+      const raw=$('mtpe-paste').value.trim();
+      const payload=JSON.parse(raw);
+      if(payload?.v!==1||!Array.isArray(payload.records)||!payload.records.length||payload.records.length>20)
+        throw new Error('Format non reconnu');
+      const allowed=['Jour travaillé / repos','Horaires / durée','Poste / affectation','Congé / jour férié','Compteur d\'heures / prime','Paie / suivi RH','Présence / absence annoncée','Autre'];
+      const now=new Date().toISOString();
+      const items=payload.records.map(r=>{
+        const val=(k,max)=>String(r[k]??'').trim().slice(0,max);
+        const id=val('id',120), date=val('date',10), agent=val('agent',100), category=val('category',100);
+        const issue=val('issue',1500), request=val('request',800), post=val('post',70);
+        if(!/^[a-z0-9_-]{8,120}$/i.test(id)||!/^(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(date)
+          ||!agent||!issue||!allowed.includes(category))
+          throw new Error('Dates, agent ou catégories incorrects');
+        return {id,date,month:date.slice(0,7),agent,category,post,issue,request,status:'Brouillon',createdAt:now,updatedAt:now};
+      });
+      const existing=records();
+      const additions=items.filter(x=>!existing.some(y=>y.id===x.id));
+      if(additions.length&&!writeRecords(existing.concat(additions)))throw new Error('Stockage local indisponible');
+      status.textContent=additions.length?additions.length+' signalement(s) enregistre(s) localement. Aucun message transmis aux RH.':'Signalement(s) deja enregistre(s) : aucun doublon.';
+      if(additions.length) $('mtpe-paste').value='';
+      monthInput.value=items[0].month;
+      onMonthChange();
+      renderAgentErrors();
+    }catch(e) {
+      status.textContent='Import impossible : '+e.message;
+    }
+  }
+  $('mtpe-paste-import').onclick=importPastedReports;
 
   // Import depuis un fragment d'URL : le fragment n'est pas envoyé au serveur GitHub.
   // Les informations sont conservées dans le stockage local existant, puis dans
@@ -427,7 +461,7 @@
       const payload=JSON.parse(decodeURIComponent(fragment.slice(prefix.length)));
       if(payload?.v!==1 || !Array.isArray(payload.records) || payload.records.length<1 || payload.records.length>10)
         throw new Error('Format invalide');
-      const accepted=['Jour travaillé / repos','Horaires / durée','Poste / affectation','Congé / jour férié','Compteur d\'heures / prime','Autre'];
+      const accepted=['Jour travaillé / repos','Horaires / durée','Poste / affectation','Congé / jour férié','Compteur d\'heures / prime','Paie / suivi RH','Présence / absence annoncée','Autre'];
       const newItems=payload.records.map(r=>{
         const get=(field,max)=>String(r[field]||'').trim().slice(0,max);
         const id=get('id',120), date=get('date',10), agent=get('agent',100),issue=get('issue',1500);
