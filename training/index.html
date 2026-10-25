@@ -238,6 +238,52 @@
   <script src="s7-original-photo-sprite-v104.js?v=104"></script>
   <script src="s7-visuals-v102.js?v=108"></script>
   <script src="s7-original-v105.js?v=108"></script>
-  <script src="s4-light-oneoff-v106.js?v=106"></script>
+  <script>
+/* Réinitialisation ponctuelle de S4 si la version exceptionnelle a déjà été lancée.
+   Conserve les séries terminées et les exercices ajoutés manuellement. */
+(function(){
+  'use strict';
+  const FLAG='mtOneOffS420261025';
+  function restoreStartedS4(){
+    const w=state.activeWorkout;
+    const s=state.program?.sessions?.find(x=>x.id==='S4');
+    if(!w||w.id!=='S4'||!w[FLAG]||!s)return;
+    const old=w.exercises||[];
+    const names=new Set(s.exercises.map(x=>x.name));
+    const restored=s.exercises.map(ex=>{
+      const prev=old.find(x=>x.name===ex.name);
+      const sets=ex.sets.map((target,i)=>{
+        const before=prev?.sets?.[i];
+        return before?.done?{...before}:{
+          i:i+1,targetReps:target.reps,targetWeight:target.weight,
+          weight:target.weight??'',reps:'',rir:'',done:false
+        };
+      });
+      for(let i=ex.sets.length;i<(prev?.sets?.length||0);i++){
+        if(prev.sets[i]?.done)sets.push({...prev.sets[i]});
+      }
+      return {...(prev||{}),name:ex.name,note:ex.note||'',rest:ex.rest,
+        superset:ex.superset||null,autoTarget:ex.autoTarget||null,
+        cardio:isCardioName(ex.name)?(prev?.cardio?.done?prev.cardio:parseCardioDefaults(ex)):null,
+        sets};
+    });
+    const added=old.filter(x=>!names.has(x.name));
+    w.exercises=[...restored,...added];
+    w.name=s.name;
+    w.supersetEnabled={};
+    delete w[FLAG];
+    save();
+    renderWorkout();
+  }
+  const preceding=renderProgram;
+  renderProgram=function(){
+    const result=preceding.apply(this,arguments);
+    restoreStartedS4();
+    return result;
+  };
+  window.renderProgram=renderProgram;
+  restoreStartedS4();
+})();
+</script>
 </body>
 </html>
