@@ -100,6 +100,7 @@ workerImport?.addEventListener('change',async event=>{
     Object.assign(agentProfiles,updated);
     renderAgents(agentSelect.value);
     try{window.renderMyTeamAgentList?.()}catch{}
+    window.dispatchEvent(new CustomEvent('myteam-worker-imported',{detail:{count,missing}}));
     status.textContent=count+' matricule(s) intégré(s) aux fiches existantes'+(missing?' ; '+missing+' agent(s) absent(s) ou retiré(s) ignoré(s)':'')+'. Les autres informations sont conservées.';
   }catch(error){
     status.textContent='Import impossible : '+error.message;
