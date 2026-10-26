@@ -57,13 +57,56 @@ renderLeaves();
 
 const agentKey='myteam_agent_profiles_v1',agentSelect=document.querySelector('#agent-select'),agentDetail=document.querySelector('#agent-detail');
 let agentProfiles={};try{const data=JSON.parse(localStorage.getItem(agentKey)||'{}');if(data&&typeof data==='object'&&!Array.isArray(data))agentProfiles=data}catch{}
-const agentFields={notes:'agent-notes',instructions:'agent-instructions-date',rx:'agent-rx-date',reminders:'agent-reminders',reminderNotes:'agent-reminder-notes',sickLog:'agent-sick-log',lateLog:'agent-late-log',rxLog:'agent-rx-log'};
+const agentFields={workerNumber:'agent-worker-number',notes:'agent-notes',instructions:'agent-instructions-date',rx:'agent-rx-date',reminders:'agent-reminders',reminderNotes:'agent-reminder-notes',sickLog:'agent-sick-log',lateLog:'agent-late-log',rxLog:'agent-rx-log'};
 function showAgent(){const key=agentSelect.value,p=agentProfiles[key];agentDetail.classList.toggle('hidden',!p);if(!p)return;document.querySelector('#agent-title').textContent=key;document.querySelector('#agent-qual-rx').checked=p.rxCertified===true;document.querySelector('#agent-qual-piste').checked=p.pistePermit===true;document.querySelector('#agent-qual-summary').textContent=(p.gender==='F'?'Femme':p.gender==='M'?'Homme':'Genre non renseigné')+' • '+(p.rxCertified?'RX ✓':'RX non indiqué')+' • '+(p.pistePermit?'Permis piste ✓':'Permis non indiqué');for(const [field,id] of Object.entries(agentFields))document.getElementById(id).value=p[field]??'';document.querySelector('#agent-status').textContent=''}
 function renderAgents(selected){agentSelect.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent='Sélectionner un agent';agentSelect.append(empty);for(const key of Object.keys(agentProfiles).sort((a,b)=>a.localeCompare(b,'fr'))){const o=document.createElement('option');o.value=key;o.textContent=key;agentSelect.append(o)}agentSelect.value=selected&&agentProfiles[selected]?selected:'';showAgent()}
 agentSelect.addEventListener('change',showAgent);
 document.querySelector('#agent-add').onclick=()=>{const name=document.querySelector('#agent-name').value.trim();if(!name||name.length>100){alert('Saisis un identifiant ou un nom valide.');return}if(!agentProfiles[name])agentProfiles[name]={};try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));renderAgents(name);document.querySelector('#agent-name').value=''}catch{alert('Enregistrement local impossible.')}};
-document.querySelector('#agent-save').onclick=()=>{const name=agentSelect.value;if(!name)return;const p={};for(const [field,id] of Object.entries(agentFields))p[field]=document.getElementById(id).value.trim();const count=Number(p.reminders||0);if(!Number.isInteger(count)||count<0||count>999){document.querySelector('#agent-status').textContent='Nombre de rappels invalide.';return}p.reminders=count;p.rxCertified=document.querySelector('#agent-qual-rx').checked;p.pistePermit=document.querySelector('#agent-qual-piste').checked;p.gender=agentProfiles[name]?.gender||'';p.team=agentProfiles[name]?.team||4;agentProfiles[name]=p;try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));document.querySelector('#agent-status').textContent='Fiche enregistrée sur cet appareil uniquement.'}catch{document.querySelector('#agent-status').textContent='Enregistrement impossible.'}};
+document.querySelector('#agent-save').onclick=()=>{const name=agentSelect.value;if(!name)return;const p={...agentProfiles[name]};for(const [field,id] of Object.entries(agentFields))p[field]=document.getElementById(id).value.trim();const count=Number(p.reminders||0);if(!Number.isInteger(count)||count<0||count>999){document.querySelector('#agent-status').textContent='Nombre de rappels invalide.';return}p.reminders=count;p.rxCertified=document.querySelector('#agent-qual-rx').checked;p.pistePermit=document.querySelector('#agent-qual-piste').checked;p.gender=agentProfiles[name]?.gender||'';p.team=agentProfiles[name]?.team||4;agentProfiles[name]=p;try{localStorage.setItem(agentKey,JSON.stringify(agentProfiles));document.querySelector('#agent-status').textContent='Fiche enregistrée sur cet appareil uniquement.'}catch{document.querySelector('#agent-status').textContent='Enregistrement impossible.'}};
 renderAgents();
+
+const workerImport=document.querySelector('#agent-worker-import');
+workerImport?.addEventListener('change',async event=>{
+  const status=document.querySelector('#agent-worker-import-status');
+  const file=event.target.files?.[0];
+  if(!file)return;
+  try{
+    if(file.size>100000)throw Error('Fichier trop volumineux');
+    const data=JSON.parse(await file.text());
+    if(data.schema!=='myteam-worker-numbers-v1'||!Array.isArray(data.agents)||data.agents.length<1||data.agents.length>200)throw Error('Format de matricules non reconnu');
+    const normal=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+    const names=new Map();
+    for(const name of Object.keys(agentProfiles)){
+      const key=normal(name);
+      if(names.has(key))names.set(key,null);
+      else names.set(key,name);
+    }
+    const deletedRaw=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');
+    const deleted=new Set((Array.isArray(deletedRaw)?deletedRaw:[]).map(normal));
+    const seen=new Set(),updated={};
+    let missing=0;
+    for(const item of data.agents){
+      if(!item||typeof item.name!=='string'||!item.name.trim()||typeof item.workerNumber!=='string'||!/^\d{1,20}$/.test(item.workerNumber.trim()))throw Error('Nom ou matricule invalide');
+      const key=normal(item.name);
+      if(seen.has(key))throw Error('Agent présent deux fois dans le fichier');
+      seen.add(key);
+      const name=names.get(key);
+      if(!name||deleted.has(key)){missing++;continue}
+      updated[name]={...agentProfiles[name],workerNumber:item.workerNumber.trim()};
+    }
+    const count=Object.keys(updated).length;
+    if(!count)throw Error('Aucun agent actif correspondant. Aucune donnée modifiée.');
+    localStorage.setItem(agentKey,JSON.stringify({...agentProfiles,...updated}));
+    Object.assign(agentProfiles,updated);
+    renderAgents(agentSelect.value);
+    try{window.renderMyTeamAgentList?.()}catch{}
+    status.textContent=count+' matricule(s) intégré(s) aux fiches existantes'+(missing?' ; '+missing+' agent(s) absent(s) ou retiré(s) ignoré(s)':'')+'. Les autres informations sont conservées.';
+  }catch(error){
+    status.textContent='Import impossible : '+error.message;
+  }finally{
+    event.target.value='';
+  }
+});
 
 document.querySelector('#agent-import').addEventListener('change',async e=>{
  const el=document.querySelector('#agent-import-status'),file=e.target.files?.[0];if(!file)return;
