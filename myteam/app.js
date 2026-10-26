@@ -70,7 +70,8 @@
         gender:p?.gender||'',
         team:Number(p?.team)||0,
         sickActive:p?.sickActive===true,
-        sickEnd:p?.sickEnd||''
+        sickEnd:p?.sickEnd||'',
+        workerNumber:p?.workerNumber||''
       }))
       .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
   }
@@ -91,7 +92,7 @@
       box.id='agents-direct';
       box.innerHTML=`<style>
         #agents-direct{margin:0 0 18px}#agent-manual-list{display:none!important}
-        .ad-team-tabs{display:flex;gap:7px;overflow:auto;padding:2px 0 12px;scrollbar-width:none}.ad-team-tab{white-space:nowrap;padding:11px 14px;border-radius:999px;background:#27364c;color:#fff;border:1px solid #46566c;font-weight:850}.ad-team-tab.active{background:#e76b24;border-color:#e76b24}
+        .ad-identity{display:flex;flex-direction:column;gap:3px;min-width:0}.ad-worker{font-size:11px;color:#bfcfe1;font-weight:650}.ad-team-tabs{display:flex;gap:7px;overflow:auto;padding:2px 0 12px;scrollbar-width:none}.ad-team-tab{white-space:nowrap;padding:11px 14px;border-radius:999px;background:#27364c;color:#fff;border:1px solid #46566c;font-weight:850}.ad-team-tab.active{background:#e76b24;border-color:#e76b24}
         .ad-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:8px}.ad-count{font-size:12px;color:#aebacc;text-align:right}
         #ad-search{width:100%;padding:13px 14px;border-radius:12px;border:1px solid #61748b;background:#111928;color:#fff;font:inherit;margin:6px 0 10px}
         .ad-filters{display:flex;gap:7px;overflow:auto;padding-bottom:10px}.ad-filter{white-space:nowrap;padding:9px 11px;border-radius:999px;background:#27364c;color:#fff;border:0;font-weight:750}.ad-filter.active{background:#e76b24}
@@ -147,7 +148,7 @@
       const waCount=all.filter(a=>isWhatsappMember(a.name)).length;
       const q=(search.value||'').trim().toLocaleLowerCase('fr');
       const visible=all.filter(a=>{
-        const searchOk=!q||a.name.toLocaleLowerCase('fr').includes(q);
+        const searchOk=!q||a.name.toLocaleLowerCase('fr').includes(q)||String(a.workerNumber).includes(q);
         const filterOk=filter==='all'||(filter==='rx'&&a.rx===true)||(filter==='piste'&&a.piste===true)||(filter==='unknown'&&(typeof a.rx!=='boolean'||typeof a.piste!=='boolean'))||(filter==='asked'&&isAsked(a.name))||(filter==='toask'&&!isAsked(a.name))||(filter==='waconfirmed'&&isWhatsappMember(a.name))||(filter==='watocheck'&&!isWhatsappMember(a.name));
         return searchOk&&filterOk;
       });
@@ -159,7 +160,7 @@
       box.querySelector('#ad-wa-info').textContent=`Groupe WhatsApp : ${waCount}/${all.length} présences confirmées · ${all.length-waCount} à vérifier. Icône verte + cadenas = présence confirmée et verrouillée ; grise = à vérifier. Pour corriger : ouvrir la fiche de l’agent.`;
       list.innerHTML=visible.length?visible.map(a=>`<div class="ad-row${a.gender==='F'?' female':''}">
         <button type="button" class="ad-open" data-ad-name="${esc(a.name)}" aria-label="Ouvrir la fiche de ${esc(a.name)}">
-          <span class="ad-name">${esc(a.name)}</span>
+          <span class="ad-identity"><span class="ad-name">${esc(a.name)}</span>${a.workerNumber?`<span class="ad-worker">Mat. ${esc(a.workerNumber)}</span>`:''}</span>
           <span class="ad-tags">${a.rx===true?'<span class="ad-tag">RX</span>':''}${a.piste===true?'<span class="ad-tag">PISTE</span>':''}${(typeof a.rx!=='boolean'||typeof a.piste!=='boolean')?'<span class="ad-tag pending">À compléter</span>':''}${a.sickActive?`<span class="ad-tag ad-sick">🩺 ${fmtDate(a.sickEnd)}</span>`:''}<span class="ad-arrow">›</span></span>
         </button>
         <button type="button" class="ad-wa-mark${isWhatsappMember(a.name)?' is-member':''}" data-ad-whatsapp="${esc(a.name)}" aria-pressed="${isWhatsappMember(a.name)}" ${isWhatsappMember(a.name)?'disabled':''} aria-label="${isWhatsappMember(a.name)?'Présence confirmée et verrouillée':'Confirmer la présence'} dans le groupe WhatsApp : ${esc(a.name)}" title="${isWhatsappMember(a.name)?'Présence WhatsApp verrouillée · confirmation manuelle le '+(members[a.name]?.checkedOn||'date inconnue')+' · correction depuis la fiche agent':'Présence dans le groupe WhatsApp non vérifiée'}">
@@ -265,7 +266,7 @@
   (async()=>{
     try{
       await load('./pwa-install-v1.js?v=20261017-1');
-      await load('../team4/app.js?v=20261021-8');
+      await load('../team4/app.js?v=20261026-1');
       document.querySelector('.voice-box')?.remove();
       await load('./hours-v1.js?v=20261021-4');
       await load('./salary-forecast-v3.js?v=20261021-4');
