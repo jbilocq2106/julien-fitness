@@ -266,7 +266,7 @@
   (async()=>{
     try{
       await load('./pwa-install-v1.js?v=20261017-1');
-      await load('../team4/app.js?v=20261026-1');
+      await load('../team4/app.js?v=20261026-2');
       document.querySelector('.voice-box')?.remove();
       await load('./hours-v1.js?v=20261021-4');
       await load('./salary-forecast-v3.js?v=20261021-4');
@@ -276,7 +276,7 @@
       visitsCss.rel='stylesheet';visitsCss.href='./post-visits-v1.css?v=20261019-1';
       document.head.append(visitsCss);
       await load('./post-visits-v1.js?v=20261019-1');
-      await load('./composition-v1.js?v=20261026-1');
+      await load('./composition-v1.js?v=20261026-2');
       renderDirectAgents();
       await load('./prestation-share-v1.js?v=2');
       await load('./prestation-rules-v1.js?v=20261017-1');
