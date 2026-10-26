@@ -36,10 +36,34 @@
   const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
   const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-  const blank={name:'',team:4,group:'Agent',gender:'',rx:'',piste:'',note:''};
-  const normalizeRow=r=>({id:String(r.id||makeId()),name:String(r.name||'').slice(0,100),team:[1,2,3,4].includes(Number(r.team))?Number(r.team):4,
+  const blank={name:'',workerNumber:'',team:4,group:'Agent',gender:'',rx:'',piste:'',note:''};
+  const normalizeRow=r=>({id:String(r.id||makeId()),name:String(r.name||'').slice(0,100),workerNumber:/^\d{1,20}$/.test(String(r.workerNumber??'').trim())?String(r.workerNumber).trim():'',team:[1,2,3,4].includes(Number(r.team))?Number(r.team):4,
     group:groups.includes(r.group)||r.group==='En-tête (à préciser)'?r.group:'Autre',gender:['F','M'].includes(r.gender)?r.gender:'',rx:['oui','non'].includes(r.rx)?r.rx:'',
     piste:['oui','non'].includes(r.piste)?r.piste:'',note:String(r.note||'').slice(0,250)});
+
+  // Matricule : la fiche agent est la source de référence, y compris pour les brouillons existants.
+  // On ne publie pas les matricules dans le code ; ils restent dans les données privées de l'appareil.
+  const activeProfiles=()=>{
+    let profiles={},deleted=[];
+    try{const parsed=JSON.parse(localStorage.getItem('myteam_agent_profiles_v1')||'{}');if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))profiles=parsed}catch{}
+    try{const parsed=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');if(Array.isArray(parsed))deleted=parsed}catch{}
+    const blocked=new Set(deleted.map(norm));
+    return Object.entries(profiles).filter(([name])=>!blocked.has(norm(name)));
+  };
+  const profileNumber=(row,profiles)=>{
+    const normalized=norm(row.name);
+    if(!normalized)return row.workerNumber||'';
+    const exact=profiles.filter(([name])=>norm(name)===normalized);
+    let match=exact.length===1?exact[0]:null;
+    // La photo historique comporte des noms abrégés ; rapprocher seulement les correspondances uniques.
+    if(!match&&exact.length===0&&normalized.length>=4){
+      const potential=profiles.filter(([name])=>norm(name).startsWith(normalized));
+      if(potential.length===1)match=potential[0];
+    }
+    return match&&/^\d{1,20}$/.test(String(match[1]?.workerNumber||'').trim())
+      ?String(match[1].workerNumber).trim():(row.workerNumber||'');
+  };
+
   function photoRows(){
     const known=(()=>{try{return JSON.parse(localStorage.getItem('myteam_agent_profiles_v1')||'{}')}catch{return {}}})();
     const profiles=Object.entries(known);
@@ -63,7 +87,7 @@
       if(!approved.has(norm(name))&&!p?.manualAdded&&!p?.teamManual)continue;
       const rx=p?.rxCertified===true?'oui':'',piste=p?.pistePermit===true?'oui':'';
       const group=rx&&piste?'RX + P':rx?'RX':piste?'Permis':'Agent';
-      rows.push(normalizeRow({...blank,name,team:Number(p.team),group,gender:p?.gender||'',rx,piste,note:''}));
+      rows.push(normalizeRow({...blank,name,workerNumber:p?.workerNumber||'',team:Number(p.team),group,gender:p?.gender||'',rx,piste,note:''}));
     }
     return rows;
   }
@@ -107,12 +131,13 @@
   const section=document.createElement('section');section.id='composition';section.className='hidden';
   section.innerHTML=`<style>
     #composition .cmp-wrap{overflow-x:auto;max-width:100%;border:1px solid #3e526b;border-radius:13px}
-    #composition table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:770px}
+    #composition table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:870px}
     #composition th,#composition td{padding:7px;border-bottom:1px solid #39485c;text-align:left}
     #composition th{background:#293a51;position:sticky;top:0;z-index:1}
     #composition td input,#composition td select{width:100%;min-height:37px;padding:7px;border-radius:7px;border:1px solid #61738d;background:#121c2b;color:#fff;font:inherit}
     #composition td:first-child{min-width:155px;position:sticky;left:0;background:#202f44;z-index:1}
     #composition tr.cmp-female td:first-child input{color:#ff8bc3;font-weight:800}
+    #composition .cmp-worker{font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
     #composition .cmp-tools,#composition .cmp-teams{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
     #composition .cmp-teams button[aria-pressed=true]{background:#e76b24}
     #composition .cmp-tools button{font-size:12px;padding:10px 12px}
@@ -136,9 +161,9 @@
       #composition tbody td{border:0;padding:0;min-width:0}
       #composition tbody td:first-child{grid-column:1;position:static;background:transparent}
       #composition tbody td:last-child{grid-column:2;grid-row:1;display:flex;gap:5px;align-items:center}
-      #composition tbody tr:not(.cmp-open) td:nth-child(n+2):nth-child(-n+7){display:none}
-      #composition tbody tr.cmp-open td:nth-child(n+2):nth-child(-n+7){grid-column:1 / -1;display:block}
-      #composition tbody tr.cmp-open td:nth-child(n+2):nth-child(-n+7)::before{content:attr(data-label);
+      #composition tbody tr:not(.cmp-open) td:nth-child(n+2):nth-child(-n+8){display:none}
+      #composition tbody tr.cmp-open td:nth-child(n+2):nth-child(-n+8){grid-column:1 / -1;display:block}
+      #composition tbody tr.cmp-open td:nth-child(n+2):nth-child(-n+8)::before{content:attr(data-label);
         color:#aebacc;display:block;font-size:12px;font-weight:750;margin:3px 0 5px}
       #composition tbody td input,#composition tbody td select{min-height:45px;font-size:15px}
       #composition .cmp-brief{display:block;margin:5px 2px 0;color:#b9cde0;font-size:12px}
@@ -149,7 +174,7 @@
     }
   </style>
   <div class="card"><h2>🧩 Composition des équipes</h2>
-    <p class="muted">Tableau modifiable comme dans Excel : touche une cellule pour corriger le nom, l'équipe, le groupe ou les qualifications. Les modifications sont privées et enregistrées <strong>sur ce téléphone</strong>.</p>
+    <p class="muted">Tableau modifiable comme dans Excel : touche une cellule pour corriger le nom, l'équipe, le groupe ou les qualifications. Les matricules se mettent à jour depuis les fiches Agents et restent modifiables dans celles-ci. Les modifications sont privées et enregistrées <strong>sur ce téléphone</strong>.</p>
     <label for="cmp-mode">Base de travail</label><select class="cmp-mode" id="cmp-mode">
       <option value="current">Équipes actuelles (base MyTEAM)</option>
       <option value="photo">Photo de référence (${HIST_DATE}, répartition historique)</option>
@@ -158,7 +183,7 @@
     <input type="search" id="cmp-search" placeholder="Rechercher un agent dans cette équipe…">
     <div class="cmp-stats" id="cmp-stats"></div>
     <div class="cmp-wrap"><table aria-label="Composition éditable des équipes"><thead><tr>
-      <th>Agent</th><th>Équipe</th><th>Groupe</th><th>F/H</th><th>RX</th><th>Permis</th><th>Note</th><th></th>
+      <th>Agent</th><th>Matricule</th><th>Équipe</th><th>Groupe</th><th>F/H</th><th>RX</th><th>Permis</th><th>Note</th><th></th>
     </tr></thead><tbody id="cmp-body"></tbody></table></div>
     <div class="cmp-tools"><button id="cmp-add" type="button">+ Agent / ligne</button><button id="cmp-undo" type="button">↶ Annuler</button>
       <button id="cmp-csv" type="button">⬇ Export Excel (CSV)</button><button id="cmp-import-button" type="button">⬆ Import CSV</button>
@@ -188,9 +213,11 @@
     $('cmp-teams').querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{team=Number(b.dataset.team);search='';$('cmp-search').value='';draw()});
     const all=rows().filter(r=>r.team===team),s=stats(all);
     $('cmp-stats').innerHTML=`<div class="cmp-stat"><b>${s.total}</b>Agents</div><div class="cmp-stat"><b>${s.rx}</b>RX indiqués</div><div class="cmp-stat"><b>${s.piste}</b>Permis indiqués</div>`;
-    const subset=all.filter(r=>norm(r.name).includes(norm(search)));
+    const profiles=activeProfiles();
+    const subset=all.filter(r=>norm(r.name).includes(norm(search))||profileNumber(r,profiles).includes(search.trim()));
     $('cmp-body').innerHTML=subset.map(r=>`<tr data-id="${esc(r.id)}" class="${r.gender==='F'?'cmp-female ':''}${expanded.has(r.id)?'cmp-open':''}">
-      <td data-label="Agent"><input data-field="name" aria-label="Nom" maxlength="100" value="${esc(r.name)}"><small class="cmp-brief">${esc(r.group)} · RX ${esc(r.rx||'?')} · Permis ${esc(r.piste||'?')}</small></td>
+      <td data-label="Agent"><input data-field="name" aria-label="Nom" maxlength="100" value="${esc(r.name)}"><small class="cmp-brief">${profileNumber(r,profiles)?'Mat. '+esc(profileNumber(r,profiles))+' · ':''}${esc(r.group)} · RX ${esc(r.rx||'?')} · Permis ${esc(r.piste||'?')}</small></td>
+      <td data-label="Matricule"><span class="cmp-worker">${esc(profileNumber(r,profiles)||'—')}</span></td>
       <td data-label="Équipe"><select data-field="team" aria-label="Équipe">${select([1,2,3,4].map(n=>[String(n),'Équipe '+n]),String(r.team))}</select></td>
       <td data-label="Groupe"><select data-field="group" aria-label="Groupe">${select(groups.map(x=>[x,x]),r.group)}</select></td>
       <td data-label="F/H"><select data-field="gender" aria-label="Femme ou homme">${select([['','—'],['F','F'],['M','H']],r.gender)}</select></td>
@@ -198,7 +225,7 @@
       <td data-label="Permis"><select data-field="piste" aria-label="Permis piste">${select([['','?'],['oui','Oui'],['non','Non']],r.piste)}</select></td>
       <td data-label="Note"><input data-field="note" aria-label="Note" maxlength="250" value="${esc(r.note)}"></td>
       <td><button class="cmp-expand" data-expand type="button" aria-expanded="${expanded.has(r.id)}">${expanded.has(r.id)?'Fermer':'Modifier'}</button><button class="cmp-del" data-delete type="button" aria-label="Supprimer la ligne">✕</button></td>
-    </tr>`).join('')||'<tr><td colspan="8">Aucun agent. Ajoute une ligne si nécessaire.</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="9">Aucun agent. Ajoute une ligne si nécessaire.</td></tr>';
     $('cmp-body').querySelectorAll('tr[data-id]').forEach(tr=>{
       const id=tr.dataset.id;
       tr.querySelectorAll('[data-field]').forEach(input=>{
@@ -238,8 +265,9 @@
     remember();state[mode]=mode==='photo'?photoRows():currentRows();save('Base restaurée pour ce mode.');draw()};
   function csvCell(v){let s=String(v??'');if(/^[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
   $('cmp-csv').onclick=()=>{
-    const header=['Équipe','Groupe','Agent','F/H','RX','Permis','Note'];
-    const body=rows().map(r=>[r.team,r.group,r.name,r.gender,r.rx,r.piste,r.note]);
+    const header=['Équipe','Groupe','Agent','Matricule','F/H','RX','Permis','Note'];
+    const profiles=activeProfiles();
+    const body=rows().map(r=>[r.team,r.group,r.name,profileNumber(r,profiles),r.gender,r.rx,r.piste,r.note]);
     const csv='\ufeff'+[header,...body].map(row=>row.map(csvCell).join(';')).join('\r\n');
     const a=document.createElement('a');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
     a.href=url;a.download=`MyTEAM_composition_${mode}_${new Date().toISOString().slice(0,10)}.csv`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -256,10 +284,16 @@
       else field+=c;
     }
     if(quotes)throw Error('Guillemets non fermés');row.push(field);if(row.some(v=>v.trim()))out.push(row);
-    if(!out.length||out[0].map(x=>x.trim()).join(';')!=='Équipe;Groupe;Agent;F/H;RX;Permis;Note')throw Error('En-têtes incorrects : exporte d’abord un modèle depuis MyTEAM');
+    if(!out.length)throw Error('CSV vide');
+    const header=out[0].map(x=>x.trim()).join(';');
+    const hasWorker=header==='Équipe;Groupe;Agent;Matricule;F/H;RX;Permis;Note';
+    if(!hasWorker&&header!=='Équipe;Groupe;Agent;F/H;RX;Permis;Note')throw Error('En-têtes incorrects : exporte d’abord un modèle depuis MyTEAM');
     return out.slice(1).map((cells,i)=>{
-      if(cells.length!==7||![1,2,3,4].includes(Number(cells[0]))||!groups.includes(cells[1]))throw Error('Ligne '+(i+2)+' invalide');
-      return normalizeRow({...blank,team:Number(cells[0]),group:cells[1],name:cells[2],gender:cells[3],rx:cells[4],piste:cells[5],note:cells[6]});
+      if(cells.length!==(hasWorker?8:7)||![1,2,3,4].includes(Number(cells[0]))||!groups.includes(cells[1]))throw Error('Ligne '+(i+2)+' invalide');
+      const workerNumber=hasWorker?cells[3].trim():'';
+      if(workerNumber&&!/^\d{1,20}$/.test(workerNumber))throw Error('Matricule invalide, ligne '+(i+2));
+      const k=hasWorker?1:0;
+      return normalizeRow({...blank,team:Number(cells[0]),group:cells[1],name:cells[2],workerNumber,gender:cells[3+k],rx:cells[4+k],piste:cells[5+k],note:cells[6+k]});
     });
   }
   $('cmp-file').onchange=async e=>{
