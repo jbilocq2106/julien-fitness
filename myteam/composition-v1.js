@@ -185,7 +185,7 @@
     <div class="cmp-wrap"><table aria-label="Composition éditable des équipes"><thead><tr>
       <th>Agent</th><th>Matricule</th><th>Équipe</th><th>Groupe</th><th>F/H</th><th>RX</th><th>Permis</th><th>Note</th><th></th>
     </tr></thead><tbody id="cmp-body"></tbody></table></div>
-    <div class="cmp-tools"><button id="cmp-add" type="button">+ Agent / ligne</button><button id="cmp-undo" type="button">↶ Annuler</button>
+    <div class="cmp-tools"><button id="cmp-worker-import" type="button">Importer les matricules G4S</button><button id="cmp-add" type="button">+ Agent / ligne</button><button id="cmp-undo" type="button">↶ Annuler</button>
       <button id="cmp-csv" type="button">⬇ Export Excel (CSV)</button><button id="cmp-import-button" type="button">⬆ Import CSV</button>
       <button id="cmp-restore" type="button">Restaurer cette base</button></div>
     <input id="cmp-file" type="file" accept=".csv,text/csv" hidden>
@@ -274,6 +274,16 @@
     $('cmp-status').textContent='CSV exporté : tu peux le modifier dans Excel et le réimporter.';
   };
   $('cmp-import-button').onclick=()=>$('cmp-file').click();
+  $('cmp-worker-import').onclick=()=>{
+    const workerFile=document.querySelector('#agent-worker-import');
+    if(!workerFile){$('cmp-status').textContent='Import privé indisponible : actualise MyTEAM.';return}
+    workerFile.click();
+  };
+  window.addEventListener('myteam-worker-imported',event=>{
+    const count=Number(event.detail?.count||0);
+    $('cmp-status').textContent=count+' matricule(s) ajoutés aux fiches Agents et visibles dans Composition.';
+    draw();
+  });
   function parseCsv(raw){
     const out=[];let row=[],field='',quotes=false;
     const s=raw.replace(/^\ufeff/,'');
