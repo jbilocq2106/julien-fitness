@@ -63,7 +63,7 @@
         const months=[...new Set([...(oldMeta?.source==='pdf-local'&&Array.isArray(oldMeta.months)?oldMeta.months:[]),month])].sort();
         const meta={
           ...oldMeta,source:'pdf-local',fileName:'Planning G4S '+display,
-          creationDate:'21/10/2026',total:(minutes/60)+' h 00',months,
+          creationDate:(typeof pack.created==='string'&&/^\d{2}\/\d{2}\/\d{4}$/.test(pack.created))?pack.created:'',total:(minutes/60)+' h 00',months,
           importedAt:new Date().toISOString()
         };
         // Donnees locales seulement ; synchronisation privee geree separement.
