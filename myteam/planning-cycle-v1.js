@@ -10,6 +10,7 @@
   const FIRST_MONTH = 2026 * 12 + 9;
   const LAST_MONTH = 2027 * 12 + 11;
   const CDE_START = '2026-11-01';
+  const CDE_POST = /(?:chef(?:\s+d[’' ]?\s*)?\s*[eé]quipe|\bCDE\b)/i;
   const PATTERN = ['morning', 'morning', 'afternoon', 'afternoon', 'night', 'night', 'rest', 'rest'];
   const TYPES = { morning: 'Matin', afternoon: 'Après-midi', night: 'Nuit', rest: 'Repos' };
   const SHIFT_HOURS = { morning: '05h–13h', afternoon: '13h–21h', night: '21h–05h' };
@@ -171,7 +172,7 @@
       const holidayComp=holidayCompDue&&date===holidayCompDate;
       const type = paidLeave ? 'leave' : actual ? rowType(rows[0]) : officialPdfMonth ? 'rest' : phase;
       const isHoliday = legalHolidays.has(date);
-      const cde = !paidLeave && date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : !officialPdfMonth && phase !== 'rest');
+      const cde = !paidLeave && (rows.some(row => CDE_POST.test(String(row?.post || ''))) || (date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : !officialPdfMonth && phase !== 'rest')));
       const col = (firstOffset + day - 1) % 7;
       const el = document.createElement('button');
       el.type = 'button';
