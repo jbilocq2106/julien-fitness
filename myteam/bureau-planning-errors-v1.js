@@ -112,7 +112,7 @@
   bureau.className = 'hidden';
   bureau.innerHTML = [
     "<div class='card mtb-intro'><h2>Mon bureau MyTEAM</h2>",
-    "<p class='mtb-note'>Team 4 · Tous tes outils, classés par activité. Les nouveaux onglets seront ajoutés ici automatiquement.</p></div>",
+    "<p class='mtb-note'>Team 4 · Outils classés par priorité. « Mon planning » concerne uniquement mes horaires ; les anomalies des agents se trouvent dans « Plannings agents ». Les futurs modules apparaîtront dans les autres rubriques.</p></div>",
     "<div id='mtb-planning-alert' class='mtb-alert' role='status'></div>",
     "<div id='mtb-groups'></div>"
   ].join('');
@@ -137,20 +137,34 @@
   }
   // Bureau : un point d'entrée par espace, les sous-fonctions restent accessibles à l'intérieur.
   const categoryItems = [
-    ['Activité quotidienne', [
-      ['today', '☀️', "Aujourd'hui"], ['parif', '📷', 'Plan PARIF'],
-      ['planning', '🗓️', 'Mon planning'], ['team', '👥', 'Agents'],
-      ['leave', '🏖️', 'Congés'], ['consignes', '📋', 'Consignes'],
-      ['visits', '✅', 'Visites sur poste'], ['main-courante', '📝', 'Main courante']
+    ['1 · Aujourd’hui — actions quotidiennes', [
+      ['today', '☀️', 'Tableau du jour', 'Alertes et remplacements'],
+      ['parif', '📷', 'Plan PARIF'],
+      ['main-courante', '📝', 'Main courante'],
+      ['visits', '✅', 'Visites sur poste', 'Objectif : 3 par jour']
     ]],
-    ['Suivi et encadrement', [
-      ['planning-errors', '⚠️', 'Erreurs planning'],
-      ['mt-management-workspace', '🤝', 'Management'],
+    ['2 · Exploitation — contrôle des postes', [
       ['prestation', '📑', 'Fiche de prestation'],
-      ['history', '📚', 'Historique']
+      ['composition', '👷', 'Composition des équipes'],
+      ['consignes', '📋', 'Consignes']
     ]],
-    ['Mes outils', [
-      ['salary', '💶', 'Salaire'], ['hours', '🕒', 'Mes heures'],
+    ['3 · Plannings agents — à vérifier et corriger', [
+      ['planning-issues', '⚠️', 'Signalements reçus'],
+      ['planning-errors', '📅', 'Suivi mensuel', 'Erreurs et échéances'],
+      ['leave', '🏖️', 'Congés agents']
+    ]],
+    ['4 · Agents et encadrement', [
+      ['team', '👥', 'Fiches agents', 'Matricules et qualifications'],
+      ['mt-management-workspace', '🤝', 'Management', 'Entretiens individuels'],
+      ['cde-memo', '📌', 'Mémo CDE']
+    ]],
+    ['5 · Mon espace personnel', [
+      ['planning', '🗓️', 'Mon planning', 'Mes horaires uniquement'],
+      ['hours', '🕒', 'Mes heures'],
+      ['salary', '💶', 'Salaire']
+    ]],
+    ['6 · Historique et sauvegarde', [
+      ['history', '📚', 'Historique'],
       ['secure-backup', '🔐', 'Sauvegarde privée']
     ]]
   ];
@@ -192,7 +206,7 @@
       const grid = document.createElement('div');
       grid.className = 'mtb-grid';
       group[1].forEach(item => {
-        const tile = makeTile(item[0],item[1],item[2]);
+        const tile = makeTile(item[0],item[1],item[2],item[3]);
         if (tile) {grid.append(tile);included.add(item[0]);included.add(aliases[item[0]]?.target || item[0]);}
       });
       if (grid.children.length) groups.append(heading,grid);
