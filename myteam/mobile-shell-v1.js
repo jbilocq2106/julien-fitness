@@ -40,8 +40,9 @@
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['mt-bureau','▦','Bureau'],['parif','📷','Plan PARIF'],['today','☀️','Aujourd’hui'],['planning','🗓️','Planning'],['team','👥','Agents']];
-  const NAV_ORDER_KEY='myteam_mobile_nav_order_v1';
+  const navItems=[['today','☀️','Aujourd’hui'],['parif','📷','Plan PARIF'],['mt-bureau','▦','Bureau'],['team','👥','Agents'],['planning','🗓️','Mon planning']];
+  // Nouvelle organisation demandée : réinitialise une fois l'ancien ordre visuel, sans effacer aucune donnée de travail.
+  const NAV_ORDER_KEY='myteam_mobile_nav_order_v2';
   const navDefinitions=[...navItems,['more','☰','Plus']];
   const defaults=navDefinitions.map(item=>item[0]);
   const storedOrder=read(NAV_ORDER_KEY,[]);
@@ -63,10 +64,41 @@
 
   function closeMore(){shade.hidden=true;more.hidden=true;mobileNav.querySelector('[data-mt-open=more]').setAttribute('aria-expanded','false')}
   function openMore(){
+    // Priorité opérationnelle dans « Plus » ; seules les rubriques présentes sont affichées.
     const primary=new Set(navItems.map(x=>x[0]));
-    $('mt-more-links').innerHTML=Array.from(topNav.querySelectorAll('button[data-tab]'))
-      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true')
-      .map(b=>`<button type="button" data-mt-other="${esc(b.dataset.tab)}">${esc(b.textContent.trim())}</button>`).join('');
+    const available=Array.from(topNav.querySelectorAll('button[data-tab]'))
+      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true');
+    const groups=[
+      ['Plannings et exploitation', ['planning-issues','planning-errors','prestation','composition','leave']],
+      ['Actions et encadrement', ['visits','consignes','cde-memo','mt-management-workspace']],
+      ['Mes outils personnels', ['hours','salary']],
+      ['Historique et sécurité', ['history','secure-backup']]
+    ];
+    const labels={
+      'planning-issues':'⚠️ Signalements des agents',
+      'planning-errors':'📅 Tableau des erreurs',
+      'mt-management-workspace':'🤝 Management et entretiens',
+      'cde-memo':'📌 Mémo CDE'
+    };
+    const host=$('mt-more-links');host.replaceChildren();
+    const used=new Set();
+    const addGroup=(heading,buttons)=>{
+      if(!buttons.length)return;
+      const title=document.createElement('h3');
+      title.textContent=heading;
+      title.style.cssText='grid-column:1/-1;margin:11px 0 1px;font-size:14px;color:#f0c9a4';
+      host.append(title);
+      buttons.forEach(original=>{
+        const button=document.createElement('button');
+        button.type='button';
+        button.dataset.mtOther=original.dataset.tab;
+        button.textContent=labels[original.dataset.tab]||original.textContent.trim();
+        host.append(button);used.add(original.dataset.tab);
+      });
+    };
+    groups.forEach(([heading,ids])=>addGroup(heading,ids
+      .map(id=>available.find(b=>b.dataset.tab===id)).filter(Boolean)));
+    addGroup('Autres rubriques',available.filter(b=>!used.has(b.dataset.tab)));
     shade.hidden=false;more.hidden=false;
     mobileNav.querySelector('[data-mt-open=more]').setAttribute('aria-expanded','true');
     $('mt-more-close').focus();
@@ -231,5 +263,5 @@
   });
   window.addEventListener('focus',()=>{if(current==='today')renderToday()});
   window.addEventListener('storage',event=>{if(event.key?.startsWith('myteam')&&current==='today')renderToday()});
-  activate('parif');
+  activate('today');
 })();
