@@ -47,7 +47,7 @@
   const defaults=navDefinitions.map(item=>item[0]);
   const storedOrder=read(NAV_ORDER_KEY,[]);
   const saved=Array.isArray(storedOrder)?storedOrder.filter(id=>defaults.includes(id)):[];
-  const order=saved.includes('mt-bureau')?[...new Set([...saved,...defaults])]:['mt-bureau',...new Set([...saved,...defaults.filter(id=>id!=='mt-bureau')])];
+  const order=[...new Set([...saved,...defaults])];
   const mobileNav=document.createElement('nav');
   mobileNav.id='mt-mobile-nav';mobileNav.setAttribute('aria-label','Navigation principale');
   mobileNav.innerHTML=order.map(id=>{
