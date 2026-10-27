@@ -11,6 +11,7 @@
   const HOURS = { morning: ['05:00', '13:00'], afternoon: ['13:00', '21:00'], night: ['21:00', '05:00'] };
   const ANCHOR = Date.UTC(2026, 9, 17); // 17-18 octobre 2026 : matin
   const CDE_START = '2026-11-01';
+  const CDE_POST = /(?:chef(?:\s+d[’' ]?\s*)?\s*[eé]quipe|\bCDE\b)/i;
   const euro = n => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Number(n) || 0);
   const hm = n => `${Math.floor((Number(n) || 0) / 60)} h ${String(Math.round((Number(n) || 0) % 60)).padStart(2, '0')}`;
   const round = n => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -70,7 +71,7 @@
       if (!Number.isFinite(minutes) || minutes < 0) continue;
       total += minutes;
       if (isLeave(s)) { leaveMinutes += minutes; continue; }
-      if ((s.date >= CDE_START && !isTraining(s)) || /chef d[’' ]?équipe|\bCDE\b/i.test(String(s.post || ''))) cdeDates.add(s.date);
+      if ((s.date >= CDE_START && !isTraining(s)) || CDE_POST.test(String(s.post || ''))) cdeDates.add(s.date);
       weeks.set(weekKey(a), (weeks.get(weekKey(a)) || 0) + minutes);
       const first = new Date(a); first.setHours(0, 0, 0, 0); first.setDate(first.getDate() - 1);
       const last = new Date(b); last.setHours(0, 0, 0, 0); last.setDate(last.getDate() + 1);
