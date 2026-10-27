@@ -304,6 +304,7 @@
       try{await load('./bureau-planning-errors-v1.js?v=20261027-7')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
       try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
       try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
+      try{await load('./startup-reminders-v1.js?v=20261027-1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
     }
   })();
 })();
