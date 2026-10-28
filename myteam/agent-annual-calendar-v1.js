@@ -15,6 +15,26 @@
     {id:'holiday',title:'Jour férié',short:'Férié',color:'#e9b860'}
   ];
   const STATUS=[{id:'planned',title:'Prévu / à confirmer'},{id:'confirmed',title:'Confirmé'}];
+  // Conserver la différence essentielle : accord du chef ≠ validation MyGesper.
+  const LEAVE_STAGES=[
+    {id:'requested',title:'Demandé — non validé'},
+    {id:'chef-approved',title:'Accordé par le chef — non validé MyGesper'},
+    {id:'filed',title:'Déposé dans MyGesper'},
+    {id:'pending',title:'En attente de réponse MyGesper'},
+    {id:'approved',title:'Accepté MyGesper — non validé'},
+    {id:'validated',title:'Validé MyGesper'},
+    {id:'rejected',title:'Refusé / sans suite'}
+  ];
+  const stageTitle=stage=>LEAVE_STAGES.find(x=>x.id===stage)?.title||'Demandé — non validé';
+  function stageForLegacy(r){
+    if(r.gesperStatus==='validated')return 'validated';
+    if(r.gesperStatus==='rejected'||r.chefStatus==='rejected')return 'rejected';
+    if(r.gesperStatus==='approved')return 'approved';
+    if(r.gesperStatus==='pending')return 'pending';
+    if(r.gesperFiled==='yes')return 'filed';
+    if(r.chefStatus==='approved')return 'chef-approved';
+    return 'requested';
+  }
   const $=id=>document.getElementById(id);
   const read=(key,backup)=>{try{const value=JSON.parse(localStorage.getItem(key)||'null');return value??backup;}catch{return backup;}};
   const data=()=>{const a=read(KEY,[]);return Array.isArray(a)?a.filter(x=>x&&typeof x==='object'&&typeof x.id==='string'):[];};
@@ -41,10 +61,10 @@
     return matches.length===1?matches[0]:'';
   }
   const typeInfo=id=>TYPES.find(t=>t.id===id)||TYPES[0];
-  const statusText=id=>id==='confirmed'?'Confirmé':'Prévu / à confirmer';
-  const eventLabel=r=>r.source==='mygesper'
-    ?(r.gesperStatus==='validated'?'Congé validé MyGesper':'Demande MyGesper non confirmée')
-    :typeInfo(r.type).title;
+  const statusText=id=>id==='confirmed'?'Confirmé':id==='rejected'?'Refusé / sans suite':'Prévu / à confirmer';
+  const stageFor=r=>r.type==='leave'?(r.leaveStage||((r.status==='confirmed')?'validated':'requested')):'';
+  const statusOf=r=>r.type==='leave'?stageTitle(stageFor(r)):statusText(r.status);
+  const eventLabel=r=>r.source==='mygesper'?'Congé (suivi MyGesper)':typeInfo(r.type).title;
   const intersects=(r,year)=>isDate(r.from)&&r.from<=year+'-12-31'&&(isDate(r.to)?r.to:r.from)>=year+'-01-01';
   let selected='',year=new Date().getFullYear(),editing='',chooseEnd=false;
   let currentFilter='all';
@@ -65,7 +85,9 @@
     '<label class="mtaa-label">Type<select name="type" required></select></label>',
     '<label class="mtaa-label">Du (inclus)<input name="from" type="date" required></label>',
     '<label class="mtaa-label">Au (inclus, facultatif si inconnu)<input name="to" type="date"></label>',
-    '<label class="mtaa-label">État<select name="status"><option value="planned">Prévu / à confirmer</option><option value="confirmed">Confirmé</option></select></label>',
+    '<label class="mtaa-label" id="mtaa-leave-stage-field">Suivi du congé<select name="leaveStage" id="mtaa-leave-stage"></select></label>',
+    '<label class="mtaa-label" id="mtaa-general-state-field">État<select name="status"><option value="planned">Prévu / à confirmer</option><option value="confirmed">Confirmé</option></select></label>',
+    '<p class="mtaa-hint">Le statut saisi manuellement doit être vérifié : seul « Validé MyGesper » représente une validation définitive. « Accordé par le chef » ne suffit pas.</p>',
     '<p class="mtaa-hint">Pour un arrêt dont la fin est inconnue, laisse « Au » vide. Seul le premier jour sera marqué jusqu’à la mise à jour.</p>',
     '<p class="mtaa-hint">Indique seulement les dates administratives : aucun diagnostic ni motif médical.</p>',
     '<div class="mtaa-actions"><button type="submit" class="mtaa-primary">Enregistrer</button><button type="button" id="mtaa-cancel">Nouveau / annuler</button></div>',
@@ -113,6 +135,14 @@
   ].join('');document.head.append(css);
   const select=$('mtaa-agent'),form=$('mtaa-form'),message=$('mtaa-message');
   TYPES.forEach(t=>form.elements.type.add(new Option(t.title,t.id)));
+  LEAVE_STAGES.forEach(stage=>form.elements.leaveStage.add(new Option(stage.title,stage.id)));
+  function updateTypeFields(){
+    const isLeave=form.elements.type.value==='leave';
+    $('mtaa-leave-stage-field').hidden=!isLeave;
+    $('mtaa-general-state-field').hidden=isLeave;
+  }
+  form.elements.type.addEventListener('change',updateTypeFields);
+  updateTypeFields();
   const legend=$('mtaa-legend');
   TYPES.forEach(t=>{const label=document.createElement('span'),dot=document.createElement('i');dot.className='mtaa-dot';dot.style.background=t.color;label.append(dot,document.createTextNode(t.short));legend.append(label);});
   const mark=document.createElement('span');mark.textContent='Contour pointillé : à confirmer';legend.append(mark);
@@ -128,22 +158,26 @@
     const values=read(LEAVES,[]);
     if(!Array.isArray(values))return [];
     const people=names();
-    return values.filter(r=>r&&typeof r==='object'&&r.archived!==true&&r.gesperStatus!=='rejected'&&isDate(r.from)).map(r=>{
+    return values.filter(r=>r&&typeof r==='object'&&r.archived!==true&&isDate(r.from)).map(r=>{
       const match=matchingName(r.agent,people);
       if(!match)return null;
-      const until=isDate(r.to)&&r.to>=r.from?r.to:r.from;
+      const until=isDate(r.to)&&r.to>=r.from?r.to:r.from,leaveStage=stageForLegacy(r);
       return {id:'legacy-'+r.id,agent:match,type:'leave',from:r.from,to:until,
-        status:r.gesperStatus==='validated'?'confirmed':'planned',source:'mygesper',
-        gesperStatus:r.gesperStatus||'unknown'};
+        leaveStage,status:leaveStage==='validated'?'confirmed':leaveStage==='rejected'?'rejected':'planned',
+        source:'mygesper',gesperStatus:r.gesperStatus||'unknown'};
     }).filter(Boolean);
   }
   function personal(){
-    return data().filter(r=>TYPES.some(t=>t.id===r.type)&&isDate(r.from)).map(r=>({...r,source:'personal',status:r.status==='confirmed'?'confirmed':'planned'}));
+    return data().filter(r=>TYPES.some(t=>t.id===r.type)&&isDate(r.from)).map(r=>{
+      const stage=r.type==='leave'?(r.leaveStage||((r.status==='confirmed')?'validated':'requested')):'';
+      const status=r.type==='leave'?(stage==='validated'?'confirmed':stage==='rejected'?'rejected':'planned'):(r.status==='confirmed'?'confirmed':'planned');
+      return {...r,leaveStage:stage,source:'personal',status};
+    });
   }
   function forSelected(){return selected?[...personal(),...legacy()].filter(r=>r.agent===selected):[];}
   function clearForm(){
     editing='';chooseEnd=false;form.reset();
-    form.elements.status.value='planned';
+    form.elements.status.value='planned';form.elements.leaveStage.value='requested';updateTypeFields();
     $('mtaa-form-heading').textContent='Ajouter une période';
     message.textContent='';
   }
@@ -152,7 +186,8 @@
     form.elements.type.value=r.type;
     form.elements.from.value=r.from;
     form.elements.to.value=r.to||'';
-    form.elements.status.value=r.status;
+    form.elements.status.value=r.status==='confirmed'?'confirmed':'planned';
+    form.elements.leaveStage.value=stageFor(r);updateTypeFields();
     $('mtaa-form-heading').textContent='Modifier la période';
     $('mtaa-editor-card').scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -195,7 +230,7 @@
       const count=new Date(year,month+1,0,12).getDate();
       for(let day=1;day<=count;day++){
         const date=iso(new Date(year,month,day,12));
-        const matches=items.filter(r=>r.from<=date&&(r.to||r.from)>=date);
+        const matches=items.filter(r=>r.status!=='rejected'&&r.from<=date&&(r.to||r.from)>=date);
         const btn=document.createElement('button');btn.type='button';btn.className='mtaa-day';btn.dataset.date=date;
         btn.textContent=String(day);btn.setAttribute('aria-label',nice(date)+(matches.length?' : '+matches.map(eventLabel).join(', '):''));
         if(date===today)btn.classList.add('today');
@@ -207,7 +242,7 @@
             const dot=document.createElement('i');dot.style.background=typeInfo(t).color;dots.append(dot);
           });
           btn.append(dots);
-          btn.title=matches.map(r=>eventLabel(r)+' ('+statusText(r.status)+')').join(' · ');
+          btn.title=matches.map(r=>eventLabel(r)+' ('+statusOf(r)+')').join(' · ');
         }
         btn.onclick=()=>clickDay(date);grid.append(btn);
       }
@@ -230,9 +265,7 @@
       date.textContent=nice(r.from)+' → '+(r.to&&r.to!==r.from?nice(r.to):r.to?nice(r.from):'fin non renseignée');
       entry.append(date);
       const state=document.createElement('div');state.className='mtaa-meta';
-      state.textContent=r.source==='mygesper'?
-        (r.status==='confirmed'?'MyGesper : validé — confirmé':'Demande de congés : pas de validation définitive MyGesper')
-        :statusText(r.status);
+      state.textContent=statusOf(r)+(r.source==='mygesper'?' · Dossier MyGesper':' · Déclaré dans MyTEAM');
       entry.append(state);
       if(r.source==='personal'){
         const actions=document.createElement('div');actions.className='mtaa-actions';
@@ -278,15 +311,19 @@
   form.onsubmit=e=>{
     e.preventDefault();
     if(!selected||!names().includes(selected)){message.textContent='Sélectionne un agent existant.';return;}
-    const type=form.elements.type.value,from=form.elements.from.value,to=form.elements.to.value,status=form.elements.status.value;
-    if(!TYPES.some(t=>t.id===type)||!isDate(from)||(to&&!isDate(to))||!STATUS.some(s=>s.id===status)){
+    const type=form.elements.type.value,from=form.elements.from.value,to=form.elements.to.value,
+      stage=form.elements.leaveStage.value,uiStatus=form.elements.status.value;
+    const status=type==='leave'?(stage==='validated'?'confirmed':stage==='rejected'?'rejected':'planned'):uiStatus;
+    if(!TYPES.some(t=>t.id===type)||!isDate(from)||(to&&!isDate(to))||
+      (type==='leave'?!LEAVE_STAGES.some(s=>s.id===stage):!STATUS.some(s=>s.id===uiStatus))){
       message.textContent='Dates ou type incorrects.';return;
     }
     if(to&&to<from){message.textContent='La fin est antérieure au début.';return;}
     const now=new Date().toISOString(),current=data(),before=editing?current.find(x=>x.id===editing&&x.agent===selected):null;
     if(editing&&!before){message.textContent='La période à modifier est introuvable.';return;}
     const id=before?.id||('absence-'+Date.now()+'-'+Math.random().toString(36).slice(2,8));
-    const record={id,agent:selected,type,from,to,status,createdAt:before?.createdAt||now,updatedAt:now};
+    const record={id,agent:selected,type,from,to,status,leaveStage:type==='leave'?stage:'',
+      createdAt:before?.createdAt||now,updatedAt:now};
     if(!before&&type==='leave'&&legacy().some(r=>r.agent===selected&&r.from===from&&r.to===(to||from))){
       message.textContent='Cette période existe déjà dans les demandes de congés MyGesper. Modifie-la depuis la fiche de congés plutôt que de créer un doublon.';return;
     }
