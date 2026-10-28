@@ -78,8 +78,18 @@
     '<p id="mtaa-stats" class="mtaa-hint" role="status"></p>',
     '<p class="mtaa-hint">Appuie sur un jour pour choisir le début, puis sur un autre jour pour la fin. Les dates peuvent aussi être saisies manuellement.</p>',
     '</div>',
+    '<div class="card" id="mtaa-team-summary"><h3>Congés simultanés — toute la Team 4</h3>',
+    '<p class="mtaa-hint">Un agent compte une seule fois par journée, même si deux demandes se chevauchent. Les demandes non validées sont séparées des congés confirmés.</p>',
+    '<label class="mtaa-label">Mois du tableau récapitulatif<input type="month" id="mtaa-overlap-month"></label>',
+    '<div id="mtaa-team-metrics" class="mtaa-team-metrics" role="status"></div>',
+    '<div class="mtaa-table-wrap"><table class="mtaa-team-table"><thead><tr><th>Date</th><th>Validés</th><th>À confirmer</th><th>Total potentiel</th><th>Agents en congé</th></tr></thead><tbody id="mtaa-overlap-body"></tbody></table></div>',
+    '<p id="mtaa-team-note" class="mtaa-hint"></p></div>',
     '<div id="mtaa-months" class="mtaa-months" aria-label="Douze mois de l’année"></div>',
-    '<div class="card" id="mtaa-entries-box"><h3>Périodes de l’agent</h3><div id="mtaa-entries"></div></div>',
+    '<div class="card" id="mtaa-entries-box"><h3>Périodes de l’agent</h3>',
+    '<label class="mtaa-label">Filtrer les périodes<select id="mtaa-entry-filter">',
+    '<option value="all">Toutes les périodes</option><option value="leave">Congés / demandes</option>',
+    '<option value="parental">Congé parental</option><option value="sick">Arrêts maladie</option><option value="holiday">Jours fériés</option>',
+    '</select></label><div id="mtaa-entries"></div></div>',
     '<div class="card" id="mtaa-editor-card"><h3 id="mtaa-form-heading">Ajouter une période</h3>',
     '<form id="mtaa-form">',
     '<label class="mtaa-label">Type<select name="type" required></select></label>',
@@ -118,6 +128,14 @@
     '#mt-agent-annual .mtaa-day.today{box-shadow:inset 0 0 0 2px #fff}',
     '#mt-agent-annual .mtaa-dots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}',
     '#mt-agent-annual .mtaa-dots i{display:block;width:5px;height:5px;border-radius:50%}',
+    '#mt-agent-annual .mtaa-team-metrics{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0;font-size:12px;font-weight:700}',
+    '#mt-agent-annual .mtaa-team-metrics span{padding:8px 10px;border-radius:9px;background:#294460}',
+    '#mt-agent-annual .mtaa-table-wrap{overflow-x:auto;max-height:65dvh;overflow-y:auto}',
+    '#mt-agent-annual .mtaa-team-table{width:100%;border-collapse:collapse;min-width:550px;font-size:12px}',
+    '#mt-agent-annual .mtaa-team-table th{text-align:left;background:#2c415b;position:sticky;top:0;z-index:1;padding:10px}',
+    '#mt-agent-annual .mtaa-team-table td{border-bottom:1px solid #3e5169;padding:9px 10px;vertical-align:top}',
+    '#mt-agent-annual .mtaa-team-table tr.mtaa-warning{background:#553a27}',
+    '#mt-agent-annual .mtaa-team-table td[data-count]{font-weight:800;text-align:center;font-variant-numeric:tabular-nums}',
     '#mt-agent-annual .mtaa-entry{border-top:1px solid #4a5b71;padding:12px 0;display:grid;gap:6px}',
     '#mt-agent-annual .mtaa-entry strong{font-size:14px}#mt-agent-annual .mtaa-meta{font-size:12px;color:#bed0e3}',
     '#mt-agent-annual .mtaa-entry .mtaa-mark{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:7px}',
@@ -253,7 +271,9 @@
   function renderEntries(items){
     const host=$('mtaa-entries');host.replaceChildren();
     if(!selected){host.textContent='Sélectionne un agent.';return;}
-    const relevant=items.filter(r=>intersects(r,String(year))).sort((a,b)=>a.from.localeCompare(b.from)||a.type.localeCompare(b.type));
+    const chosen=$('mtaa-entry-filter').value;
+    const relevant=items.filter(r=>intersects(r,String(year))&&(chosen==='all'||r.type===chosen))
+      .sort((a,b)=>a.from.localeCompare(b.from)||a.type.localeCompare(b.type));
     if(!relevant.length){const msg=document.createElement('p');msg.className='mtaa-empty';msg.textContent='Aucune période enregistrée pour '+year+'.';host.append(msg);return;}
     for(const r of relevant){
       const entry=document.createElement('div');entry.className='mtaa-entry';
@@ -286,6 +306,51 @@
       host.append(entry);
     }
   }
+  function renderConcurrency(){
+    const month=$('mtaa-overlap-month').value;
+    const body=$('mtaa-overlap-body');body.replaceChildren();
+    if(!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month))return;
+    const [y,m]=month.split('-').map(Number);
+    const count=new Date(y,m,0,12).getDate(),everyone=[...personal(),...legacy()];
+    const people=names(),included=new Set(people);
+    const all=everyone.filter(r=>included.has(r.agent)&&isDate(r.from)&&r.status!=='rejected');
+    let peak=0,peakConfirmed=0,risk=0,rows=0;
+    for(let d=1;d<=count;d++){
+      const date=iso(new Date(y,m-1,d,12)),today=all.filter(r=>r.from<=date&&(r.to||r.from)>=date);
+      const vacations=today.filter(r=>r.type==='leave'||r.type==='parental');
+      const agents=new Map();
+      for(const r of vacations){
+        const entry=agents.get(r.agent);
+        const confirmed=r.status==='confirmed';
+        if(!entry)agents.set(r.agent,{confirmed,types:[statusOf(r)]});
+        else{entry.confirmed=entry.confirmed||confirmed;if(!entry.types.includes(statusOf(r)))entry.types.push(statusOf(r));}
+      }
+      if(!agents.size)continue;
+      const confirmed=[...agents.values()].filter(a=>a.confirmed).length,unconfirmed=agents.size-confirmed;
+      peak=Math.max(peak,agents.size);peakConfirmed=Math.max(peakConfirmed,confirmed);
+      if(agents.size>=5)risk++;
+      rows++;
+      const row=document.createElement('tr');if(agents.size>=5)row.className='mtaa-warning';
+      const cells=[
+        nice(date),String(confirmed),String(unconfirmed),String(agents.size),
+        [...agents.entries()].sort((a,b)=>a[0].localeCompare(b[0],'fr')).map(([n,v])=>n+' ('+(v.confirmed?'validé':v.types.join(', '))+')').join(' · ')
+      ];
+      cells.forEach((value,i)=>{const cell=document.createElement('td');cell.textContent=value;if(i>=1&&i<=3)cell.dataset.count='true';row.append(cell);});
+      body.append(row);
+    }
+    if(!rows){
+      const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=5;td.textContent='Aucun congé daté enregistré pour ce mois.';tr.append(td);body.append(tr);
+    }
+    $('mtaa-team-metrics').replaceChildren();
+    ['Maximum simultané : '+peak+' agent(s)','Maximum validé : '+peakConfirmed,'Jours avec 5 agents ou plus : '+risk].forEach(v=>{
+      const chip=document.createElement('span');chip.textContent=v;$('mtaa-team-metrics').append(chip);
+    });
+    $('mtaa-team-note').textContent=
+      'Total potentiel = demandes + congés validés + congés parentaux. Les arrêts maladie et jours fériés ne sont pas comptés comme congés. '
+      +'Une demande, un accord du chef ou une acceptation MyGesper non validée ne sont jamais comptés comme congé confirmé. '
+      +'Seuls les agents rapprochés d’une fiche locale et les périodes datées figurent ici. '
+      +'Le seuil de 5 est une alerte de vérification, pas un refus automatique.';
+  }
   function renderAgentDetail(){
     const wrap=$('mtaa-agent-detail');
     if(!wrap)return;
@@ -302,8 +367,11 @@
     $('mtaa-stats').textContent=selected
       ?selected+' · '+year+' : '+inside.length+' période(s) · '+inside.filter(r=>r.status==='confirmed').length+' confirmée(s) · '+inside.filter(r=>r.status!=='confirmed').length+' à confirmer'
       :'Aucun agent sélectionné.';
-    renderMonths(all);renderEntries(all);renderAgentDetail();
+    renderMonths(all);renderEntries(all);renderConcurrency();renderAgentDetail();
   }
+  $('mtaa-overlap-month').value=iso(new Date()).slice(0,7);
+  $('mtaa-overlap-month').addEventListener('change',renderConcurrency);
+  $('mtaa-entry-filter').addEventListener('change',()=>renderEntries(forSelected()));
   select.onchange=()=>{selected=select.value;clearForm();render();};
   $('mtaa-prev').onclick=()=>{if(year>2020){year--;render();}};
   $('mtaa-next').onclick=()=>{if(year<2040){year++;render();}};
