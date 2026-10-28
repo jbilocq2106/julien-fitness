@@ -16,7 +16,7 @@
   const fmt=s=>validDate(s)?s.slice(8,10)+'/'+s.slice(5,7):'date à confirmer';
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
-  const complete=s=>['corrigé','non retenu','validated','rejected'].includes(String(s||'').toLowerCase());
+  const complete=s=>['corrigé','réglé','non retenu','sans suite','validated','rejected'].includes(String(s||'').toLowerCase());
   const $=id=>document.getElementById(id);
 
   const style=document.createElement('style');
@@ -90,7 +90,8 @@
     const rows=[];
     const allPlanning=[
       ...arr(read('myteam_planning_issues_v1',[])).map(r=>({...r,origin:'planning-issues'})),
-      ...arr(read('myteam_planning_errors_v1',[])).map(r=>({...r,origin:'planning-errors'}))
+      ...arr(read('myteam_planning_errors_v1',[])).map(r=>({...r,origin:'planning-errors'})),
+      ...arr(read('myteam_planning_followups_v1',[])).map(r=>({...r,origin:'planning-followup-simple'}))
     ];
     const seen=new Set();
     const dated={soon:[],next:[],old:[]};
@@ -110,17 +111,17 @@
       const days=offset(earliest);
       rows.push(item('planning-soon','Plannings agents : '+dated.soon.length+' anomalie(s) à vérifier',
         'Prochaine date : '+fmt(earliest)+' · '+(days===0?"aujourd’hui":days===1?'J−1':'J−2')+'. Vérifier la fiche de prestation et les corrections demandées.',
-        'urgent','planning-issues',null,true));
+        'urgent','planning-followup-simple',null,true));
     }
     if(dated.old.length)rows.push(item('planning-old','Plannings agents : '+dated.old.length+' suivi(s) en retard',
       'Dates de poste déjà passées ; vérifier la résolution sans conclure automatiquement à une erreur.',
-      'urgent','planning-errors',null,true));
+      'urgent','planning-followup-simple',null,true));
     if(dated.next.length)rows.push(item('planning-next','Plannings agents : '+dated.next.length+' date(s) à anticiper',
       'Dans les 3 à 7 prochains jours. Vérifier les réponses avant l’échéance.',
-      'normal','planning-issues',null,false));
+      'normal','planning-followup-simple',null,false));
     if(undated)rows.push(item('planning-undated',undated+' signalement(s) sans date confirmée',
       'Compléter les dates des signalements pour activer le rappel J−2/J−1.',
-      'normal','planning-issues',null,false));
+      'normal','planning-followup-simple',null,false));
 
     const leaves=arr(read('myteam_agent_leave_requests_v1',[]))
       .filter(r=>r&&!r.archived&&!['validated','rejected'].includes(r.gesperStatus));
