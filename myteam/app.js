@@ -305,7 +305,7 @@
       try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
       try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
       try{await load('./startup-reminders-v1.js?v=20261028-1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
-      try{await load('./planning-followup-simple-v1.js?v=20261028-2')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
+      try{await load('./planning-followup-simple-v1.js?v=20261028-3')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
     }
   })();
 })();
