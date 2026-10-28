@@ -148,9 +148,8 @@
       ['composition', '👷', 'Composition des équipes'],
       ['consignes', '📋', 'Consignes']
     ]],
-    ['3 · Plannings agents — à vérifier et corriger', [
-      ['planning-issues', '⚠️', 'Signalements reçus'],
-      ['planning-errors', '📅', 'Suivi mensuel', 'Erreurs et échéances'],
+    ['3 · Suivi des plannings agents', [
+      ['planning-followup-simple', '✓', 'Suivi planning', 'En attente · Réglé · Sans suite'],
       ['leave', '🏖️', 'Congés agents']
     ]],
     ['4 · Agents et encadrement', [
