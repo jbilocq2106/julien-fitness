@@ -232,15 +232,15 @@
     alert.replaceChildren();
     const title = document.createElement('strong');
     title.textContent = insideWindow(target,now)
-      ? 'Erreurs de planning — période de saisie en cours'
-      : now > w.end ? 'Erreurs de planning — échéance passée' : 'Prochaine période de remontée des erreurs';
+      ? 'Suivi planning — période de saisie en cours'
+      : now > w.end ? 'Suivi planning — échéance passée' : 'Prochaine période de suivi planning';
     const info = document.createElement('p');
     info.className = 'mtb-note';
     info.textContent = labelMonth(target) + ' : du ' + frenchDate(w.start) + ' au ' + frenchDate(w.end) + ' · ' + all.length + ' anomalie(s) enregistrée(s), ' + open + ' à suivre.';
     const action = document.createElement('button');
     action.type = 'button';
     action.className = 'mtb-alert-btn';
-    action.textContent = "Ouvrir les erreurs de planning";
+    action.textContent = "Ouvrir le suivi planning";
     action.onclick = () => {monthInput.value=target;onMonthChange();selectTab('planning-errors');};
     alert.append(title,info,action);
   }
