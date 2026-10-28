@@ -69,7 +69,7 @@
     const available=Array.from(topNav.querySelectorAll('button[data-tab]'))
       .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true');
     const groups=[
-      ['Plannings et exploitation', ['planning-issues','planning-errors','prestation','composition','leave']],
+      ['Plannings et exploitation', ['planning-followup-simple','prestation','composition','leave','agent-annual']],
       ['Actions et encadrement', ['visits','consignes','cde-memo','mt-management-workspace']],
       ['Mes outils personnels', ['hours','salary']],
       ['Historique et sécurité', ['history','secure-backup']]
@@ -77,6 +77,8 @@
     const labels={
       'planning-issues':'⚠️ Signalements des agents',
       'planning-errors':'📅 Tableau des erreurs',
+      'agent-annual':'📅 Agenda annuel agents',
+      'planning-followup-simple':'✓ Suivi planning',
       'mt-management-workspace':'🤝 Management et entretiens',
       'cde-memo':'📌 Mémo CDE'
     };
