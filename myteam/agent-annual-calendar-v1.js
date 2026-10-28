@@ -106,6 +106,7 @@
   main.append(view);
   const css=document.createElement('style');css.id='mtaa-css';css.textContent=[
     '#mt-agent-annual{max-width:1120px;margin:0 auto}',
+    '#mt-agent-annual [hidden]{display:none!important}',
     '#mt-agent-annual h2{margin:0 0 7px}#mt-agent-annual h3{margin:0 0 11px}',
     '#mt-agent-annual .mtaa-hint{font-size:12px;line-height:1.5;color:#bed0e3}',
     '#mt-agent-annual .mtaa-label{display:grid;gap:6px;font-size:14px;font-weight:750;margin:11px 0}',
@@ -300,8 +301,15 @@
         actions.append(edit,remove);entry.append(actions);
       }else{
         const info=document.createElement('div');info.className='mtaa-hint';
-        info.textContent='Importé en lecture seule du suivi de congés de la fiche agent. Modifier la demande dans ce suivi.';
-        entry.append(info);
+        info.textContent='Issu du suivi des congés : les décisions MyGesper restent modifiables uniquement dans la fiche de l’agent.';
+        const link=document.createElement('button');link.type='button';link.textContent='Ouvrir sa demande de congés';
+        link.onclick=()=>{
+          nav.querySelector('button[data-tab="team"]')?.click();
+          agentSelect.value=r.agent;
+          agentSelect.dispatchEvent(new Event('change',{bubbles:true}));
+          $('mt-agent-leaves')?.scrollIntoView({block:'start',behavior:'smooth'});
+        };
+        entry.append(info,link);
       }
       host.append(entry);
     }
@@ -365,7 +373,7 @@
     const all=forSelected();
     const inside=all.filter(r=>intersects(r,String(year)));
     $('mtaa-stats').textContent=selected
-      ?selected+' · '+year+' : '+inside.length+' période(s) · '+inside.filter(r=>r.status==='confirmed').length+' confirmée(s) · '+inside.filter(r=>r.status!=='confirmed').length+' à confirmer'
+      ?selected+' · '+year+' : '+inside.length+' période(s) · '+inside.filter(r=>r.status==='confirmed').length+' confirmée(s) · '+inside.filter(r=>r.status==='planned').length+' à confirmer · '+inside.filter(r=>r.status==='rejected').length+' refusée(s) / sans suite'
       :'Aucun agent sélectionné.';
     renderMonths(all);renderEntries(all);renderConcurrency();renderAgentDetail();
   }
