@@ -19,6 +19,7 @@
   const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\bG4S\b/gi,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(Boolean).sort().join(' ');
   const labelStatus=s=>['Corrigé','Réglé'].includes(s)?'Réglé':['Non retenu','Sans suite'].includes(s)?'Sans suite':'En attente';
   const legacyStatus=(source,status)=>status==='Réglé'?'Corrigé':status==='Sans suite'?'Non retenu':source==='issues'?'En attente de réponse':'En attente';
+  const objectFor=r=>String(r.followupSubject??r.object??'').trim();
   const niceDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))?s.slice(8)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'Date non précisée';
   const profiles=()=>{const data=read('myteam_agent_profiles_v1',{});const deleted=new Set(read('myteam_deleted_agents_v1',[]));return Object.keys(data&&typeof data==='object'?data:{}).filter(n=>!deleted.has(n)).sort((a,b)=>a.localeCompare(b,'fr'));};
   const aliases=()=>read(ALIAS_KEY,{});
@@ -51,7 +52,7 @@
   section.id='planning-followup-simple';section.className='hidden';
   section.innerHTML=[
     '<div class="card"><h2>Suivi planning · Team 4</h2>',
-    '<p class="mts-note">Retrouve chaque suivi dans la fiche de l’agent. Aucun détail d’erreur à saisir.</p>',
+    '<p class="mts-note">Agent, date et objet facultatif : tu peux laisser l’objet « À préciser » puis le compléter plus tard, sans saisir de motif.</p>',
     '<div id="mts-count" class="mts-count" role="status"></div>',
     '<label class="mts-label">Rechercher un agent<input id="mts-search" type="search" placeholder="Nom de l’agent"></label>',
     '<label class="mts-label">Afficher<select id="mts-filter"><option value="">Tous les statuts</option><option>En attente</option><option>Réglé</option><option>Sans suite</option></select></label></div>',
@@ -59,6 +60,7 @@
     '<div class="card"><h3>Ajouter un suivi</h3>',
     '<form id="mts-form"><label class="mts-label">Agent<select name="agent" id="mts-agent" required></select></label>',
     '<label class="mts-label">Date concernée (facultative)<input type="date" name="date"></label>',
+    '<label class="mts-label">Objet (facultatif)<input type="text" name="object" maxlength="120" placeholder="À préciser si motif inconnu"></label>',
     '<label class="mts-label">Statut<select name="status"><option>En attente</option><option>Réglé</option><option>Sans suite</option></select></label>',
     '<button class="mts-action" type="submit">+ Enregistrer</button></form>',
     '<p id="mts-message" class="mts-note" role="status"></p></div>'
@@ -80,6 +82,11 @@
     '#planning-followup-simple .mts-row:first-of-type{margin-top:10px}',
     '#planning-followup-simple .mts-row small{color:#bdcbd9;display:block;margin-top:3px}',
     '#planning-followup-simple .mts-row select{font-size:13px;min-height:44px}',
+    '#planning-followup-simple .mts-object{color:#f0d9b5;font-weight:600;margin:5px 0}',
+    '#planning-followup-simple .mts-edit-button{min-height:40px;padding:8px;margin:6px 0;font-size:13px;background:#345471}',
+    '#planning-followup-simple .mts-edit{padding:9px;background:#20354b;border-radius:10px;margin-top:6px}',
+    '#planning-followup-simple .mts-edit[hidden]{display:none}',
+    '#planning-followup-simple .mts-edit button{min-height:43px;margin-top:8px}',
     '#planning-followup-simple .mts-unmatched{font-size:12px;margin:10px 0;padding:10px;background:#463927;border-radius:10px}',
     '#planning-followup-simple .mts-unmatched select{margin-top:5px}',
     '#planning-followup-simple .mts-action{min-height:46px;background:#2865a2;font-size:15px}',
@@ -129,6 +136,19 @@
     try{store(key,all);window.dispatchEvent(new Event('myteam:planning-followups-changed'));return true;}
     catch(e){alert('Enregistrement impossible. Réessaie après avoir vérifié le stockage du téléphone.');return false;}
   }
+  function setObject(source,id,newValue){
+    if(!Object.hasOwn(SOURCES,source))return false;
+    const key=SOURCES[source],all=rows(key),item=all.find(r=>r.id===id);
+    if(!item)return false;
+    const value=String(newValue??'').trim().slice(0,120);
+    if(objectFor(item)===value)return true;
+    const now=new Date().toISOString();
+    if(source==='simple')item.object=value;
+    else item.followupSubject=value;
+    item.updatedAt=now;
+    try{store(key,all);window.dispatchEvent(new Event('myteam:planning-followups-changed'));return true;}
+    catch(e){alert('Objet non enregistré : stockage indisponible.');return false;}
+  }
   function renderAgentPanel(){
     if(!agentPanel)return;
     const selected=agentSelect?.value||'';
@@ -141,7 +161,7 @@
     }
     data.forEach(r=>{
       const line=document.createElement('div');line.className='mts-profile-row';
-      const info=document.createElement('span');info.textContent=niceDate(r.date)+(r.post?' · '+r.post:'');
+      const info=document.createElement('span');info.textContent=niceDate(r.date)+(r.post?' · '+r.post:'')+' · Objet : '+(objectFor(r)||'À préciser');
       const state=document.createElement('strong');state.textContent=r._state;
       line.append(info,state);agentPanel.append(line);
     });
@@ -153,7 +173,7 @@
     const data=allEntries().sort((a,b)=>(a._profile||a.agent).localeCompare(b._profile||b.agent,'fr')||String(a.date||'').localeCompare(String(b.date||'')));
     section.querySelector('#mts-count').innerHTML=STATES.map(state=>'<span class="mts-pill">'+esc(state)+' : '+data.filter(r=>r._state===state).length+'</span>').join('');
     const q=norm(search.value),wanted=filter.value;
-    const visible=data.filter(r=>(!wanted||r._state===wanted)&&(!q||norm(r._profile||r.agent).includes(q)));
+    const visible=data.filter(r=>(!wanted||r._state===wanted)&&(!q||(norm(r._profile||r.agent)+' '+norm(objectFor(r))).includes(q)));
     list.replaceChildren();
     if(!visible.length){
       const empty=document.createElement('div');empty.className='card';
@@ -185,7 +205,19 @@
         date.textContent=niceDate(r.date)+(r.post?' · '+r.post:'');
         const meta=document.createElement('small');
         meta.textContent=(entries.length>1?'Suivi '+(i+1)+' · ':'')+(r.updatedAt?'Actualisé le '+new Date(r.updatedAt).toLocaleDateString('fr-FR'):'');
-        info.append(date,meta);
+        const object=document.createElement('small');object.className='mts-object';
+        object.textContent='Objet : '+(objectFor(r)||'À préciser');
+        const edit=document.createElement('button');edit.type='button';edit.className='mts-edit-button';edit.textContent='Modifier l’objet';
+        const editor=document.createElement('div');editor.className='mts-edit';editor.hidden=true;
+        const field=document.createElement('input');field.type='text';field.maxLength=120;field.value=objectFor(r);field.placeholder='Objet à préciser';
+        field.setAttribute('aria-label','Objet du suivi de '+name);
+        const save=document.createElement('button');save.type='button';save.textContent='Enregistrer l’objet';
+        const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Annuler';
+        edit.onclick=()=>{editor.hidden=!editor.hidden;if(!editor.hidden)field.focus();};
+        save.onclick=()=>{if(setObject(r._source,r.id,field.value))render();};
+        cancel.onclick=()=>{editor.hidden=true;};
+        editor.append(field,save,cancel);
+        info.append(date,object,meta,edit,editor);
         const sel=document.createElement('select');
         sel.setAttribute('aria-label','Statut de '+name+' le '+niceDate(r.date));
         STATES.forEach(s=>sel.add(new Option(s,s)));sel.value=r._state;
@@ -200,13 +232,13 @@
     e.preventDefault();
     const data=new FormData(e.currentTarget),agent=String(data.get('agent')||'');
     if(!profiles().includes(agent)){section.querySelector('#mts-message').textContent='Choisis un agent existant.';return;}
-    const date=String(data.get('date')||''),status=String(data.get('status')||'En attente');
+    const date=String(data.get('date')||''),status=String(data.get('status')||'En attente'),object=String(data.get('object')||'').trim().slice(0,120);
     if(!STATES.includes(status)){return;}
-    const existing=allEntries().some(r=>r._profile===agent&&String(r.date||'')===date&&r._source==='simple');
+    const existing=allEntries().some(r=>r._profile===agent&&String(r.date||'')===date&&r._source==='simple'&&objectFor(r).toLocaleLowerCase('fr')===object.toLocaleLowerCase('fr'));
     if(existing){section.querySelector('#mts-message').textContent='Un suivi simple existe déjà pour cet agent et cette date.';return;}
     const now=new Date().toISOString();
     const id='followup-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
-    const item={id,agent,date,status,createdAt:now,updatedAt:now,followupHistory:[{from:'',to:status,at:now}]};
+    const item={id,agent,date,object,status,createdAt:now,updatedAt:now,followupHistory:[{from:'',to:status,at:now}]};
     try{
       store(SOURCES.simple,rows(SOURCES.simple).concat(item));
       e.currentTarget.reset();
