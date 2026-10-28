@@ -25,7 +25,12 @@
   function profileFor(name) {
     const candidates=profiles(),alias=aliases()[norm(name)];
     if(alias&&candidates.includes(alias))return alias;
-    const matches=candidates.filter(p=>norm(p)===norm(name));
+    const exact=candidates.filter(p=>norm(p)===norm(name));
+    if(exact.length===1)return exact[0];
+    if(exact.length>1)return '';
+    const words=norm(name).split(' ').filter(Boolean);
+    if(!words.length)return '';
+    const matches=candidates.filter(p=>{const tokens=norm(p).split(' ');return words.every(w=>tokens.includes(w));});
     return matches.length===1?matches[0]:'';
   }
   function allEntries(){
