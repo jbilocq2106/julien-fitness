@@ -230,4 +230,7 @@
   agentSelect?.addEventListener('change',renderAgentPanel);
   window.addEventListener('myteam:planning-followups-changed',renderAgentPanel);
   render();
+  if(document.getElementById('mt-bureau')&&!document.getElementById('mt-bureau').classList.contains('hidden')){
+    nav.querySelector('button[data-tab="mt-bureau"]')?.click();
+  }
 })();
