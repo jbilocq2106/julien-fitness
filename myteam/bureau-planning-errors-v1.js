@@ -154,6 +154,7 @@
     ]],
     ['4 · Agents et encadrement', [
       ['team', '👥', 'Fiches agents', 'Matricules et qualifications'],
+      ['agent-annual', '📅', 'Agenda annuel agents', 'Congés, parentaux, arrêts et fériés'],
       ['mt-management-workspace', '🤝', 'Management', 'Entretiens individuels'],
       ['cde-memo', '📌', 'Mémo CDE']
     ]],
