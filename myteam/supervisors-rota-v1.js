@@ -166,7 +166,7 @@
     brief.id='mt-sup-summary-card';brief.className='card mt-sup-panel';
     brief.innerHTML='<h3 style="margin-top:0">Superviseurs de service</h3><div id="mt-sup-today-brief"></div>';
     const hero=todaySection.querySelector('.mt-hero');
-    if(hero)hero.after(brief);else todaySection.prepend(brief);
+    const reminders=todaySection.querySelector('#mt-reminders-panel');if(reminders)reminders.after(brief);else if(hero)hero.after(brief);else todaySection.prepend(brief);
   }
   window.MyTeamSupervisors={forDate:s=>{const d=parseDate(s);return d?profiles.map(p=>({name:p.name,shift:SHIFTS[shiftIndex(d,p.phase)]})):[];}};
   window.addEventListener('focus',render);
