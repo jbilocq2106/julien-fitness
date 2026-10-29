@@ -292,7 +292,7 @@
       console.error(err)
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
-      try{await load('./mobile-shell-v1.js?v=20261028-2')}catch(error){console.error('Navigation mobile indisponible :',error)}
+      try{await load('./mobile-shell-v1.js?v=20261029-1')}catch(error){console.error('Navigation mobile indisponible :',error)}
       try{await load('./today-operations-v1.js?v=20261019-1')}catch(error){console.error('Suivi quotidien indisponible :',error)}
       try{await load('./mobile-polish-v1.js?v=20261018-1')}catch(error){console.error('Fiches mobiles indisponibles :',error)}
       try{await load('./secure-backup-v1.js?v=20261020-2')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
@@ -307,6 +307,7 @@
       try{await load('./startup-reminders-v1.js?v=20261028-1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
       try{await load('./planning-followup-simple-v1.js?v=20261028-3')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
       try{await load('./agent-annual-calendar-v1.js?v=20261028-2')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
+      try{await load('./supervisors-rota-v1.js?v=20261029-1')}catch(error){console.error('Agenda des superviseurs indisponible :',error)}
     }
   })();
 })();
