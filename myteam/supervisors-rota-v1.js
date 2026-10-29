@@ -11,7 +11,7 @@
   const REF_DATE='2026-10-29';
   const SHIFTS=['Matin','Après-midi','Nuit','Repos'];
   const CODES=['M','A','N','R'];
-  const EMPTY=[{name:'Cyr',phase:0},{name:'Ric',phase:1},{name:'Jor',phase:2},{name:'Fre',phase:3}];
+  const EMPTY=[{name:'Cyrille',phase:0},{name:'Richard',phase:1},{name:'Jordan',phase:2},{name:'Fred',phase:3}];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const parseDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))?new Date(String(s)+'T12:00:00Z'):null;
   const iso=d=>[d.getUTCFullYear(),String(d.getUTCMonth()+1).padStart(2,'0'),String(d.getUTCDate()).padStart(2,'0')].join('-');
@@ -20,7 +20,7 @@
   const mondayOf=date=>plusDays(date,-((date.getUTCDay()+6)%7));
   const fmt=date=>new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}).format(date);
   const fmtMonth=date=>new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric',timeZone:'UTC'}).format(date);
-  const normRow=(r,i)=>({name:String(r?.name||'').trim().slice(0,45),phase:Number.isInteger(Number(r?.phase))&&Number(r.phase)>=0&&Number(r.phase)<=3?Number(r.phase):i});
+  const normRow=(r,i)=>({name:String(r?.name||EMPTY[i].name).trim().slice(0,45)||EMPTY[i].name,phase:Number.isInteger(Number(r?.phase))&&Number(r.phase)>=0&&Number(r.phase)<=3?Number(r.phase):i});
   const validRows=rows=>Array.isArray(rows)&&rows.length===4?rows.map(normRow):EMPTY.map(x=>({...x}));
   let profiles=(()=>{try{return validRows(JSON.parse(localStorage.getItem(KEY)||'null'));}catch{return validRows(null);}})();
   const hasNames=()=>profiles.every(x=>x.name.length>0);
