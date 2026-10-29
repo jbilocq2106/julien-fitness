@@ -56,18 +56,39 @@
     if (!Number.isFinite(hour)) return 'morning';
     return hour >= 20 || hour < 4 ? 'night' : hour >= 12 ? 'afternoon' : 'morning';
   }
-  // Un seul superviseur est affecte a chaque vacation theorique du cycle 2/2/3.
-  // La vacation personnelle provient d'abord du PDF importe, sinon du cycle 2/2/2.
+  // Prévision indépendante du chargement de l'agenda séparé des superviseurs.
+  // Les valeurs privées sur l'appareil peuvent remplacer les prénoms de référence.
+  const SUPERVISOR_DEFAULTS = [
+    {name:'Cyrille', phase:0}, {name:'Richard', phase:1},
+    {name:'Jordan', phase:2}, {name:'Fred', phase:3}
+  ];
+  function supervisorSettings() {
+    const stored = read('myteam_supervisors_rota_v1', null);
+    return SUPERVISOR_DEFAULTS.map((fallback, i) => {
+      const row = Array.isArray(stored) ? stored[i] : null;
+      const phase = Number(row?.phase);
+      return {
+        name: String(row?.name || fallback.name).trim() || fallback.name,
+        phase: Number.isInteger(phase) && phase >= 0 && phase <= 3 ? phase : fallback.phase
+      };
+    });
+  }
   function supervisorFor(date, type) {
-    const shift = { morning: 'Matin', afternoon: 'Après-midi', night: 'Nuit' }[type];
-    if (!shift || typeof window.MyTeamSupervisors?.forDate !== 'function') return null;
-    const supervisors = window.MyTeamSupervisors.forDate(date);
-    if (!Array.isArray(supervisors)) return null;
-    const matched = supervisors.filter(item => item?.shift === shift && String(item?.name || '').trim());
-    if (matched.length !== 1) return null;
-    const name = String(matched[0].name).trim();
-    const code = Array.from(name.split(/\s+/)[0]).slice(0, 3).join('').toLocaleUpperCase('fr');
-    return { name, code };
+    const shiftIndex = { morning:0, afternoon:1, night:2 }[type];
+    if (shiftIndex === undefined) return null;
+    // Le 29/10/2026 est le bloc mercredi-jeudi (bloc 1) de référence.
+    const [year, month, day] = date.split('-').map(Number);
+    const utc = Date.UTC(year, month-1, day);
+    const weekday = (new Date(utc).getUTCDay() + 6) % 7;
+    const monday = utc - weekday * 86400000;
+    const week = Math.round((monday - Date.UTC(2026, 9, 26)) / 604800000);
+    const block = week * 3 + (weekday < 2 ? 0 : weekday < 4 ? 1 : 2);
+    const candidates = supervisorSettings().filter(row =>
+      ((row.phase + block - 1) % 4 + 4) % 4 === shiftIndex
+    );
+    if (candidates.length !== 1) return null;
+    const name = candidates[0].name;
+    return { name, code: Array.from(name.split(/\s+/)[0]).slice(0,3).join('').toLocaleUpperCase('fr') };
   }
 
   function changeMonth(delta) {
@@ -117,6 +138,11 @@
     hint.className = 'mt-cycle-hint';
     hint.textContent = 'Balaye pour changer de mois · PDF importé prioritaire, sinon cycle 2M / 2A / 2N / 2R · badge 3 lettres = superviseur prévu sur ta vacation';
     monthEl.append(header, hint);
+    const supGuide = document.createElement('p');
+    supGuide.className = 'mt-cycle-supervisors-guide';
+    supGuide.textContent = 'SUPERVISEUR SUR TA VACATION · ' +
+      supervisorSettings().map(s => s.name.slice(0,3).toLocaleUpperCase('fr') + ' = ' + s.name).join(' · ');
+    monthEl.append(supGuide);
     const leaveTools = document.createElement('div');
     leaveTools.className = 'mt-cycle-leave-tools';
     const leaveButton = document.createElement('button');
@@ -244,12 +270,13 @@
     .mt-cycle-arrow{flex:0 0 41px;padding:7px 12px;font-size:26px;line-height:1;background:#314762;border:1px solid #526581}
     .mt-cycle-arrow:disabled{opacity:.3;cursor:default}
     .mt-cycle-hint{display:block;margin:8px 1px 0;color:#bac8d9;font-size:11px;line-height:1.45}
+    .mt-cycle-supervisors-guide{margin:8px 0 10px;border:1px solid #8da8c7;border-radius:9px;background:#243c58;padding:9px;color:#fff;font-size:11px;font-weight:800;line-height:1.5}
     #grid{touch-action:pan-y;overscroll-behavior-x:contain}
     #grid .mt-cycle-day{min-width:0;width:100%;font:inherit;font-size:12px;font-weight:400;color:#fff;border:0;cursor:pointer;padding:5px 2px}
     #grid .mt-cycle-day b{font-size:13px;margin-bottom:6px}
     #grid .mt-cycle-day span{font-size:11px;font-weight:650;overflow-wrap:anywhere}
     #grid .mt-cycle-day .mt-cycle-detail{display:block;font-size:9px;line-height:1.3;margin-top:5px;color:#eef2f8;overflow-wrap:anywhere}
-    #grid .mt-cycle-day .mt-cycle-supervisor{display:block;width:max-content;max-width:100%;margin:5px auto 0;padding:3px 5px;border:1px solid #d5e6fc;border-radius:6px;background:#162b4b;color:#fff;font-size:11px;font-weight:900;letter-spacing:.5px;line-height:1.15;white-space:nowrap;text-align:center;box-shadow:0 1px 4px #091524aa}
+    #grid .mt-cycle-day .mt-cycle-supervisor{display:block;width:max-content;max-width:100%;margin:5px auto 0;padding:3px 5px;border:1px solid #d5e6fc;border-radius:6px;background:#162b4b;color:#fff;font-size:12px;font-weight:950;letter-spacing:.5px;line-height:1.2;white-space:nowrap;text-align:center;box-shadow:0 1px 4px #091524aa}
     #grid .mt-cycle-day.rest{background:#354052}
     #grid .mt-cycle-day.mt-cycle-holiday-comp{background:#594779;border:2px solid #f2d172}
     #grid .mt-cycle-day.mt-cycle-holiday-comp .mt-cycle-detail{color:#fff0c6;font-weight:800}
