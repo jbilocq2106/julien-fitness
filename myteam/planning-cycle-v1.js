@@ -56,6 +56,20 @@
     if (!Number.isFinite(hour)) return 'morning';
     return hour >= 20 || hour < 4 ? 'night' : hour >= 12 ? 'afternoon' : 'morning';
   }
+  // Un seul superviseur est affecte a chaque vacation theorique du cycle 2/2/3.
+  // La vacation personnelle provient d'abord du PDF importe, sinon du cycle 2/2/2.
+  function supervisorFor(date, type) {
+    const shift = { morning: 'Matin', afternoon: 'Après-midi', night: 'Nuit' }[type];
+    if (!shift || typeof window.MyTeamSupervisors?.forDate !== 'function') return null;
+    const supervisors = window.MyTeamSupervisors.forDate(date);
+    if (!Array.isArray(supervisors)) return null;
+    const matched = supervisors.filter(item => item?.shift === shift && String(item?.name || '').trim());
+    if (matched.length !== 1) return null;
+    const name = String(matched[0].name).trim();
+    const code = Array.from(name.split(/\s+/)[0]).slice(0, 3).join('').toLocaleUpperCase('fr');
+    return { name, code };
+  }
+
   function changeMonth(delta) {
     const next = Math.max(FIRST_MONTH, Math.min(LAST_MONTH, selected + delta));
     if (next === selected) return;
@@ -101,7 +115,7 @@
     header.append(previous, monthLabel, next);
     const hint = document.createElement('small');
     hint.className = 'mt-cycle-hint';
-    hint.textContent = 'Balaye vers la gauche · PDF importé prioritaire ; sinon cycle théorique 2M / 2A / 2N / 2R';
+    hint.textContent = 'Balaye pour changer de mois · PDF importé prioritaire, sinon cycle 2M / 2A / 2N / 2R · badge 3 lettres = superviseur prévu sur ta vacation';
     monthEl.append(header, hint);
     const leaveTools = document.createElement('div');
     leaveTools.className = 'mt-cycle-leave-tools';
@@ -172,6 +186,7 @@
       const holidayComp=holidayCompDue&&date===holidayCompDate;
       const type = paidLeave ? 'leave' : actual ? rowType(rows[0]) : officialPdfMonth ? 'rest' : phase;
       const isHoliday = legalHolidays.has(date);
+      const supervisor = !paidLeave && !holidayComp && ['morning', 'afternoon', 'night'].includes(type) ? supervisorFor(date, type) : null;
       const cde = !paidLeave && (rows.some(row => CDE_POST.test(String(row?.post || ''))) || (date >= CDE_START && (actual ? type !== 'rest' && type !== 'training' : !officialPdfMonth && phase !== 'rest')));
       const col = (firstOffset + day - 1) % 7;
       const el = document.createElement('button');
@@ -185,10 +200,18 @@
       detail.className = 'mt-cycle-detail';
       detail.textContent = paidLeave ? (importedLeave ? 'Congé du planning importé' : '8 h estimées · marquées') : holidayComp ? '1 jour à récupérer · hors total' : actual ? `${rows[0]?.post || 'Importé'}${cde && !/CDE|chef d[e’']équipe/i.test(String(rows[0]?.post || '')) ? ' · CDE' : ''}` : officialPdfMonth ? 'Aucun poste sur le PDF' : phase === 'rest' ? 'Cycle' : `${SHIFT_HOURS[phase]}${cde ? ' · CDE' : ''}`;
       if (isHoliday) detail.textContent += ' · 🇱🇺 Férié';
-      el.append(number, summary, detail);
+      el.append(number, summary);
+      if (supervisor) {
+        const badge = document.createElement('span');
+        badge.className = 'mt-cycle-supervisor';
+        badge.textContent = supervisor.code;
+        badge.title = 'Superviseur prévu : ' + supervisor.name + ' (cycle théorique)';
+        el.append(badge);
+      }
+      el.append(detail);
       const fallbackDescription = officialPdfMonth ? 'aucune vacation sur le PDF' : `${TYPES[phase]} ${SHIFT_HOURS[phase] || ''}`.trim();
       const accessible = `${day} ${title} : ${paidLeave ? 'congé payé, ' : ''}${holidayComp ? '1 jour compensatoire à récupérer, hors total, ' : ''}${actual ? 'planning importé' : officialPdfMonth ? 'planning PDF importé' : 'cycle théorique'}, ${actual ? rows.map(r => `${r.start || ''}–${r.end || ''} ${r.post || ''}`).join(', ') : fallbackDescription}${cde ? ', chef d’équipe' : ''}${isHoliday ? ', jour férié légal luxembourgeois' : ''}`;
-      el.setAttribute('aria-label', accessible);
+      el.setAttribute('aria-label', accessible + (supervisor ? ', superviseur théorique ' + supervisor.name : ''));
       el.addEventListener('click', () => {
         if (Date.now() < blockClickUntil) return;
         if (leaveEditMode) {
@@ -204,7 +227,7 @@
         const description = paidLeave ? '🏖️ Congé payé (8 h estimées). Calculé dans le complément salarial.' : holidayComp ? '🇱🇺 Toussaint : jour férié légal tombé un dimanche non travaillé. Droit à 1 jour de congé compensatoire à prendre en nature sous 3 mois, avec possibilité de report jusqu’à mars 2027 selon les nécessités de service. Aucune heure supplémentaire ajoutée au total de novembre.' : actual
           ? rows.map(r => `${r.start || '--:--'} – ${r.end || '--:--'} · ${r.post || 'Vacation'}`).join('\n') + (cde ? '\nFonction : chef d’équipe (CDE).' : '')
           : officialPdfMonth ? 'Aucune vacation indiquée sur le planning PDF importé.' : `${TYPES[phase]}${phase === 'rest' ? '' : ' · ' + SHIFT_HOURS[phase] + (phase === 'night' ? ' (fin le lendemain)' : '')}${cde ? ' · CDE (chef d’équipe)' : ''}\nRoulement théorique, à confirmer avec le planning officiel.`;
-        alert(`${date}\n${description}`);
+        alert(`${date}\n${description}${supervisor ? '\nSuperviseur prévu : ' + supervisor.name + ' (cycle théorique, à confirmer).' : ''}`);
       });
       fragment.append(el);
     }
@@ -226,6 +249,7 @@
     #grid .mt-cycle-day b{font-size:13px;margin-bottom:6px}
     #grid .mt-cycle-day span{font-size:11px;font-weight:650;overflow-wrap:anywhere}
     #grid .mt-cycle-day .mt-cycle-detail{display:block;font-size:9px;line-height:1.3;margin-top:5px;color:#eef2f8;overflow-wrap:anywhere}
+    #grid .mt-cycle-day .mt-cycle-supervisor{display:block;width:max-content;max-width:100%;margin:5px auto 0;padding:3px 5px;border:1px solid #d5e6fc;border-radius:6px;background:#162b4b;color:#fff;font-size:11px;font-weight:900;letter-spacing:.5px;line-height:1.15;white-space:nowrap;text-align:center;box-shadow:0 1px 4px #091524aa}
     #grid .mt-cycle-day.rest{background:#354052}
     #grid .mt-cycle-day.mt-cycle-holiday-comp{background:#594779;border:2px solid #f2d172}
     #grid .mt-cycle-day.mt-cycle-holiday-comp .mt-cycle-detail{color:#fff0c6;font-weight:800}
@@ -275,9 +299,10 @@
   observer.observe(monthEl, { childList: true });
   observer.observe(grid, { childList: true });
   window.addEventListener('storage', event => {
-    if (['myteam_shifts', 'myteam_planning_history', LEAVE_KEY].includes(event.key)) render();
+    if (['myteam_shifts', 'myteam_planning_history', 'myteam_supervisors_rota_v1', LEAVE_KEY].includes(event.key)) render();
   });
 
+  window.addEventListener('myteam-supervisors-updated', render);
   window.MyTeamCycleCalendar = { render, projected, changeMonth };
   render();
 })();
