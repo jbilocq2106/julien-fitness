@@ -282,7 +282,7 @@
       await load('./prestation-rules-v1.js?v=20261017-1');
       await load('./prestation-analysis-demo-v1.js?v=20261017-3');
       await load('./planning-pdf-import-v2.js?v=20261021-2');
-      await load('./planning-cycle-v1.js?v=20261029-3');
+      await load('./planning-cycle-v1.js?v=20261029-4');
       renderDirectAgents();
     }catch(err){
       document.querySelector('.voice-box')?.remove();
@@ -307,7 +307,7 @@
       try{await load('./startup-reminders-v1.js?v=20261028-1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
       try{await load('./planning-followup-simple-v1.js?v=20261028-3')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
       try{await load('./agent-annual-calendar-v1.js?v=20261028-2')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
-      try{await load('./supervisors-rota-v1.js?v=20261029-2')}catch(error){console.error('Agenda des superviseurs indisponible :',error)}
+      try{await load('./supervisors-rota-v1.js?v=20261029-4')}catch(error){console.error('Agenda des superviseurs indisponible :',error)}
     }
   })();
 })();
