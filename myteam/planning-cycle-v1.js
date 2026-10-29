@@ -138,7 +138,7 @@
     hint.className = 'mt-cycle-hint';
     hint.textContent = 'Balaye pour changer de mois · PDF importé prioritaire, sinon cycle 2M / 2A / 2N / 2R · badge 3 lettres = superviseur prévu sur ta vacation';
     monthEl.append(header, hint);
-    const supGuide = document.createElement('p');
+    const supGuide = document.createElement('div');
     supGuide.className = 'mt-cycle-supervisors-guide';
     supGuide.textContent = 'SUPERVISEUR SUR TA VACATION · ' +
       supervisorSettings().map(s => s.name.slice(0,3).toLocaleUpperCase('fr') + ' = ' + s.name).join(' · ');
