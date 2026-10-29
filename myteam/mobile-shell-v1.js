@@ -69,7 +69,7 @@
     const available=Array.from(topNav.querySelectorAll('button[data-tab]'))
       .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true');
     const groups=[
-      ['Plannings et exploitation', ['planning-followup-simple','prestation','composition','leave','agent-annual']],
+      ['Plannings et exploitation', ['planning-followup-simple','supervisors','prestation','composition','leave','agent-annual']],
       ['Actions et encadrement', ['visits','consignes','cde-memo','mt-management-workspace']],
       ['Mes outils personnels', ['hours','salary']],
       ['Historique et sécurité', ['history','secure-backup']]
