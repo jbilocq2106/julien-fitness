@@ -1,5 +1,5 @@
 /* MyTEAM — agenda des superviseurs, cycle 2/2/3.
-   Configuration personnelle en localStorage, les noms ne sont pas publies dans le code.
+   Configuration personnelle en localStorage ; seules des abreviations sont publiques.
    Semaine de reference : 26/10/2026; jeudi 29 = bloc mercredi-jeudi. */
 (()=>{
   'use strict';
@@ -11,7 +11,7 @@
   const REF_DATE='2026-10-29';
   const SHIFTS=['Matin','Après-midi','Nuit','Repos'];
   const CODES=['M','A','N','R'];
-  const EMPTY=[{name:'',phase:0},{name:'',phase:1},{name:'',phase:2},{name:'',phase:3}];
+  const EMPTY=[{name:'Cyr',phase:0},{name:'Ric',phase:1},{name:'Jor',phase:2},{name:'Fre',phase:3}];
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const parseDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||''))?new Date(String(s)+'T12:00:00Z'):null;
   const iso=d=>[d.getUTCFullYear(),String(d.getUTCMonth()+1).padStart(2,'0'),String(d.getUTCDate()).padStart(2,'0')].join('-');
@@ -157,7 +157,7 @@
     const entries=[0,1,2,3].map(i=>({name:String(data.get('name'+i)||'').trim().slice(0,45),phase:Number(data.get('phase'+i))}));
     if(entries.some(x=>!x.name)||new Set(entries.map(x=>x.name.toLocaleLowerCase('fr'))).size!==4||
        new Set(entries.map(x=>x.phase)).size!==4){warning='Renseigne quatre noms et une vacation différente pour chacun.';render();return;}
-    try{localStorage.setItem(KEY,JSON.stringify(entries));profiles=entries;warning='';document.getElementById('mt-sup-settings').hidden=true;render();}
+    try{localStorage.setItem(KEY,JSON.stringify(entries));profiles=entries;warning='';document.getElementById('mt-sup-settings').hidden=true;render();window.dispatchEvent(new Event('myteam-supervisors-updated'));}
     catch{warning='Enregistrement local impossible.';render();}
   };
   const todaySection=document.getElementById('today');
@@ -170,6 +170,7 @@
   }
   window.MyTeamSupervisors={forDate:s=>{const d=parseDate(s);return d?profiles.map(p=>({name:p.name,shift:SHIFTS[shiftIndex(d,p.phase)]})):[];}};
   window.addEventListener('focus',render);
-  window.addEventListener('storage',e=>{if(e.key===KEY){try{profiles=validRows(JSON.parse(e.newValue||'null'));}catch{}render();}});
+  window.addEventListener('storage',e=>{if(e.key===KEY){try{profiles=validRows(JSON.parse(e.newValue||'null'));}catch{}render();window.dispatchEvent(new Event('myteam-supervisors-updated'));}});
   render();
+  window.dispatchEvent(new Event('myteam-supervisors-updated'));
 })();
