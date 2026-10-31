@@ -245,7 +245,7 @@ function parseCardioDefaults(e){
   return {
     speed:speed?String(speed).replace(',','.'):'',
     incline:incline?String(incline).replace(',','.'):'',
-    duration:'',
+    duration:e.cardioDuration?String(e.cardioDuration):'',
     distance:'',
     done:false
   };
@@ -436,7 +436,7 @@ function renderProgram(){
 }function startWorkout(id,testMode=false){
   const s=getSession(id); if(!s)return;
   const groups={};
-  s.exercises.forEach(e=>{if(e.superset)groups[e.superset]=s.id==='S7';});
+  s.exercises.forEach(e=>{if(e.superset)groups[e.superset]=['S7','S8'].includes(s.id);});
   state.activeWorkout={
     id:s.id,name:s.name,started:Date.now(),testMode:!!testMode,supersetEnabled:groups,
     exercises:s.exercises.map(e=>({
