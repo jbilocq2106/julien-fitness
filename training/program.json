@@ -1,7 +1,7 @@
 {
-  "version": 14,
-  "updated": "2026-10-23",
-  "weekly_note": "4 séances habituelles S1–S4 + S5 bras-abdos à la demande + S6 haut du corps Thionville du 23/10/2026 • séances spéciales hors roulement • aucun soulevé de terre + S7 congestion bras maison 30 min, hors roulement",
+  "version": 15,
+  "updated": "2026-10-31",
+  "weekly_note": "4 séances habituelles S1–S4 + S5 bras-abdos à la demande + S6 haut du corps Thionville du 23/10/2026 • séances spéciales hors roulement • aucun soulevé de terre + S7 congestion bras maison 30 min, hors roulement + S8 haut du corps/bras/abdos 2h30 avec 45 min cardio, sans jambes, hors roulement",
   "sessions": [
     {
       "id": "S1",
@@ -1448,6 +1448,345 @@
           "rest": 30,
           "coachOrder": 9,
           "note": "Finisher ≈3 min : petite amplitude, bassin gainé, revenir sans creuser les lombaires. Si inconfort dans le dos : remplacer par dead bug 8 répétitions par côté."
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "name": "Séance spéciale — Haut du corps / Bras / Abdos (2h30)",
+      "focus": "Congestion biceps et triceps • pectoraux et dos • épaules • abdominaux • 45 min de tapis • sans musculation des jambes",
+      "day_hint": "À la demande · 10 min échauffement + 78 min haut du corps et bras + 17 min abdos + 45 min cardio · hors roulement S1–S4",
+      "exercises": [
+        {
+          "name": "Échauffement haut du corps",
+          "sets": [
+            {
+              "reps": "600 s",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "00–10 min. 5 min de marche très légère puis mobilité des épaules et poignets, élastique, séries progressives très légères sur la poitrine et le dos. Ne pas fatiguer les jambes.",
+          "coachOrder": 1
+        },
+        {
+          "name": "Chest Press machine",
+          "sets": [
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            },
+            {
+              "reps": "8–12",
+              "weight": null
+            }
+          ],
+          "rest": 90,
+          "note": "10–38 min avec rowing et développé incliné. 1–2 répétitions en réserve; montée progressive, descente contrôlée. Charge à renseigner selon la machine.",
+          "coachOrder": 2
+        },
+        {
+          "name": "Rowing poitrine appuyée",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 90,
+          "note": "Poitrine soutenue, dos stable, épaules basses. Éviter les tirages verticaux lourds et toute douleur entre les omoplates.",
+          "coachOrder": 3
+        },
+        {
+          "name": "Développé incliné haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "note": "Banc à 15–30°. Descente contrôlée. Saisir les kg par haltère.",
+          "coachOrder": 4
+        },
+        {
+          "name": "Élévations latérales",
+          "sets": [
+            {
+              "reps": "12–20",
+              "weight": null
+            },
+            {
+              "reps": "12–20",
+              "weight": null
+            },
+            {
+              "reps": "12–20",
+              "weight": null
+            },
+            {
+              "reps": "12–20",
+              "weight": null
+            }
+          ],
+          "rest": 60,
+          "note": "38–53 min, bloc épaules. Garder les trapèzes relâchés; pas d'élan.",
+          "coachOrder": 5
+        },
+        {
+          "name": "Oiseau machine / reverse pec deck",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 60,
+          "note": "Arrière des épaules, poids modéré. Écarter les bras sans monter les épaules; arrêter si douleur scapulaire.",
+          "coachOrder": 6
+        },
+        {
+          "name": "Curl incliné haltères",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "superset": "A",
+          "note": "53–88 min, SS A, 4 tours : faire le curl puis directement l'extension corde; 75 s de repos APRÈS les deux exercices. Banc 45–60°, charges par haltère.",
+          "coachOrder": 7
+        },
+        {
+          "name": "Extension triceps corde",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "superset": "A",
+          "note": "SS A — après le curl incliné, sans repos intermédiaire. Coudes au corps, 75 s après ce mouvement.",
+          "coachOrder": 8
+        },
+        {
+          "name": "Curl marteau haltères",
+          "sets": [
+            {
+              "reps": "12",
+              "weight": null
+            },
+            {
+              "reps": "12",
+              "weight": null
+            },
+            {
+              "reps": "12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "superset": "B",
+          "note": "SS B, 3 tours : curl marteau puis dips assistés; repos 75 s après les deux. Kg par haltère.",
+          "coachOrder": 9
+        },
+        {
+          "name": "Dips assistés",
+          "sets": [
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            },
+            {
+              "reps": "10–12",
+              "weight": null
+            }
+          ],
+          "rest": 75,
+          "superset": "B",
+          "note": "SS B — assistance selon la machine, amplitude confortable, buste relativement vertical. Saisir l'assistance indiquée par la machine en kg.",
+          "coachOrder": 10
+        },
+        {
+          "name": "Curl pupitre machine",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            },
+            {
+              "reps": "12–15",
+              "weight": null
+            }
+          ],
+          "rest": 60,
+          "superset": "C",
+          "note": "SS C, 3 tours : curl pupitre puis pushdown unilatéral; 60 s de repos après les deux. Dernière série près de l'échec technique sans tricher.",
+          "coachOrder": 11
+        },
+        {
+          "name": "Extension triceps unilatérale poulie",
+          "sets": [
+            {
+              "reps": "12–15/bras",
+              "weight": null
+            },
+            {
+              "reps": "12–15/bras",
+              "weight": null
+            },
+            {
+              "reps": "12–15/bras",
+              "weight": null
+            }
+          ],
+          "rest": 60,
+          "superset": "C",
+          "note": "SS C — un bras après l'autre, coudes fixes. 60 s après avoir terminé les deux bras.",
+          "coachOrder": 12
+        },
+        {
+          "name": "Crunch poulie",
+          "sets": [
+            {
+              "reps": "15",
+              "weight": null
+            },
+            {
+              "reps": "15",
+              "weight": null
+            },
+            {
+              "reps": "15",
+              "weight": null
+            }
+          ],
+          "rest": 45,
+          "note": "88–105 min : enrouler le tronc, expirer en bas. Saisir la charge choisie.",
+          "coachOrder": 13
+        },
+        {
+          "name": "Relevés de genoux chaise romaine",
+          "sets": [
+            {
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
+              "weight": 0
+            },
+            {
+              "reps": "12–15",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "Sans balancer le corps, enrouler le bassin. Si les lombaires tirent, réduire l'amplitude.",
+          "coachOrder": 14
+        },
+        {
+          "name": "Gainage planche",
+          "sets": [
+            {
+              "reps": "45–60 s",
+              "weight": 0
+            },
+            {
+              "reps": "45–60 s",
+              "weight": 0
+            },
+            {
+              "reps": "45–60 s",
+              "weight": 0
+            }
+          ],
+          "rest": 45,
+          "note": "45 à 60 secondes par série. Abdos serrés, respiration contrôlée, ne pas creuser les lombaires.",
+          "coachOrder": 15
+        },
+        {
+          "name": "Tapis incliné",
+          "sets": [
+            {
+              "reps": "45 min",
+              "weight": 0
+            }
+          ],
+          "rest": 0,
+          "note": "5,2 km/h • 10 % • 45 min total (105–150 min de séance). Minutes 0–5 : 4,8 km/h, pente 5 %. Minutes 5–35 : 5 à 5,5 km/h, pente 8 à 12 %. Minutes 35–45 : 4,5 à 5 km/h, pente 3 à 5 %. Le champ vitesse/pente correspond à la moyenne effectuée; durée cible préremplie 45 min. Adapter la pente à la fatigue et la tolérance lombaire.",
+          "cardioDuration": 45,
+          "coachOrder": 16
         }
       ]
     }
