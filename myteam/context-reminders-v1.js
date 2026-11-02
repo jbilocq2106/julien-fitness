@@ -68,7 +68,7 @@ function listBadges(){
  document.querySelectorAll('#agents-direct [data-ad-name]').forEach(b=>{
   const n=active().filter(r=>matches(r.agent,b.dataset.adName)).length;
   let badge=b.querySelector('.ctx-badge');
-  if(n){if(!badge){badge=document.createElement('span');badge.className='ctx-badge';b.append(badge)}badge.textContent='🔔 '+n;}
+  if(n){if(!badge){badge=document.createElement('span');badge.className='ctx-badge';b.append(badge)}if(badge.textContent!=='🔔 '+n)badge.textContent='🔔 '+n;}
   else badge?.remove();
  });
 }
@@ -83,7 +83,7 @@ function planPanel(){
   const found=all.filter(r=>matches(r.agent,raw)&&(r.condition!=='afternoon-night'||shift==='afternoon'||shift==='night'));
   found.forEach(r=>spotted.set(r.id,r));
   let badge=span.querySelector('.ctx-badge');
-  if(found.length){if(!badge){badge=document.createElement('span');badge.className='ctx-badge';badge.setAttribute('role','button');badge.tabIndex=0;span.append(badge)}badge.textContent='🔔 '+found.length;badge.dataset.ctxOpen='1';}
+  if(found.length){if(!badge){badge=document.createElement('span');badge.className='ctx-badge';badge.setAttribute('role','button');badge.tabIndex=0;span.append(badge)}if(badge.textContent!=='🔔 '+found.length)badge.textContent='🔔 '+found.length;badge.dataset.ctxOpen='1';}
   else badge?.remove();
  });
  const h=document.createElement('h3');h.textContent='🔔 Rappels à vérifier sur le plan';parifPanel.replaceChildren(h);
