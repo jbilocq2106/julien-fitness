@@ -123,6 +123,17 @@
       'Compléter les dates des signalements pour activer le rappel J−2/J−1.',
       'normal','planning-followup-simple',null,false));
 
+    const certifications=arr(read('myteam_agent_certifications_v1',[]))
+      .filter(r=>r&&validDate(r.date)&&r.status!=='done'&&r.agent&&r.time);
+    for(const [days,label] of [[1,'demain'],[0,"aujourd'hui"]]){
+      const due=certifications.filter(r=>offset(r.date)===days);
+      if(due.length){
+        rows.push(item('certifications-'+days,'Certifications '+label+' : '+due.length+' agent(s)',
+          due.slice().sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(r=>r.time+' '+r.agent).join(' · ')+'. Vérifier les disponibilités et la fiche de prestation.',
+          'urgent','today','#mt-parif-g4s-board',true));
+      }
+    }
+
     const leaves=arr(read('myteam_agent_leave_requests_v1',[]))
       .filter(r=>r&&!r.archived&&!['validated','rejected'].includes(r.gesperStatus));
     const nearLeave=leaves.filter(r=>{const diff=offset(r.from);return diff!==null&&diff>=-2&&diff<=7&&(!validDate(r.to)||offset(r.to)>=0);});
