@@ -45,3 +45,15 @@
 .mtb-trendline{fill:none;stroke:var(--accent,#60a5fa);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
 .mtb-trendpoint{fill:var(--accent,#60a5fa);stroke:#0e1727;stroke-width:1.5}
 @media(max-width:360px){.mtb-table{font-size:10px}.mtb-table th,.mtb-table td{padding:7px 3px}}
+
+/* Objectif bras : grille adaptee au telephone. */
+.mtb-target-controls{display:flex;gap:10px;align-items:end;margin:12px 0;flex-wrap:wrap}
+.mtb-target-controls label{flex:1;min-width:140px;font-size:13px;color:var(--muted)}
+.mtb-target-controls input{display:block;margin-top:7px}
+.mtb-target-controls button{min-height:43px}
+.mtb-target-title{margin:12px 0;font-size:14px}
+.mtb-goal-progress{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.mtb-goal-progress>div{background:#0e1727;border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:5px}
+.mtb-goal-progress strong{font-size:12px}
+.mtb-goal-progress span{font-weight:700;font-size:16px}
+.mtb-goal-progress small{font-size:11px;color:var(--muted);line-height:1.4}
