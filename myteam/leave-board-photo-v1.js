@@ -7,15 +7,15 @@
   panel.id='mt-leave-photo';panel.className='mt-leave-photo-card';
   panel.innerHTML=`
     <div class="mt-leave-photo-head"><h3>🖼️ Tableau des congés</h3>
-      <button type="button" id="mt-leave-photo-attach">📎 Joindre le tableau</button></div>
-    <input type="file" id="mt-leave-photo-input" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" hidden>
+      <button type="button" id="mt-leave-photo-attach">📎 Ajouter des photos</button></div>
+    <input type="file" id="mt-leave-photo-input" multiple accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" hidden>
     <p id="mt-leave-photo-status" class="mt-leave-photo-status" role="status"></p>
     <div id="mt-leave-photo-view" class="mt-leave-photo-view"></div>
-    <p class="mt-leave-photo-note">Photo privée enregistrée sur cet appareil. Elle n’ajoute pas de congé et ne valide aucune absence automatiquement.</p>`;
+    <p class="mt-leave-photo-note">Tu peux ajouter les deux photos maintenant ou l’une après l’autre, sans remplacer la première. Conservées en privé sur cet appareil ; les congés ne sont pas modifiés automatiquement.</p>`;
   section.querySelector('h2')?.after(panel);
   section.classList.add('mt-leave-photo-only');
 
-  const DB='myteam_leave_board_photos_v1',TABLE='documents',KEY='current';
+  const DB='myteam_leave_board_photos_v1',TABLE='documents',KEY='current',MAX_PAGES=12;
   const attach=panel.querySelector('#mt-leave-photo-attach');
   const input=panel.querySelector('#mt-leave-photo-input');
   const status=panel.querySelector('#mt-leave-photo-status');
@@ -23,24 +23,36 @@
   let current=null,urls=[];
 
   function clearUrls(){urls.forEach(url=>URL.revokeObjectURL(url));urls=[];}
+  const pageNames=record=>record?.pages?.map((_,i)=>record.pageNames?.[i]||(
+    record.pages.length===1?record.name||'Photo du planning':'Photo du planning '+(i+1)))||[];
   function show(record){
     current=record;clearUrls();view.replaceChildren();
     if(!record?.pages?.length){
       const empty=document.createElement('p');empty.className='mt-leave-photo-empty';
-      empty.textContent='Aucun tableau photographié pour le moment. Appuie sur « Joindre le tableau » pour l’ajouter.';
-      view.append(empty);attach.textContent='📎 Joindre le tableau';return;
+      empty.textContent='Aucune photo enregistrée. Appuie sur « Ajouter des photos » pour joindre ton planning.';
+      view.append(empty);attach.textContent='📎 Ajouter des photos';return;
     }
-    attach.textContent='📎 Remplacer la photo';
+    attach.textContent='📎 Ajouter une autre photo';
     const file=document.createElement('p');file.className='mt-leave-photo-filename';
     const stored=record.savedAt?new Date(record.savedAt).toLocaleDateString('fr-LU'):'date inconnue';
-    file.textContent=`${record.name||'Tableau des congés'} · ajouté le ${stored}`;view.append(file);
+    file.textContent=`${record.pages.length} photo(s) / page(s) enregistrée(s) · dernière mise à jour le ${stored}`;
+    view.append(file);
+    const names=pageNames(record);
     record.pages.forEach((blob,index)=>{
+      if(!(blob instanceof Blob))return;
+      const item=document.createElement('div');item.className='mt-leave-photo-item';
+      const heading=document.createElement('div');heading.className='mt-leave-photo-item-head';
+      const caption=document.createElement('strong');caption.textContent=`Photo ${index+1} · ${names[index]}`;
+      const remove=document.createElement('button');remove.type='button';
+      remove.dataset.removePhoto=String(index);remove.textContent='Supprimer cette photo';
+      remove.setAttribute('aria-label',`Supprimer la photo ${index+1}`);
+      heading.append(caption,remove);item.append(heading);
       const scroller=document.createElement('div');scroller.className='mt-leave-photo-scroller';
       const photo=document.createElement('img');photo.className='mt-leave-photo-image';
-      photo.alt=`Tableau des congés${record.pages.length>1?` — page ${index+1}`:''}`;
-      photo.tabIndex=0;photo.setAttribute('role','button');photo.setAttribute('aria-label','Toucher pour agrandir ou réduire le tableau');
+      photo.alt=`Tableau des congés — photo ${index+1} : ${names[index]}`;
+      photo.tabIndex=0;photo.setAttribute('role','button');photo.setAttribute('aria-label','Toucher pour agrandir ou réduire cette photo');
       const url=URL.createObjectURL(blob);urls.push(url);photo.src=url;
-      scroller.append(photo);view.append(scroller);
+      scroller.append(photo);item.append(scroller);view.append(item);
     });
   }
 
@@ -104,25 +116,44 @@
 
   attach.onclick=()=>input.click();
   input.onchange=async event=>{
-    const file=event.target.files?.[0];input.value='';if(!file)return;
-    const isImage=/\.(jpe?g|png)$/i.test(file.name)||['image/jpeg','image/png'].includes(file.type);
-    const isPdf=/\.pdf$/i.test(file.name)||file.type==='application/pdf';
-    if(!isImage&&!isPdf){status.textContent='Choisis une image JPEG, PNG ou un PDF.';return;}
-    const limit=isPdf?20000000:15000000;
-    if(!file.size||file.size>limit){status.textContent=`Fichier vide ou trop volumineux (${isPdf?'20':'15'} Mo maximum).`;return;}
-    if(current?.pages?.length&&!confirm('Remplacer la photo actuelle du tableau des congés ? Les demandes de congés déjà enregistrées ne seront pas modifiées.'))return;
-    attach.disabled=true;status.textContent='Préparation du tableau…';
+    const files=Array.from(event.target.files||[]);input.value='';if(!files.length)return;
+    attach.disabled=true;status.textContent='Ajout des photos au tableau existant…';
     try{
-      const pages=isPdf?await pagesFromPdf(file):[file];
-      const record={name:file.name,savedAt:new Date().toISOString(),pages};
-      let stored=true;
-      try{await saveStored(record);}catch(error){stored=false;console.warn('Sauvegarde locale du tableau impossible',error);}
+      // Relire le dernier enregistrement pour ne pas écraser une photo déjà jointe.
+      const existing=await readStored();
+      const pages=[...(existing?.pages||[])],names=pageNames(existing);
+      for(const file of files){
+        const isImage=/\.(jpe?g|png)$/i.test(file.name)||['image/jpeg','image/png'].includes(file.type);
+        const isPdf=/\.pdf$/i.test(file.name)||file.type==='application/pdf';
+        if(!isImage&&!isPdf)throw new Error('Choisis uniquement des images JPEG, PNG ou des PDF.');
+        const limit=isPdf?20000000:15000000;
+        if(!file.size||file.size>limit)throw new Error(file.name+' : fichier vide ou trop volumineux ('+(isPdf?'20':'15')+' Mo maximum).');
+        if(pages.length>=MAX_PAGES)throw new Error('Maximum de '+MAX_PAGES+' photos ou pages. Supprime d’abord une ancienne photo.');
+        const extracted=isPdf?await pagesFromPdf(file):[file];
+        if(pages.length+extracted.length>MAX_PAGES)throw new Error('Les documents sélectionnés dépassent la limite de '+MAX_PAGES+' pages.');
+        extracted.forEach((blob,index)=>{pages.push(blob);names.push(isPdf?file.name+' — page '+(index+1):file.name);});
+      }
+      const record={name:existing?.name||files[0].name,savedAt:new Date().toISOString(),pages,pageNames:names};
+      await saveStored(record);
       show(record);
-      status.textContent=stored?'Tableau affiché et enregistré sur cet appareil. Aucun congé modifié.':
-        'Tableau affiché, mais sauvegarde locale indisponible : il faudra le joindre à nouveau après actualisation.';
-    }catch(error){status.textContent=`Impossible d’afficher ce document : ${error.message}`;}
+      status.textContent=`${files.length} fichier(s) ajouté(s). ${pages.length} photo(s) ou page(s) conservée(s) au total, sans remplacement des précédentes.`;
+    }catch(error){status.textContent='Ajout impossible : '+error.message+'. Les photos déjà enregistrées ont été conservées.';}
     finally{attach.disabled=false;}
   };
+  view.addEventListener('click',async event=>{
+    const button=event.target.closest?.('[data-remove-photo]');if(!button)return;
+    const index=Number(button.dataset.removePhoto),record=current;
+    if(!record?.pages?.[index])return;
+    if(!confirm('Supprimer uniquement cette photo du tableau des congés ?'))return;
+    button.disabled=true;
+    try{
+      const pages=record.pages.filter((_,i)=>i!==index);
+      const names=pageNames(record).filter((_,i)=>i!==index);
+      const updated={name:record.name,savedAt:new Date().toISOString(),pages,pageNames:names};
+      await saveStored(updated);show(updated);
+      status.textContent='Photo supprimée. Les autres photos et les demandes de congés sont conservées.';
+    }catch(error){button.disabled=false;status.textContent='Suppression impossible : les photos existantes sont conservées.';}
+  });
   const zoom=event=>{
     const image=event.target.closest?.('.mt-leave-photo-image');if(!image)return;
     image.classList.toggle('is-zoomed');
