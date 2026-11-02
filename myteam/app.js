@@ -312,6 +312,7 @@
       try{await load('./parif-g4s-certifications-v1.js?v=20261102-2')}catch(error){console.error('Affectations G4S et certifications indisponibles :',error)}
       try{await load('./private-day-import-v1.js?v=20261102-2')}catch(error){console.error('Import des notes privées indisponible :',error)}
       try{await load('./context-reminders-v1.js?v=20261102-2')}catch(error){console.error('Rappels visuels indisponibles :',error)}
+      try{await load('./private-chatgpt-link-v1.js?v=20261102-1')}catch(error){console.error('Liaison privée ChatGPT indisponible :',error)}
     }
   })();
 })();
