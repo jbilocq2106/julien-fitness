@@ -266,5 +266,5 @@
   nav.querySelectorAll('button[data-tab]').forEach(b=>b.addEventListener('click',refresh));
   window.MyTeamRefreshReminders=refresh;
   refresh();
-  showModal();
+  // Les rappels restent consultatifs : ne pas ouvrir de modale automatique.
 })();
