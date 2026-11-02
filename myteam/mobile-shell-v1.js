@@ -268,4 +268,5 @@
   window.addEventListener('focus',()=>{if(current==='today')renderToday()});
   window.addEventListener('storage',event=>{if(event.key?.startsWith('myteam')&&current==='today')renderToday()});
   activate('today');
+  document.body.classList.add('mt-ready');
 })();
