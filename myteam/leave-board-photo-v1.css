@@ -10,6 +10,10 @@
 #mt-leave-photo .mt-leave-photo-view{display:grid;gap:12px}
 #mt-leave-photo .mt-leave-photo-empty{font-size:13px;line-height:1.5;color:#cedcec;background:#17283c;border:1px dashed #6d829d;border-radius:11px;padding:16px;margin:5px 0}
 #mt-leave-photo .mt-leave-photo-filename{font-size:12px;font-weight:750;line-height:1.4;color:#d9e4f2;margin:5px 0 0;overflow-wrap:anywhere}
+#mt-leave-photo .mt-leave-photo-item{padding:11px;border-radius:12px;background:#172b43;border:1px solid #55738e;min-width:0}
+#mt-leave-photo .mt-leave-photo-item-head{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+#mt-leave-photo .mt-leave-photo-item-head strong{font-size:13px;overflow-wrap:anywhere;min-width:0;flex:1}
+#mt-leave-photo .mt-leave-photo-item-head button{background:#51363e;color:#ffe2e2;border:1px solid #8f5761;padding:8px 10px;min-height:40px;font-size:12px}
 #mt-leave-photo .mt-leave-photo-scroller{max-width:100%;overflow:auto;border-radius:9px;border:1px solid #607c97;background:#fff;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom}
 #mt-leave-photo .mt-leave-photo-image{display:block;width:100%;max-width:none;height:auto;cursor:zoom-in;outline-offset:-3px}
 #mt-leave-photo .mt-leave-photo-image.is-zoomed{width:200%;cursor:zoom-out}
