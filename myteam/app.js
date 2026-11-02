@@ -307,7 +307,7 @@
       try{await load('./startup-reminders-v1.js?v=20261102-2')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
       try{await load('./extras-equity-v1.js?v=20261102-1')}catch(error){console.error('Suivi des extras indisponible :',error)}
       try{await load('./planning-followup-simple-v1.js?v=20261028-3')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
-      try{await load('./agent-annual-calendar-v1.js?v=20261102-3')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
+      try{await load('./agent-annual-calendar-v1.js?v=20261102-4')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
       try{await load('./supervisors-rota-v1.js?v=20261029-4')}catch(error){console.error('Agenda des superviseurs indisponible :',error)}
       try{await load('./parif-g4s-certifications-v1.js?v=20261102-2')}catch(error){console.error('Affectations G4S et certifications indisponibles :',error)}
       try{await load('./private-day-import-v1.js?v=20261102-2')}catch(error){console.error('Import des notes privées indisponible :',error)}
