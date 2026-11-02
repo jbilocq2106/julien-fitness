@@ -9,7 +9,7 @@ if(!nav||!main||!today)return;
 const read=()=>{try{const x=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(x)?x:[]}catch{return []}};
 const save=xs=>{try{localStorage.setItem(STORE,JSON.stringify(xs));return true}catch{return false}};
 const active=()=>read().filter(x=>x&&x.status!=='done'&&x.agent&&x.text);
-const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(G4S|LXP|DUSS)\b/gi,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase().split(/\s+/).filter(Boolean).sort();
+const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(g4s|lxp|duss)\b/g,'').replace(/[^a-z0-9]+/g,' ').trim().split(/\s+/).filter(Boolean).sort();
 const matches=(a,b)=>{const x=norm(a),y=norm(b);return x.length>1&&x.every(s=>y.includes(s))};
 const style=document.createElement('style');style.textContent=[
 '#mt-home-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:8px 0 16px}',
@@ -22,6 +22,8 @@ const style=document.createElement('style');style.textContent=[
 '#mt-context-reminders input,#mt-context-reminders textarea,#mt-context-reminders select{width:100%;min-height:45px;padding:9px;background:#101c2d;color:#fff;border:1px solid #6c809a;border-radius:10px}',
 '#mt-context-reminders label{display:block;margin:10px 0}',
 '#mt-parif-context,#mt-agent-context{background:#253952;border:1px solid #607792;border-radius:14px;padding:14px;margin:10px 0}',
+'#mt-mobile-nav .ctx-mobile-count:not(:empty){background:#985923;color:white;border-radius:20px;padding:2px 5px;font-size:10px;font-weight:800;position:absolute;top:2px;right:1px;min-width:17px}',
+'#mt-mobile-nav button[data-mt-open="context-reminders"]{position:relative}',
 '#today .mt-attach-parif-photo{display:none!important}',
 '@media(min-width:720px){#mt-home-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}'
 ].join('');document.head.append(style);
@@ -38,6 +40,8 @@ const tiles=document.createElement('div');tiles.id='mt-home-tiles';tiles.setAttr
  b.onclick=()=>nav.querySelector('[data-tab="'+id+'"]')?.click();tiles.append(b);
 });
 today.querySelector('.mt-hero')?.after(tiles);
+const mobile=document.getElementById('mt-mobile-nav');
+if(mobile){const button=mobile.querySelector('[data-mt-open="context-reminders"]');if(button){const badge=document.createElement('span');badge.className='ctx-mobile-count';badge.setAttribute('aria-hidden','true');button.append(badge)}}
 function row(r){
  const box=document.createElement('div');box.className='ctx-row';
  const h=document.createElement('strong');h.textContent=r.agent+(r.status==='postponed'?' · reporté':'');
@@ -97,7 +101,9 @@ overview?.addEventListener('click',e=>{if(e.target.closest('.ctx-badge[data-ctx-
 overview?.addEventListener('keydown',e=>{if(e.target.matches('.ctx-badge[data-ctx-open]')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopImmediatePropagation();tab.click()}},true);
 function draw(){
  paint($('ctx-list'),active(),'Aucun rappel en attente sur cet appareil.');
- const b=tiles.querySelector('[data-ctx-tab="context-reminders"] strong');if(b)b.textContent='Rappels'+(active().length?' ('+active().length+')':'');
+ const n=active().length;
+ const b=tiles.querySelector('[data-ctx-tab="context-reminders"] strong');if(b)b.textContent='Rappels'+(n?' ('+n+')':'');
+ const mobileCount=document.querySelector('#mt-mobile-nav [data-mt-open="context-reminders"] .ctx-mobile-count');if(mobileCount)mobileCount.textContent=n?String(n):'';
  agentPanel();listBadges();planPanel();
 }
 $('ctx-form').addEventListener('submit',e=>{
