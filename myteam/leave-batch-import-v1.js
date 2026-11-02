@@ -1,0 +1,1 @@
+(()=>{'use strict';const KEY='myteam_agent_leave_requests_v1';const panel=document.createElement('div');panel.id='mt-leave-batch';panel.innerHTML='<h3>Importer les congés depuis un fichier privé</h3><p>Validation du chef distincte de MyGesper.</p>';document.querySelector('#leave')?.prepend(panel);})();
