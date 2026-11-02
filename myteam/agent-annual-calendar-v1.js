@@ -9,10 +9,10 @@
   if(!nav||!main||!agentSelect||!agentDetail)return;
   const KEY='myteam_agent_absence_calendar_v1',LEAVES='myteam_agent_leave_requests_v1';
   const TYPES=[
-    {id:'leave',title:'Congé / congé futur',short:'Congé',color:'#42a0d8'},
-    {id:'parental',title:'Congé parental',short:'Parental',color:'#b28ae8'},
-    {id:'sick',title:'Arrêt maladie',short:'Maladie',color:'#e88787'},
-    {id:'holiday',title:'Jour férié',short:'Férié',color:'#e9b860'}
+    {id:'leave',title:'Congé / congé futur',short:'Congé',color:'#f4c54b'},
+    {id:'parental',title:'Congé parental',short:'Parental',color:'#368de0'},
+    {id:'sick',title:'Arrêt maladie',short:'Maladie',color:'#9ba8b9'},
+    {id:'holiday',title:'Jour férié',short:'Férié',color:'#9ba8b9'}
   ];
   const STATUS=[{id:'planned',title:'Prévu / à confirmer'},{id:'confirmed',title:'Confirmé'}];
   // Conserver la différence essentielle : accord du chef ≠ validation MyGesper.
@@ -61,6 +61,15 @@
     return matches.length===1?matches[0]:'';
   }
   const typeInfo=id=>TYPES.find(t=>t.id===id)||TYPES[0];
+  const colorForRecord=r=>{
+    if(r.type==='parental')return '#368de0'; // Bleu : congé parental
+    if(r.type==='leave'){
+      if(stageFor(r)==='validated')return '#39c76c'; // Vert : validé
+      if(stageFor(r)==='rejected')return '#9ba8b9'; // Refusé : neutre
+      return '#f4c54b'; // Jaune : demandé / non encore validé
+    }
+    return '#9ba8b9'; // Autres absences : sens des couleurs Excel non confirmé
+  };
   const statusText=id=>id==='confirmed'?'Confirmé':id==='rejected'?'Refusé / sans suite':'Prévu / à confirmer';
   const stageFor=r=>r.type==='leave'?(r.leaveStage||((r.status==='confirmed')?'validated':'requested')):'';
   const statusOf=r=>r.type==='leave'?stageTitle(stageFor(r)):statusText(r.status);
@@ -123,7 +132,7 @@
     '#mt-agent-annual .mtaa-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}',
     '#mt-agent-annual .mtaa-week{font-size:10px;text-align:center;color:#a9bbcf;padding:5px 0}',
     '#mt-agent-annual .mtaa-day{border:1px solid transparent;border-radius:8px;min-width:0;min-height:34px;padding:3px 0;background:#2d3e56;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;gap:3px;cursor:pointer}',
-    '#mt-agent-annual .mtaa-day.has-events{background:#344d68;border-color:#617f9c}',
+    '#mt-agent-annual .mtaa-day.has-events{background:#344657;border-color:#75899d}',
     '#mt-agent-annual .mtaa-day.pending{border-style:dashed}',
     '#mt-agent-annual .mtaa-day.selected{outline:3px solid #f6bb6d;outline-offset:-2px}',
     '#mt-agent-annual .mtaa-day.today{box-shadow:inset 0 0 0 2px #fff}',
@@ -163,7 +172,12 @@
   form.elements.type.addEventListener('change',updateTypeFields);
   updateTypeFields();
   const legend=$('mtaa-legend');
-  TYPES.forEach(t=>{const label=document.createElement('span'),dot=document.createElement('i');dot.className='mtaa-dot';dot.style.background=t.color;label.append(dot,document.createTextNode(t.short));legend.append(label);});
+  [
+    ['#39c76c','Congé validé'],
+    ['#f4c54b','Congé demandé / non validé'],
+    ['#368de0','Congé parental'],
+    ['#9ba8b9','Autres absences (couleur non précisée)']
+  ].forEach(([color,title])=>{const label=document.createElement('span'),dot=document.createElement('i');dot.className='mtaa-dot';dot.style.background=color;label.append(dot,document.createTextNode(title));legend.append(label);});
   const mark=document.createElement('span');mark.textContent='Contour pointillé : à confirmer';legend.append(mark);
   function fillAgents(){
     const old=select.value;
@@ -257,8 +271,10 @@
           btn.classList.add('has-events');
           if(matches.some(r=>r.status!=='confirmed'))btn.classList.add('pending');
           const dots=document.createElement('span');dots.className='mtaa-dots';
-          [...new Set(matches.map(r=>r.type))].forEach(t=>{
-            const dot=document.createElement('i');dot.style.background=typeInfo(t).color;dots.append(dot);
+          const colors=[...new Set(matches.map(colorForRecord))];
+          if(colors.length===1){btn.style.backgroundColor=colors[0];btn.style.color='#132036';}
+          colors.forEach(color=>{
+            const dot=document.createElement('i');dot.style.background=color;dots.append(dot);
           });
           btn.append(dots);
           btn.title=matches.map(r=>eventLabel(r)+' ('+statusOf(r)+')').join(' · ');
@@ -280,7 +296,7 @@
       const entry=document.createElement('div');entry.className='mtaa-entry';
       if(r.source!=='mygesper')entry.classList.add('mtaa-manual');
       const head=document.createElement('strong'),dot=document.createElement('i');
-      dot.className='mtaa-mark';dot.style.background=typeInfo(r.type).color;
+      dot.className='mtaa-mark';dot.style.background=colorForRecord(r);
       head.append(dot,document.createTextNode(eventLabel(r)));entry.append(head);
       const date=document.createElement('div');date.className='mtaa-meta';
       date.textContent=nice(r.from)+' → '+(r.to&&r.to!==r.from?nice(r.to):r.to?nice(r.from):'fin non renseignée');
