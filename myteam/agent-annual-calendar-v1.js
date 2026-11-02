@@ -23,7 +23,7 @@
     {id:'pending',title:'En attente de réponse MyGesper'},
     {id:'approved',title:'Accepté MyGesper — non validé'},
     {id:'validated',title:'Validé MyGesper'},
-    {id:'rejected',title:'Refusé / sans suite'}
+    {id:'rejected',title:'Refusé'}
   ];
   const stageTitle=stage=>LEAVE_STAGES.find(x=>x.id===stage)?.title||'Demandé — non validé';
   function stageForLegacy(r){
@@ -65,12 +65,12 @@
     if(r.type==='parental')return '#368de0'; // Bleu : congé parental
     if(r.type==='leave'){
       if(stageFor(r)==='validated')return '#39c76c'; // Vert : validé
-      if(stageFor(r)==='rejected')return '#9ba8b9'; // Refusé : neutre
+      if(stageFor(r)==='rejected')return '#ef4444'; // Rouge : congé refusé
       return '#f4c54b'; // Jaune : demandé / non encore validé
     }
     return '#9ba8b9'; // Autres absences : sens des couleurs Excel non confirmé
   };
-  const statusText=id=>id==='confirmed'?'Confirmé':id==='rejected'?'Refusé / sans suite':'Prévu / à confirmer';
+  const statusText=id=>id==='confirmed'?'Confirmé':id==='rejected'?'Refusé':'Prévu / à confirmer';
   const stageFor=r=>r.type==='leave'?(r.leaveStage||((r.status==='confirmed')?'validated':'requested')):'';
   const statusOf=r=>r.type==='leave'?stageTitle(stageFor(r)):statusText(r.status);
   const eventLabel=r=>r.source==='mygesper'?'Congé (suivi MyGesper)':typeInfo(r.type).title;
@@ -134,6 +134,7 @@
     '#mt-agent-annual .mtaa-day{border:1px solid transparent;border-radius:8px;min-width:0;min-height:34px;padding:3px 0;background:#2d3e56;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;gap:3px;cursor:pointer}',
     '#mt-agent-annual .mtaa-day.has-events{background:#344657;border-color:#75899d}',
     '#mt-agent-annual .mtaa-day.pending{border-style:dashed}',
+    '#mt-agent-annual .mtaa-day.refused-only{text-decoration:line-through;text-decoration-thickness:2px}',
     '#mt-agent-annual .mtaa-day.selected{outline:3px solid #f6bb6d;outline-offset:-2px}',
     '#mt-agent-annual .mtaa-day.today{box-shadow:inset 0 0 0 2px #fff}',
     '#mt-agent-annual .mtaa-dots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}',
@@ -176,6 +177,7 @@
     ['#39c76c','Congé validé'],
     ['#f4c54b','Congé demandé / non validé'],
     ['#368de0','Congé parental'],
+    ['#ef4444','Congé refusé (hors effectif absent)'],
     ['#9ba8b9','Autres absences (couleur non précisée)']
   ].forEach(([color,title])=>{const label=document.createElement('span'),dot=document.createElement('i');dot.className='mtaa-dot';dot.style.background=color;label.append(dot,document.createTextNode(title));legend.append(label);});
   const mark=document.createElement('span');mark.textContent='Contour pointillé : à confirmer';legend.append(mark);
@@ -263,13 +265,14 @@
       const count=new Date(year,month+1,0,12).getDate();
       for(let day=1;day<=count;day++){
         const date=iso(new Date(year,month,day,12));
-        const matches=items.filter(r=>r.status!=='rejected'&&r.from<=date&&(r.to||r.from)>=date);
+        const matches=items.filter(r=>r.from<=date&&(r.to||r.from)>=date);
         const btn=document.createElement('button');btn.type='button';btn.className='mtaa-day';btn.dataset.date=date;
         btn.textContent=String(day);btn.setAttribute('aria-label',nice(date)+(matches.length?' : '+matches.map(eventLabel).join(', '):''));
         if(date===today)btn.classList.add('today');
         if(matches.length){
           btn.classList.add('has-events');
-          if(matches.some(r=>r.status!=='confirmed'))btn.classList.add('pending');
+          if(matches.some(r=>r.status==='planned'))btn.classList.add('pending');
+          if(matches.every(r=>r.status==='rejected'))btn.classList.add('refused-only');
           const dots=document.createElement('span');dots.className='mtaa-dots';
           const colors=[...new Set(matches.map(colorForRecord))];
           if(colors.length===1){btn.style.backgroundColor=colors[0];btn.style.color='#132036';}
@@ -389,7 +392,7 @@
     const all=forSelected();
     const inside=all.filter(r=>intersects(r,String(year)));
     $('mtaa-stats').textContent=selected
-      ?selected+' · '+year+' : '+inside.length+' période(s) · '+inside.filter(r=>r.status==='confirmed').length+' confirmée(s) · '+inside.filter(r=>r.status==='planned').length+' à confirmer · '+inside.filter(r=>r.status==='rejected').length+' refusée(s) / sans suite'
+      ?selected+' · '+year+' : '+inside.length+' période(s) · '+inside.filter(r=>r.status==='confirmed').length+' confirmée(s) · '+inside.filter(r=>r.status==='planned').length+' à confirmer · '+inside.filter(r=>r.status==='rejected').length+' refusée(s)'
       :'Aucun agent sélectionné.';
     renderMonths(all);renderEntries(all);renderConcurrency();renderAgentDetail();
   }
