@@ -22,7 +22,8 @@ const db = getFirestore(app);
 const PREF_KEYS = [
   'mt_show_rir', 'mt_exercise_feedback_v1', 'mt_exercise_replacements_v70',
   'mt_machine_settings_v1', 'mt_known_gym_locations_v1',
-  'mt_stats_approved_advice_v1', 'mt_sandweiler_last_two_20261021_v1'
+  'mt_stats_approved_advice_v1', 'mt_sandweiler_last_two_20261021_v1',
+  'mt_arm_target_cm_v1'
 ];
 const SIGNATURES_KEY = 'mt_cloud_workout_signatures_v1';
 const META_KEY = 'mt_cloud_meta_signature_v1';
@@ -318,6 +319,7 @@ onAuthStateChanged(auth, user => {
     status('Non connecté — tes séances restent enregistrées sur ce téléphone.');
   }
 });
+window.addEventListener('mt:preferences-changed', queueSync);
 window.addEventListener('online', () => syncNow(true));
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && currentUser && initialised) syncNow(true);

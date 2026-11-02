@@ -6,6 +6,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
 (function () {
   'use strict';
   const KEY='mt_body_measurements_v1';
+  const ARM_GOAL_KEY='mt_arm_target_cm_v1';
   const MEASUREMENTS=[
     ['heightCm','Taille (hauteur)','cm'], ['neckCm','Cou','cm'], ['chestCm','Poitrine','cm'],
     ['waistCm','Taille anatomique','cm'], ['navelCm','Ventre au nombril','cm'],
@@ -76,10 +77,46 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
       '<label class="mtb-field"><span>'+esc(label)+(unit?' ('+esc(unit)+')':'')+'</span><input data-mtb="'+key+'" type="number" min="0" max="10000" step="any" inputmode="decimal" autocomplete="off" placeholder="—"></label>'
     ).join('')+'</div>';
   }
+
+  function armGoal(){
+    const n=number(localStorage.getItem(ARM_GOAL_KEY));
+    return n!==null&&n>=20&&n<=70?n:null;
+  }
+  function persistArmGoal(value){
+    const n=number(value);
+    if(n===null||n<20||n>70)return false;
+    try{localStorage.setItem(ARM_GOAL_KEY,String(Math.round(n*10)/10));}
+    catch(e){alert('Stockage local indisponible.');return false;}
+    render();updateHome();
+    window.dispatchEvent(new Event('mt:preferences-changed'));
+    return true;
+  }
+  function renderArmGoal(){
+    const target=armGoal(),input=document.getElementById('mtbArmGoalInput'),status=document.getElementById('mtbArmGoalStatus');
+    if(!input||!status)return;
+    if(document.activeElement!==input)input.value=target??'';
+    if(target===null){status.innerHTML='<p class="muted">Fixe ton objectif pour comparer les prochaines mensurations.</p>';return;}
+    const values=live(),left=values.find(x=>x.armLeftCm!=null),right=values.find(x=>x.armRightCm!=null);
+    const arm=(label,row,key)=>{
+      const value=row?.[key];
+      if(value==null)return '<div><strong>'+esc(label)+'</strong><span class="muted">Mesure manquante</span></div>';
+      const remain=Math.max(0,Math.round((target-value)*10)/10);
+      return '<div><strong>'+esc(label)+'</strong><span>'+fmt(value,'cm')+' / '+fmt(target,'cm')+'</span><small>'+(remain===0?'Objectif atteint sur cette mesure':'Encore '+fmt(remain,'cm'))+' · '+esc(row.date.split('-').reverse().join('/'))+'</small></div>';
+    };
+    const navel=values.find(x=>x.navelCm!=null),firstNavel=[...values].reverse().find(x=>x.navelCm!=null);
+    const difference=navel&&firstNavel&&navel.date!==firstNavel.date?Math.round((navel.navelCm-firstNavel.navelCm)*10)/10:null;
+    status.innerHTML='<p class="mtb-target-title">Cible : <strong>'+fmt(target,'cm')+'</strong> · bras détendus, à froid</p>'+
+      '<div class="mtb-goal-progress">'+arm('Bras gauche',left,'armLeftCm')+arm('Bras droit',right,'armRightCm')+'</div>'+
+      '<p class="muted mtb-footnote">Ventre au nombril : '+(navel?fmt(navel.navelCm,'cm'):'à mesurer')+
+      (difference!=null?' · évolution '+(difference>0?'+':'')+fmt(difference,'cm'):'')+
+      '. Mesurer toutes les 2 à 4 semaines, sans congestion.</p>';
+  }
   const view=document.getElementById('bodyMeasurementsView');
   if(!view)return;
   view.innerHTML='<h2>Mensurations</h2><p class="muted mtb-intro">Suivi personnel du poids, de la graisse abdominale et des volumes musculaires. Donnees privees, modifiables par date.</p>'+
     '<div class="card"><div class="section-title"><h3>Bilan et evolution</h3></div><div id="mtbSummary"></div><div id="mtbCloud" class="muted" aria-live="polite"></div></div>'+
+    '<div class="card"><div class="section-title"><h3>Objectif tour de bras</h3></div><p class="muted">Bras au repos, meme les jours sans entrainement. Priorite au gain musculaire tout en diminuant le tour de ventre.</p>'+
+    '<div class="mtb-target-controls"><label for="mtbArmGoalInput">Cible pour chaque bras (cm)<input type="number" id="mtbArmGoalInput" min="20" max="70" step="0.5" inputmode="decimal"></label><button type="button" class="primary" id="mtbArmGoalSave">Enregistrer</button></div><div id="mtbArmGoalStatus" aria-live="polite"></div></div>'+
     '<div class="card"><div class="section-title"><h3>Ajouter ou corriger une mesure</h3></div>'+
     '<form id="mtbForm"><label for="mtbDate">Date de mesure</label><input id="mtbDate" required type="date">'+
     '<details open><summary>Mensurations au metre ruban</summary>'+grid(MEASUREMENTS)+'</details>'+
@@ -193,6 +230,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
       }
     });
     renderComparison(rows);
+    renderArmGoal();
   }
   function updateHome(){
     const home=document.getElementById('homeView');
@@ -205,7 +243,8 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     const x=live()[0];
     card.innerHTML='<div class="section-title"><h3>Composition corporelle</h3><button type="button" class="ghost" id="mtbOpen">Voir</button></div>'+
       (x?'<p><strong>'+fmt(x.weightKg,'kg')+'</strong> · Ventre '+fmt(x.navelCm,'cm')+' · Graisse '+fmt(x.bodyFatPct,'%')+'</p>':
-      '<p class="muted">Ajouter ton premier bilan de mensurations.</p>');
+      '<p class="muted">Ajouter ton premier bilan de mensurations.</p>')+
+      (armGoal()!==null?'<p><strong>Objectif bras : '+fmt(armGoal(),'cm')+'</strong> au repos · suivi dans Mesures.</p>':'');
     card.querySelector('#mtbOpen').onclick=()=>window.showView('bodyMeasurementsView');
   }
   form.addEventListener('submit',e=>{
@@ -225,6 +264,15 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
     else fill({date:dateInput.value});
   });
   document.getElementById('mtbReset').onclick=()=>fill({date:today()});
+  document.getElementById('mtbArmGoalSave').onclick=()=>{
+    if(!persistArmGoal(document.getElementById('mtbArmGoalInput').value))alert('Indique un objectif compris entre 20 et 70 cm.');
+  };
+  function importArmGoalFromHash(){
+    const m=(location.hash||'').match(/^#mt-arm-goal=([0-9]+(?:[.,][0-9]+)?)$/);
+    if(!m)return;
+    history.replaceState(history.state,'',location.pathname+location.search);
+    if(persistArmGoal(m[1]))window.showView('bodyMeasurementsView');
+  }
   const makeHashImport=()=>{
     const hash=location.hash||'';
     if(!hash.startsWith('#mt-bilan='))return;
@@ -242,7 +290,7 @@ import { getFirestore, doc, collection, getDocs, setDoc } from 'https://www.gsta
       if(saveRecord(row)){fill(row);window.showView('bodyMeasurementsView');alert('Bilan du '+row.date+' importe et enregistre !');}
     }catch(e){alert('Import du bilan impossible. Ouvre Mensurations pour le saisir.');}
   };
-  fill({date:today()});render();updateHome();makeHashImport();
+  fill({date:today()});render();updateHome();makeHashImport();importArmGoalFromHash();
   // Synchronisation dediee par date. Les donnees restent sous /users/{uid}/apps/mytraining.
   const firebaseApp=getApp('mytraining');
   const auth=getAuth(firebaseApp),db=getFirestore(firebaseApp);
