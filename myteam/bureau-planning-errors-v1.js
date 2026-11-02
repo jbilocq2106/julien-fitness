@@ -508,5 +508,6 @@
   }
   const importRequested = window.location.hash.startsWith('#mtpe-import=');
   importFromHash();
-  if (!importRequested) bureauTab.click();
+  // La page d'ouverture reste Aujourd'hui, définie par la navigation mobile.
+  // Le Bureau et le dossier prioritaire restent disponibles via « Plus ». 
 })();
