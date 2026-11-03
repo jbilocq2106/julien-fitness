@@ -40,7 +40,7 @@
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['today','☀️','Aujourd’hui'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels'],['team','👥','Agents'],['planning','🗓️','Mon planning']];
+  const navItems=[['today','☀️','Aujourd’hui'],['daily-journal','📒','Ma journée'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels'],['team','👥','Agents'],['planning','🗓️','Mon planning']];
   // Nouvelle organisation demandée : réinitialise une fois l'ancien ordre visuel, sans effacer aucune donnée de travail.
   const NAV_ORDER_KEY='myteam_mobile_nav_order_v3';
   const navDefinitions=[...navItems,['more','☰','Plus']];
@@ -114,6 +114,7 @@
     });
   };
   function activate(id){
+    if(id==='daily-journal'){window.location.assign('./ma-journee.html');return;}
     closeMore();
     const btn=Array.from(topNav.querySelectorAll('button[data-tab]')).find(b=>b.dataset.tab===id);
     if(!btn)return;
