@@ -19,7 +19,7 @@
       <div class="card"><h3>👥 Absences à vérifier</h3><div id="mt-absences"></div>
         <p class="mt-section-caption">Un congé demandé n’est pas forcément accordé. Seules les absences maladie signalées dans les fiches locales sont affichées, sans motif médical.</p></div>
     </div><div>
-      <div class="card"><h3>🔄 Remplacements</h3><div id="mt-replacements" class="mt-replace-list"></div>
+      <div class="card" style="display:none"><h3>🔄 Remplacements</h3><div id="mt-replacements" class="mt-replace-list"></div>
         <button type="button" id="mt-add-replacement" class="mt-primary">+ Préparer un remplacement</button>
         <form id="mt-replacement-form" class="mt-replace-form hidden">
           <label>Date <input name="date" type="date" required></label>
