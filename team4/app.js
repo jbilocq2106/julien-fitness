@@ -67,48 +67,35 @@ renderAgents();
 
 const workerImport=document.querySelector('#agent-worker-import');
 workerImport?.addEventListener('change',async event=>{
-  const status=document.querySelector('#agent-worker-import-status');
-  const file=event.target.files?.[0];
-  if(!file)return;
-  try{
-    if(file.size>100000)throw Error('Fichier trop volumineux');
-    const data=JSON.parse(await file.text());
-    if(data.schema!=='myteam-worker-numbers-v1'||!Array.isArray(data.agents)||data.agents.length<1||data.agents.length>200)throw Error('Format de matricules non reconnu');
-    const normal=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
-    const names=new Map();
-    for(const name of Object.keys(agentProfiles)){
-      const key=normal(name);
-      if(names.has(key))names.set(key,null);
-      else names.set(key,name);
-    }
-    const deletedRaw=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');
-    const deleted=new Set((Array.isArray(deletedRaw)?deletedRaw:[]).map(normal));
-    const seen=new Set(),updated={};
-    let missing=0;
-    for(const item of data.agents){
-      if(!item||typeof item.name!=='string'||!item.name.trim()||typeof item.workerNumber!=='string'||!/^\d{1,20}$/.test(item.workerNumber.trim()))throw Error('Nom ou matricule invalide');
-      const key=normal(item.name);
-      if(seen.has(key))throw Error('Agent présent deux fois dans le fichier');
-      seen.add(key);
-      const name=names.get(key);
-      if(!name||deleted.has(key)){missing++;continue}
-      updated[name]={...agentProfiles[name],workerNumber:item.workerNumber.trim()};
-    }
-    const count=Object.keys(updated).length;
-    if(!count)throw Error('Aucun agent actif correspondant. Aucune donnée modifiée.');
-    localStorage.setItem(agentKey,JSON.stringify({...agentProfiles,...updated}));
-    Object.assign(agentProfiles,updated);
-    renderAgents(agentSelect.value);
-    try{window.renderMyTeamAgentList?.()}catch{}
-    window.dispatchEvent(new CustomEvent('myteam-worker-imported',{detail:{count,missing}}));
-    status.textContent=count+' matricule(s) intégré(s) aux fiches existantes'+(missing?' ; '+missing+' agent(s) absent(s) ou retiré(s) ignoré(s)':'')+'. Les autres informations sont conservées.';
-  }catch(error){
-    status.textContent='Import impossible : '+error.message;
-  }finally{
-    event.target.value='';
+ const status=document.querySelector('#agent-worker-import-status'),file=event.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>500000)throw Error('Fichier trop volumineux');
+  const data=JSON.parse(await file.text());
+  if(!Array.isArray(data.agents)||!data.agents.length||data.agents.length>500)throw Error('Format de matricules non reconnu');
+  const normal=s=>String(s??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+  const names=new Map();
+  for(const name of Object.keys(agentProfiles)){const key=normal(name);if(names.has(key))names.set(key,null);else names.set(key,name)}
+  const deletedRaw=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');
+  const deleted=new Set((Array.isArray(deletedRaw)?deletedRaw:[]).map(normal));
+  const updated={...agentProfiles},seen=new Set();let added=0,existing=0,missing=0,conflicts=0;
+  for(const item of data.agents){
+   if(!item||typeof item.name!=='string')continue;
+   const number=String(item.workerNumber??item.matricule??'').trim();
+   if(!/^\\d{1,20}$/.test(number))continue;
+   const key=normal(item.name);if(seen.has(key))continue;seen.add(key);
+   let name=names.get(key);
+   if(!name){const candidates=Object.keys(agentProfiles).filter(k=>normal(k).startsWith(key)||key.startsWith(normal(k)));if(candidates.length===1)name=candidates[0]}
+   if(!name||deleted.has(normal(name))){missing++;continue}
+   const old=String(updated[name]?.workerNumber||'').trim();
+   if(old===number){existing++;continue}
+   if(old){conflicts++;continue}
+   updated[name]={...updated[name],workerNumber:number};added++;
   }
+  if(added){localStorage.setItem(agentKey,JSON.stringify(updated));agentProfiles=updated;renderAgents(agentSelect.value);try{window.renderMyTeamAgentList?.()}catch{}}
+  status.textContent='Import terminé : '+added+' ajoutés, '+existing+' déjà présents, '+missing+' sans correspondance, '+conflicts+' conflits conservés.';
+ }catch(error){status.textContent='Import impossible : '+error.message}
+ finally{event.target.value=''}
 });
-
 document.querySelector('#agent-import').addEventListener('change',async e=>{
  const el=document.querySelector('#agent-import-status'),file=e.target.files?.[0];if(!file)return;
  try{
