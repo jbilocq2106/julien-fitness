@@ -72,7 +72,7 @@ workerImport?.addEventListener('change',async event=>{
   if(file.size>500000)throw Error('Fichier trop volumineux');
   const data=JSON.parse(await file.text());
   if(!Array.isArray(data.agents)||!data.agents.length||data.agents.length>500)throw Error('Format de matricules non reconnu');
-  const normal=s=>String(s??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
+  const normal=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
   const names=new Map();
   for(const name of Object.keys(agentProfiles)){const key=normal(name);if(names.has(key))names.set(key,null);else names.set(key,name)}
   const deletedRaw=JSON.parse(localStorage.getItem('myteam_deleted_agents_v1')||'[]');
@@ -81,7 +81,7 @@ workerImport?.addEventListener('change',async event=>{
   for(const item of data.agents){
    if(!item||typeof item.name!=='string')continue;
    const number=String(item.workerNumber??item.matricule??'').trim();
-   if(!/^\\d{1,20}$/.test(number))continue;
+   if(!/^\d{1,20}$/.test(number))continue;
    const key=normal(item.name);if(seen.has(key))continue;seen.add(key);
    let name=names.get(key);
    if(!name){const candidates=Object.keys(agentProfiles).filter(k=>normal(k).startsWith(key)||key.startsWith(normal(k)));if(candidates.length===1)name=candidates[0]}
