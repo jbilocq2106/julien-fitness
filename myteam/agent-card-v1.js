@@ -70,9 +70,9 @@
     "#eq-agent-profile .ap-pill.soon{background:#71501f;border-color:#b99048}",
     "#eq-agent-profile .ap-pill.expired{background:#662e38;border-color:#b75e6d}",
     "#eq-agent-profile .ap-pill.unknown{background:#38495d;border-color:#76879d}",
-    "#eq-agent-profile .ap-pill-btn{cursor:pointer;min-height:44px;padding:9px 13px;background:#b45d2b;border:1px solid #d9955a;color:#fff;font-size:14px}",
+    "#eq-agent-profile .ap-pill-btn{cursor:pointer;min-height:44px;padding:9px 13px;background:#b45d2b;border:1px solid #d9955a;color:#fff;font-size:14px;text-decoration:none;display:inline-flex}",
     "#eq-agent-profile #ap-personal[hidden],#eq-agent-profile #ap-entry-form[hidden]{display:none!important}",
-    "#eq-agent-profile #ap-personal{background:#1c3047;border:1px solid #7f96ae;border-radius:14px;padding:14px;margin:10px 0}",
+    "#eq-agent-profile #ap-personal{background:#1c3047;border:1px solid #7f96ae;border-radius:14px;padding:14px;margin:10px 0;scroll-margin-top:90px}",
     "#eq-agent-profile .ap-personal-header{display:flex;justify-content:space-between;align-items:center;gap:9px}",
     "#eq-agent-profile .ap-personal-header h3{margin:0}",
     "#eq-agent-profile #ap-plus{background:#b96730;border-radius:12px;min-width:48px;min-height:45px;font-size:24px;font-weight:800;line-height:1}",
@@ -106,7 +106,7 @@
     '<h2 class="ap-title" id="ap-name"></h2>',
     '<p class="ap-sub" id="ap-info"></p>',
     '<div class="ap-pills" id="ap-summary"></div>',
-    '<section class="ap-section" id="ap-personal" hidden>',
+    '<section class="ap-section" id="ap-personal">',
     '<div class="ap-personal-header"><h3>Suivi personnel</h3><button type="button" id="ap-plus" aria-label="Ajouter une note à cet agent" title="Ajouter une note">+</button></div>',
     '<p class="ap-note">Historique daté : rappels, remarques, alertes et faits positifs. Les éléments existants sont conservés.</p>',
     '<div id="ap-personal-legacy"></div>',
@@ -143,7 +143,7 @@
   // Le journal se consulte dans Suivi personnel, sans doublon de formulaire.
   $("ap-personal-content").append($("ap-personal-journal"));
   $("ap-entry-form").hidden=true;
-  let personalOpened=false;
+  let personalOpened=true;
 
   function pill(text,state){
     const span=document.createElement("span");
@@ -173,13 +173,11 @@
       pill("RX "+(p.rxCertified===true?"✓":p.rxCertified===false?"non":"?"),p.rxCertified===true?"ok":"unknown"),
       pill("Piste "+(p.pistePermit===true?"✓":p.pistePermit===false?"non":"?"),p.pistePermit===true?"ok":"unknown")
     );
-    const shortcut=document.createElement("button");
-    shortcut.type="button";shortcut.id="ap-personal-shortcut";
+    const shortcut=document.createElement("a");
+    shortcut.id="ap-personal-shortcut";shortcut.href="#ap-personal";
     shortcut.className="ap-pill ap-pill-btn";
-    shortcut.setAttribute("aria-controls","ap-personal");
-    shortcut.setAttribute("aria-expanded",String(personalOpened));
-    shortcut.textContent="📝 Suivi personnel";
-    shortcut.onclick=()=>togglePersonal(true);
+    shortcut.setAttribute("aria-label","Voir les remarques et ajouter une note au suivi personnel");
+    shortcut.textContent="📝 Suivi personnel · voir les notes";
     $("ap-summary").append(shortcut);
     $("ap-cert-status").replaceChildren(expiryPill("RX",p.rxExpiry),expiryPill("Permis piste",p.permitExpiry));
     const extras=$("ap-extra-list");extras.replaceChildren();
@@ -225,11 +223,9 @@
     if(p.reminders!==undefined&&p.reminders!==""){const v=document.createElement("p");v.className="ap-note";v.textContent="Nombre de rappels historiques indiqué dans la fiche : "+p.reminders;existing.prepend(v)}
     if(!existing.childElementCount){const el=document.createElement("p");el.className="ap-note";el.textContent="Aucune autre information enregistrée pour cet agent.";existing.append(el)}
   }
-  function togglePersonal(value){
-    personalOpened=Boolean(value);
-    $("ap-personal").hidden=!personalOpened;
-    $("ap-personal-shortcut")?.setAttribute("aria-expanded",String(personalOpened));
-    if(personalOpened)requestAnimationFrame(()=>$("ap-personal")?.scrollIntoView({behavior:"smooth",block:"start"}));
+  function togglePersonal(){
+    $("ap-personal").hidden=false;
+    requestAnimationFrame(()=>$("ap-personal")?.scrollIntoView({behavior:"smooth",block:"start"}));
   }
   function personMatches(name){
     const target=norm(selected),needle=norm(name);
@@ -304,9 +300,9 @@
   function open(name){
     if(!Object.hasOwn(profiles(),name))return;
     selected=name;
-    personalOpened=false;
+    personalOpened=true;
     view.hidden=false;root.classList.add("ap-open");
-    $("ap-personal").hidden=true;
+    $("ap-personal").hidden=false;
     $("ap-entry-form").hidden=true;
     $("ap-entry-form").reset();$("ap-entry-form").elements.date.value=isoToday();
     $("ap-entry-form").elements.type.value="remarque";
