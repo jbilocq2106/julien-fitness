@@ -301,7 +301,7 @@
       try{await load('./secure-backup-v1.js?v=20261020-2')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
       try{await load('./cloud-sync-private-v1.js?v=3')}catch(error){console.error('Synchronisation privée indisponible :',error)}
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}
-      try{await load('./bureau-planning-errors-v1.js?v=20261102-4')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
+      try{await load('./bureau-planning-errors-v1.js?v=20261105-nohome1')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
       try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
       try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
       try{await load('./startup-reminders-v1.js?v=20261102-2')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
