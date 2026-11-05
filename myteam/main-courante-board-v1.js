@@ -130,7 +130,7 @@ $('jb-custom').addEventListener('click',e=>{
 $('jb-validate').onclick=()=>{
  const day=picker.value;if(!/^\d{4}-\d\d-\d\d$/.test(day))return;
  const fields=collect(),entries=entriesFor(day);
- if(!fields.start&&!fields.end&&!fields.station&&!fields.planNote&&!fields.notes&&!fields.extra.some(x=>x.value)&&!entries.visits.length&&!entries.reminders.length&&!entries.briefs.length){$('jb-status').textContent='La journée est vide : renseigne au moins une information.';return}
+ if(!fields.start&&!fields.end&&!fields.station&&!fields.planNote&&!fields.notes&&!fields.extra.some(x=>x.value)&&fields.cde==='unknown'&&fields.plan==='unknown'&&fields.mail==='unknown'&&fields.trello==='unknown'&&!entries.visits.length&&!entries.reminders.length&&!entries.briefs.length){$('jb-status').textContent='La journée est vide : renseigne au moins une information.';return}
  if(!confirm('Valider et archiver la journée du '+dateLabel(day)+' ? La fiche validée sera conservée dans l’historique.'))return;
  const all=load(KEY,{}),rec=all[day]||{draft:defaults(),validated:false,snapshots:[]};
  const snap={date:day,validatedAt:new Date().toISOString(),fields,entries};
