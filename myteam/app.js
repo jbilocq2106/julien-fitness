@@ -191,9 +191,10 @@
         catch{box.checked=!box.checked;box.closest('label').title='Enregistrement impossible : stockage local indisponible';if(before===null)console.warn('Suivi congés non enregistré');}
       });
       list.querySelectorAll('[data-ad-name]').forEach(btn=>btn.onclick=()=>{
+        const name=btn.dataset.adName;
+        if(window.MyTeamAgentCard?.open(name))return; // Même fiche et suivi personnel depuis Agents ou Équipes.
         const sel=document.querySelector('#agent-select');if(!sel)return;
-        sel.value=btn.dataset.adName;
-        sel.dispatchEvent(new Event('change'));
+        sel.value=name;sel.dispatchEvent(new Event('change'));
         const detail=document.querySelector('#agent-detail');
         if(detail){detail.classList.remove('hidden');detail.scrollIntoView({behavior:'smooth',block:'start'})}
       });
@@ -293,7 +294,7 @@
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
       try{await load('./equipes-v2.js?v=20261105-agent-card1')}catch(error){console.error('Vue Équipes indisponible :',error)}
-      try{await load('./agent-card-v1.js?v=20261105-personal4')}catch(error){console.error('Fiche individuelle agent indisponible :',error)}
+      try{await load('./agent-card-v1.js?v=20261105-fix5')}catch(error){console.error('Fiche individuelle agent indisponible :',error)}
       try{await load('./mobile-shell-v1.js?v=20261105-7')}catch(error){console.error('Navigation mobile indisponible :',error)}
       try{await load('./permit-validity-v1.js?v=20261105-2')}catch(error){console.error('Suivi des permis indisponible :',error)}
       try{await load('./post-qualifications-check-v1.js?v=20261105-1')}catch(error){console.error('Contrôle des postes indisponible :',error)}
@@ -303,16 +304,16 @@
       try{await load('./cloud-sync-private-v1.js?v=3')}catch(error){console.error('Synchronisation privée indisponible :',error)}
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}
       try{await load('./bureau-planning-errors-v1.js?v=20261105-restore1')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
-      try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
+      try{await load('./workspaces-v1.js?v=20261105-subsections1')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
       try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
       try{await load('./startup-reminders-v1.js?v=20261105-agent-cases1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
       try{await load('./extras-equity-v1.js?v=20261102-1')}catch(error){console.error('Suivi des extras indisponible :',error)}
       try{await load('./planning-followup-simple-v1.js?v=20261028-3')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
-      try{await load('./agent-annual-calendar-v1.js?v=20261102-4')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
+      try{await load('./agent-annual-calendar-v1.js?v=20261105-subsections1')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
       try{await load('./supervisors-rota-v1.js?v=20261029-4')}catch(error){console.error('Agenda des superviseurs indisponible :',error)}
       try{await load('./parif-g4s-certifications-v1.js?v=20261102-2')}catch(error){console.error('Affectations G4S et certifications indisponibles :',error)}
       try{await load('./private-day-import-v1.js?v=20261102-2')}catch(error){console.error('Import des notes privées indisponible :',error)}
-      try{await load('./context-reminders-v1.js?v=20261105-home1')}catch(error){console.error('Rappels visuels indisponibles :',error)}
+      try{await load('./context-reminders-v1.js?v=20261105-subsections1')}catch(error){console.error('Rappels visuels indisponibles :',error)}
       try{await load('./private-chatgpt-link-v1.js?v=20261102-1')}catch(error){console.error('Liaison privée ChatGPT indisponible :',error)}
       try{await load('./back-to-home-v1.js?v=20261105-reminders1')}catch(error){console.error('Retour vers l’accueil MyTEAM indisponible :',error)}
       // Congés : accès direct au Google Sheets partagé, sans les anciens formulaires locaux.
