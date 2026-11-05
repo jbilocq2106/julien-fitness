@@ -13,8 +13,8 @@
   const todaySection=document.createElement('section');
   todaySection.id='today';todaySection.className='hidden';
   todaySection.innerHTML=`
-    <div class="card mt-hero"><div class="mt-eyebrow">Mon tableau de bord</div><h2>Accueil</h2>
-      <p class="mt-today-date" id="mt-date"></p><span class="mt-status-chip warn" id="mt-summary">Chargement des informations locales…</span></div>
+    <!-- Conserve les champs techniques sans afficher le bloc « Mon tableau de bord ». -->
+    <div hidden aria-hidden="true"><p id="mt-date"></p><span id="mt-summary"></span></div>
     <div class="mt-columns"><div>
       <div class="card"><h3>👥 Absences à vérifier</h3><div id="mt-absences"></div>
         <p class="mt-section-caption">Un congé demandé n’est pas forcément accordé. Seules les absences maladie signalées dans les fiches locales sont affichées, sans motif médical.</p></div>
