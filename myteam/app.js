@@ -293,7 +293,7 @@
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
       try{await load('./equipes-v2.js?v=20261105-agent-card1')}catch(error){console.error('Vue Équipes indisponible :',error)}
-      try{await load('./agent-card-v1.js?v=20261105-1')}catch(error){console.error('Fiche individuelle agent indisponible :',error)}
+      try{await load('./agent-card-v1.js?v=20261105-2')}catch(error){console.error('Fiche individuelle agent indisponible :',error)}
       try{await load('./mobile-shell-v1.js?v=20261105-7')}catch(error){console.error('Navigation mobile indisponible :',error)}
       try{await load('./permit-validity-v1.js?v=20261105-2')}catch(error){console.error('Suivi des permis indisponible :',error)}
       try{await load('./post-qualifications-check-v1.js?v=20261105-1')}catch(error){console.error('Contrôle des postes indisponible :',error)}
@@ -305,7 +305,7 @@
       try{await load('./bureau-planning-errors-v1.js?v=20261105-restore1')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
       try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
       try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
-      try{await load('./startup-reminders-v1.js?v=20261105-chronological1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
+      try{await load('./startup-reminders-v1.js?v=20261105-agent-cases1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
       try{await load('./extras-equity-v1.js?v=20261102-1')}catch(error){console.error('Suivi des extras indisponible :',error)}
       try{await load('./planning-followup-simple-v1.js?v=20261028-3')}catch(error){console.error('Suivi simplifié des plannings indisponible :',error)}
       try{await load('./agent-annual-calendar-v1.js?v=20261102-4')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
