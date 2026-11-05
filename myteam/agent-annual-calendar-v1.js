@@ -449,7 +449,7 @@
   }
   function show(){
     nav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===tab));
-    main.querySelectorAll('section').forEach(s=>s.classList.toggle('hidden',s!==view));
+    main.querySelectorAll(':scope > section').forEach(s=>s.classList.toggle('hidden',s!==view));
     if(!selected&&names().includes(agentSelect.value))selected=agentSelect.value;
     render();window.scrollTo(0,0);
   }
