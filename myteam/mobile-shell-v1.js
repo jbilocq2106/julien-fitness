@@ -40,9 +40,9 @@
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['today','☀️','Aujourd’hui'],['daily-journal','📒','Ma journée'],['equipes','👥','Équipes'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']];
+  const navItems=[['today','☀️','Aujourd’hui'],['daily-journal','📖','Main courante'],['equipes','👥','Équipes'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']];
   // Nouvelle organisation demandée : réinitialise une fois l'ancien ordre visuel, sans effacer aucune donnée de travail.
-  const NAV_ORDER_KEY='myteam_mobile_nav_order_v4';
+  const NAV_ORDER_KEY='myteam_mobile_nav_order_v5';
   const navDefinitions=[...navItems,['more','☰','Plus']];
   const defaults=navDefinitions.map(item=>item[0]);
   const storedOrder=read(NAV_ORDER_KEY,[]);
@@ -67,9 +67,9 @@
     // Priorité opérationnelle dans « Plus » ; seules les rubriques présentes sont affichées.
     const primary=new Set(navItems.map(x=>x[0]));
     const available=Array.from(topNav.querySelectorAll('button[data-tab]'))
-      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true');
+      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true'&&b.dataset.tab!=='planning');
     const groups=[
-      ['Bureau et plannings', ['mt-bureau','planning','planning-followup-simple','supervisors','prestation','composition','leave','agent-annual']],
+      ['Bureau et plannings', ['mt-bureau','planning-followup-simple','supervisors','prestation','composition','leave','agent-annual']],
       ['Actions et encadrement', ['team','visits','consignes','cde-memo','mt-management-workspace']],
       ['Mes outils personnels', ['hours','salary']],
       ['Historique et sécurité', ['history','secure-backup']]
@@ -115,7 +115,7 @@
     });
   };
   function activate(id){
-    if(id==='daily-journal'){window.location.assign('./ma-journee.html');return;}
+    if(id==='daily-journal'){window.location.assign('./ma-journee.html?v=20261105-2');return;}
     closeMore();
     const btn=Array.from(topNav.querySelectorAll('button[data-tab]')).find(b=>b.dataset.tab===id);
     if(!btn)return;
