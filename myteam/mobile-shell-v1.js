@@ -36,7 +36,7 @@
   main.prepend(todaySection);
 
   const todayTab=document.createElement('button');
-  todayTab.type='button';todayTab.dataset.tab='today';todayTab.textContent='☀️ Aujourd’hui';todayTab.hidden=true;topNav.prepend(todayTab);
+  todayTab.type='button';todayTab.dataset.tab='today';todayTab.textContent='☀️ Aujourd’hui';todayTab.hidden=true;todayTab.style.display='none';topNav.prepend(todayTab);
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
