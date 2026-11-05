@@ -70,6 +70,13 @@
     "#eq-agent-profile .ap-pill.soon{background:#71501f;border-color:#b99048}",
     "#eq-agent-profile .ap-pill.expired{background:#662e38;border-color:#b75e6d}",
     "#eq-agent-profile .ap-pill.unknown{background:#38495d;border-color:#76879d}",
+    "#eq-agent-profile .ap-pill-btn{cursor:pointer;min-height:44px;padding:9px 13px;background:#b45d2b;border:1px solid #d9955a;color:#fff;font-size:14px}",
+    "#eq-agent-profile #ap-personal[hidden],#eq-agent-profile #ap-entry-form[hidden]{display:none!important}",
+    "#eq-agent-profile #ap-personal{background:#1c3047;border:1px solid #7f96ae;border-radius:14px;padding:14px;margin:10px 0}",
+    "#eq-agent-profile .ap-personal-header{display:flex;justify-content:space-between;align-items:center;gap:9px}",
+    "#eq-agent-profile .ap-personal-header h3{margin:0}",
+    "#eq-agent-profile #ap-plus{background:#b96730;border-radius:12px;min-width:48px;min-height:45px;font-size:24px;font-weight:800;line-height:1}",
+    "#eq-agent-profile #ap-personal-legacy .ap-item{margin-top:8px}",
     "#eq-agent-profile .ap-formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}",
     "#eq-agent-profile .ap-formgrid label,#eq-agent-profile .ap-entry-form label{display:grid;gap:5px;font-size:13px;font-weight:700}",
     "#eq-agent-profile select,#eq-agent-profile input,#eq-agent-profile textarea{box-sizing:border-box;min-width:0;width:100%;min-height:45px;padding:10px 11px;border-radius:10px;border:1px solid #7890ab;background:#112035;color:#fff;font:inherit}",
@@ -99,6 +106,12 @@
     '<h2 class="ap-title" id="ap-name"></h2>',
     '<p class="ap-sub" id="ap-info"></p>',
     '<div class="ap-pills" id="ap-summary"></div>',
+    '<section class="ap-section" id="ap-personal" hidden>',
+    '<div class="ap-personal-header"><h3>Suivi personnel</h3><button type="button" id="ap-plus" aria-label="Ajouter une note à cet agent" title="Ajouter une note">+</button></div>',
+    '<p class="ap-note">Historique daté : rappels, remarques, alertes et faits positifs. Les éléments existants sont conservés.</p>',
+    '<div id="ap-personal-legacy"></div>',
+    '<div id="ap-personal-related"></div>',
+    '<div id="ap-personal-content"></div></section>',
     '<section class="ap-section"><h3>Qualifications et fin de validité</h3>',
     '<div class="ap-formgrid">',
     '<label>Qualification RX<select id="ap-rx-qual"><option value="">À confirmer</option><option value="true">Oui</option><option value="false">Non</option></select></label>',
@@ -114,7 +127,7 @@
     '<label>Date de fin (si connue)<input name="expiry" type="date"></label></div><button type="submit">+ Ajouter</button></form>',
     '</section>',
     '<section class="ap-section"><h3>Rappels et alertes actifs</h3><div id="ap-active"></div></section>',
-    '<section class="ap-section"><h3>Journal individuel</h3>',
+    '<section class="ap-section" id="ap-personal-journal"><h3>Journal individuel</h3>',
     '<p class="ap-note">Consigner uniquement des faits professionnels datés et vérifiables. Un rappel n’est marqué fait qu’après confirmation.</p>',
     '<form id="ap-entry-form" class="ap-entry-form">',
     '<div class="ap-formgrid"><label>Type<select name="type"><option value="rappel">Rappel / action à faire</option><option value="alarme">Alerte / point de vigilance</option><option value="positif">Comportement positif</option><option value="remarque">Remarque factuelle</option></select></label>',
@@ -127,6 +140,10 @@
     '<p class="ap-note">Données conservées dans ce navigateur. Aucune note nominative n’est publiée sur GitHub. Les alertes sont visuelles, sans notification automatique du téléphone.</p>'
   ].join("");
   root.prepend(view);
+  // Le journal se consulte dans Suivi personnel, sans doublon de formulaire.
+  $("ap-personal-content").append($("ap-personal-journal"));
+  $("ap-entry-form").hidden=true;
+  let personalOpened=false;
 
   function pill(text,state){
     const span=document.createElement("span");
@@ -154,9 +171,16 @@
     $("ap-rx-renewal").value=validDate(p.rx)?p.rx:"";
     $("ap-summary").replaceChildren(
       pill("RX "+(p.rxCertified===true?"✓":p.rxCertified===false?"non":"?"),p.rxCertified===true?"ok":"unknown"),
-      pill("Piste "+(p.pistePermit===true?"✓":p.pistePermit===false?"non":"?"),p.pistePermit===true?"ok":"unknown"),
-      pill("Suivi personnel", "ok")
+      pill("Piste "+(p.pistePermit===true?"✓":p.pistePermit===false?"non":"?"),p.pistePermit===true?"ok":"unknown")
     );
+    const shortcut=document.createElement("button");
+    shortcut.type="button";shortcut.id="ap-personal-shortcut";
+    shortcut.className="ap-pill ap-pill-btn";
+    shortcut.setAttribute("aria-controls","ap-personal");
+    shortcut.setAttribute("aria-expanded",String(personalOpened));
+    shortcut.textContent="📝 Suivi personnel";
+    shortcut.onclick=()=>togglePersonal(true);
+    $("ap-summary").append(shortcut);
     $("ap-cert-status").replaceChildren(expiryPill("RX",p.rxExpiry),expiryPill("Permis piste",p.permitExpiry));
     const extras=$("ap-extra-list");extras.replaceChildren();
     const list=Array.isArray(p.otherCertifications)?p.otherCertifications:[];
@@ -187,6 +211,7 @@
     const old=logged.slice().sort((a,b)=>String(b.date||b.createdAt||"").localeCompare(String(a.date||a.createdAt||"")));
     if(!old.length){const empty=document.createElement("p");empty.className="ap-note";empty.textContent="Aucun fait structuré enregistré pour l’instant.";hist.append(empty)}
     old.forEach(x=>hist.append(renderEvent(x,false)));
+    renderPersonalHistory(p);
     const existing=$("ap-existing");existing.replaceChildren();
     const fields=[
       ["Remarques et appréciations historiques",p.notes],
@@ -199,7 +224,67 @@
     fields.forEach(([label,body])=>{if(body)addTextCard(existing,label,body)});
     if(p.reminders!==undefined&&p.reminders!==""){const v=document.createElement("p");v.className="ap-note";v.textContent="Nombre de rappels historiques indiqué dans la fiche : "+p.reminders;existing.prepend(v)}
     if(!existing.childElementCount){const el=document.createElement("p");el.className="ap-note";el.textContent="Aucune autre information enregistrée pour cet agent.";existing.append(el)}
-    window.scrollTo(0,0);
+  }
+  function togglePersonal(value){
+    personalOpened=Boolean(value);
+    $("ap-personal").hidden=!personalOpened;
+    $("ap-personal-shortcut")?.setAttribute("aria-expanded",String(personalOpened));
+    if(personalOpened)requestAnimationFrame(()=>$("ap-personal")?.scrollIntoView({behavior:"smooth",block:"start"}));
+  }
+  function personMatches(name){
+    const target=norm(selected),needle=norm(name);
+    if(!target||needle.length<5)return false;
+    if(needle===target)return true;
+    // Un nom abrégé n'est accepté que s'il correspond à un seul agent.
+    if(!target.startsWith(needle))return false;
+    return Object.keys(profiles()).filter(k=>norm(k).startsWith(needle)).length===1;
+  }
+  function relatedJournal(){
+    const items=[],seen=new Set();
+    const add=(id,source,date,text,done)=>{
+      if(!text||seen.has(id))return;
+      seen.add(id);items.push({id,source,date,text,done});
+    };
+    for(const [source,key] of [["Action main courante","myteam-board-actions-v1"],["Événement main courante","myteam-board-events-v1"]]){
+      const data=read(key,{});
+      if(!data||typeof data!=="object"||Array.isArray(data))continue;
+      Object.entries(data).forEach(([day,entries])=>{
+        if(!Array.isArray(entries))return;
+        entries.forEach((entry,i)=>{
+          if(!entry||!personMatches(String(entry.agent||"")))return;
+          const text=[entry.title,entry.description].filter(Boolean).join(" · ").trim();
+          add(key+"|"+day+"|"+(entry.id||i),source,day,text,entry.status==="done"||entry.state==="done");
+        });
+      });
+    }
+    const ctx=read(CONTEXT,[]);
+    if(Array.isArray(ctx))ctx.forEach((entry,i)=>{
+      if(!entry||!personMatches(String(entry.agent||"")))return;
+      add("ctx|"+(entry.id||i),"Rappel agent",String(entry.createdAt||"").slice(0,10),String(entry.text||""),entry.status==="done");
+    });
+    return items.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  }
+  function renderPersonalHistory(p){
+    const legacy=$("ap-personal-legacy");legacy.replaceChildren();
+    const oldNotes=[["Rappels historiques",p.reminderNotes],["Remarques existantes",p.notes]];
+    oldNotes.forEach(([label,content])=>{
+      if(!String(content||"").trim())return;
+      const box=document.createElement("div");box.className="ap-item";
+      const head=document.createElement("strong");head.textContent=label;
+      const para=document.createElement("p");para.textContent=String(content);
+      box.append(head,para);legacy.append(box);
+    });
+    const related=$("ap-personal-related");related.replaceChildren();
+    const items=relatedJournal();
+    items.forEach(x=>{
+      const box=document.createElement("div");box.className="ap-item";
+      const head=document.createElement("div");head.className="ap-pills";
+      head.append(pill(x.source,"unknown"));
+      if(validDate(x.date))head.append(pill(fmt(x.date),"unknown"));
+      if(x.done)head.append(pill("Terminé","ok"));
+      const p=document.createElement("p");p.textContent=x.text;
+      box.append(head,p);related.append(box);
+    });
   }
   function renderEvent(x,active){
     const card=document.createElement("div");card.className="ap-item";
@@ -219,8 +304,12 @@
   function open(name){
     if(!Object.hasOwn(profiles(),name))return;
     selected=name;
+    personalOpened=false;
     view.hidden=false;root.classList.add("ap-open");
+    $("ap-personal").hidden=true;
+    $("ap-entry-form").hidden=true;
     $("ap-entry-form").reset();$("ap-entry-form").elements.date.value=isoToday();
+    $("ap-entry-form").elements.type.value="remarque";
     $("ap-qual-message").textContent="";$("ap-entry-status").textContent="";
     render();
   }
@@ -233,6 +322,14 @@
     e.preventDefault();open(btn.dataset.eqAgent);
   });
   $("ap-back").onclick=close;
+  $("ap-plus").onclick=()=>{
+    togglePersonal(true);
+    const form=$("ap-entry-form");
+    form.hidden=false;
+    form.elements.date.value=isoToday();
+    form.elements.type.value="remarque";
+    requestAnimationFrame(()=>form.querySelector('textarea[name="text"]')?.focus());
+  };
   $("ap-save-quals").onclick=()=>{
     const p=details();if(!p)return;
     const rx=$("ap-rx-expiry").value,permit=$("ap-permit-expiry").value,renewal=$("ap-rx-renewal").value;
@@ -265,7 +362,8 @@
     if(!["rappel","alarme","positif","remarque"].includes(type)||!validDate(date)||due&&!validDate(due)||!text)return;
     const record={id:"agent-"+Date.now()+"-"+Math.random().toString(36).slice(2,9),type,date,due,text:text.slice(0,1000),done:false,createdAt:new Date().toISOString()};
     if(!saveCases([...ownCases(),record])){$("ap-entry-status").textContent="Enregistrement impossible.";return}
-    f.reset();f.elements.date.value=isoToday();render();$("ap-entry-status").textContent="Fait enregistré dans la fiche.";
+    f.reset();f.elements.date.value=isoToday();f.elements.type.value="remarque";f.hidden=true;
+    render();$("ap-entry-status").textContent="Note ajoutée à l'historique de cet agent.";
   });
   $("ap-active").addEventListener("click",e=>{
     const b=e.target.closest("[data-ap-done]");if(!b)return;
