@@ -98,7 +98,7 @@
 
   const manual=()=>arr(read(KEY,[])).filter(r=>r&&typeof r==='object'&&r.id&&r.done!==true);
   const saveManual=rows=>{try{localStorage.setItem(KEY,JSON.stringify(rows));return true;}catch{return false;}};
-  const item=(id,title,detail,level,tab,selector,popup,manualId=null,date=null)=>({id,title,detail,level,tab,selector,popup,manualId,date});
+  const item=(id,title,detail,level,tab,selector,popup,manualId=null,date=null,agentName=null,caseId=null)=>({id,title,detail,level,tab,selector,popup,manualId,date,agentName,caseId});
   function collect(){
     const rows=[];
     const allPlanning=[
@@ -174,6 +174,44 @@
         'normal','today','#mt-ops-consignes-summary',false));
     }
 
+
+    // Rappels et alertes structurés dans les fiches agents : pas de copie nominative dans le code public.
+    const casebook=read('myteam_agent_casebook_v1',{});
+    if(casebook&&typeof casebook==='object'&&!Array.isArray(casebook)){
+      Object.entries(casebook).forEach(([name,entries])=>{
+        arr(entries).forEach(r=>{
+          if(!r||r.done===true||!['rappel','alarme'].includes(r.type))return;
+          const due=validDate(r.due)?r.due:null;
+          const label=r.type==='alarme'?'Alerte':'Rappel';
+          rows.push(item('agent-case-'+r.id,label+' · '+name,
+            String(r.text||'').slice(0,270)+(due?' · échéance '+fmt(due):' · échéance à préciser'),
+            due&&offset(due)<=2?'urgent':'normal','equipes',null,Boolean(due&&offset(due)<=2),null,due,name,r.id));
+        });
+      });
+    }
+    // Échéances de certification : pastilles à partir d'un mois calendaire avant la fin.
+    const agentData=read('myteam_agent_profiles_v1',{});
+    if(agentData&&typeof agentData==='object'&&!Array.isArray(agentData)){
+      const today=iso(new Date());
+      const beforeMonth=(d)=>{
+        if(!validDate(d))return null;
+        const [y,m,day]=d.split('-').map(Number);
+        const x=new Date(y,m-2,Math.min(day,new Date(y,m-1,0).getDate()),12);
+        return iso(x);
+      };
+      Object.entries(agentData).forEach(([name,p])=>{
+        if(!p||typeof p!=='object')return;
+        const certs=[['RX',p.rxExpiry],['Permis piste',p.permitExpiry],
+          ...arr(p.otherCertifications).map(x=>[String(x?.label||'Certification'),x?.expiry])];
+        certs.forEach(([label,d],index)=>{
+          if(!validDate(d)||today<beforeMonth(d))return;
+          rows.push(item('cert-expiry-'+name+'-'+index,'Certification · '+name+' · '+label,
+            d<today?'Date de fin dépassée · vérifier la validité officielle.':'Date de fin proche · vérifier le renouvellement.',
+            'urgent','equipes',null,true,null,d,name,null));
+        });
+      });
+    }
+
     manual().forEach(r=>{
       const diff=offset(r.date);
       if(diff===null)return;
@@ -195,6 +233,7 @@
     hideModal();
     const tab=Array.from(nav.querySelectorAll('button[data-tab]')).find(b=>b.dataset.tab===r.tab);
     if(tab)tab.click();
+    if(r.agentName)window.MyTeamAgentCard?.open(r.agentName);
     if(r.selector)setTimeout(()=>document.querySelector(r.selector)?.scrollIntoView({behavior:'smooth',block:'start'}),140);
   }
   function renderRows(list,items,inModal){
@@ -222,6 +261,19 @@
           const current=arr(read(KEY,[]));
           const saved=saveManual(current.map(x=>x.id===r.manualId?{...x,done:true,doneAt:new Date().toISOString()}:x));
           if(saved)refresh();else alert('Enregistrement impossible sur cet appareil.');
+        };
+        actions.append(done);
+      }
+      if(r.caseId&&r.agentName&&!inModal){
+        const done=document.createElement('button');done.type='button';done.className='mtr-complete';done.textContent='✓ Fait';
+        done.onclick=()=>{
+          if(!confirm('Confirmer que ce rappel ou cette alerte a été traité ?'))return;
+          const all=read('myteam_agent_casebook_v1',{});
+          const entries=arr(all?.[r.agentName]);
+          if(!entries.some(x=>x.id===r.caseId))return;
+          all[r.agentName]=entries.map(x=>x.id===r.caseId?{...x,done:true,doneAt:new Date().toISOString()}:x);
+          try{localStorage.setItem('myteam_agent_casebook_v1',JSON.stringify(all));window.MyTeamAgentCard?.refresh();refresh();}
+          catch{alert('Enregistrement impossible.')}
         };
         actions.append(done);
       }
@@ -268,6 +320,7 @@
   window.addEventListener('storage',e=>{if(e.key&&e.key.startsWith('myteam_'))refresh();});
   document.getElementById('mt-mobile-nav')?.addEventListener('click',refresh);
   nav.querySelectorAll('button[data-tab]').forEach(b=>b.addEventListener('click',refresh));
+  window.addEventListener('myteam:agent-profile-changed',refresh);
   window.MyTeamRefreshReminders=refresh;
   refresh();
   // Les rappels restent consultatifs : ne pas ouvrir de modale automatique.
