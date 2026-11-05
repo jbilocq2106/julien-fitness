@@ -271,7 +271,7 @@
       await load('./hours-v1.js?v=20261021-4');
       await load('./salary-forecast-v3.js?v=20261027-1');
       await load('./agents-migration-v3.js?v=20261023-1');
-      await load('./roster-v6.js?v=20261023-2');
+      await load('./roster-v6.js?v=20261105-1');
       const visitsCss=document.createElement('link');
       visitsCss.rel='stylesheet';visitsCss.href='./post-visits-v1.css?v=20261019-1';
       document.head.append(visitsCss);
@@ -292,7 +292,8 @@
       console.error(err)
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
-      try{await load('./mobile-shell-v1.js?v=20261102-2')}catch(error){console.error('Navigation mobile indisponible :',error)}
+      try{await load('./equipes-v2.js?v=20261105-1')}catch(error){console.error('Vue Équipes indisponible :',error)}
+      try{await load('./mobile-shell-v1.js?v=20261105-1')}catch(error){console.error('Navigation mobile indisponible :',error)}
       try{await load('./today-operations-v1.js?v=20261019-1')}catch(error){console.error('Suivi quotidien indisponible :',error)}
       try{await load('./mobile-polish-v1.js?v=20261018-1')}catch(error){console.error('Fiches mobiles indisponibles :',error)}
       try{await load('./secure-backup-v1.js?v=20261020-2')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
