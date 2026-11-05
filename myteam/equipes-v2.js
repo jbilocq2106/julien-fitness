@@ -57,7 +57,7 @@
     "#equipes .eq-privacy input{width:100%}",
     "#equipes .eq-hint{padding:20px 8px;color:#afc3d8}",
     "@media(min-width:781px){#equipes{max-width:900px;margin:auto}#equipes .eq-head,#equipes .eq-row{grid-template-columns:112px 1fr 100px 100px;padding:0 17px}#equipes .eq-name{font-size:15px}#equipes .eq-num{font-size:13px}}",
-    "@media print{@page{size:A4 portrait;margin:11mm}body{background:white!important;color:#172d45!important}body>*:not(main){display:none!important}main>*:not(#equipes){display:none!important}main{padding:0!important}#equipes{display:block!important;padding:0!important;max-width:none!important}#equipes .eq-teams,#equipes .eq-filters,#equipes #eq-search,#equipes .eq-foot,#equipes .eq-privacy,#equipes .eq-sub{display:none!important}#equipes .eq-row{min-height:21px!important;break-inside:avoid}#equipes .eq-name{font-size:9px}#equipes .eq-num{font-size:9px}#equipes .eq-head{min-height:28px}#equipes .eq-qual{min-height:15px;padding:0 2px;border-radius:1px}#equipes .eq-stats{margin:8px 0}#equipes .eq-stat{padding:6px 10px}#equipes .eq-stat b{font-size:15px}}"
+    "@media print{@page{size:A4 portrait;margin:11mm}body{background:white!important;color:#172d45!important}body>*:not(main){display:none!important}main>*:not(#equipes){display:none!important}main{padding:0!important}#equipes{display:block!important;padding:0!important;max-width:none!important}#equipes .eq-teams,#equipes .eq-filters,#equipes #eq-search,#equipes .eq-foot,#equipes .eq-privacy,#equipes .eq-sub{display:none!important}#equipes .eq-row{min-height:21px!important;break-inside:avoid}#equipes .eq-name{font-size:9px}#equipes .eq-num{font-size:9px}#equipes .eq-head{min-height:28px}#equipes .eq-qual{min-height:15px;padding:0 2px;border-radius:1px;font-size:0!important;background:transparent!important;color:transparent!important}#equipes .eq-qual::after{content:"□";font-size:12px;color:#263248}#equipes .eq-stats{margin:8px 0}#equipes .eq-stat{padding:6px 10px}#equipes .eq-stat b{font-size:15px}}"
   ].join("\n");
   document.head.append(style);
   const section=document.createElement("section");
@@ -134,21 +134,31 @@
       if(file.size>2000000)throw Error("Fichier trop volumineux");
       const data=JSON.parse(await file.text());
       if(!data||!data.teams||typeof data.teams!=="object")throw Error("Format d'annuaire non reconnu");
-      const current=getProfiles(),normMap=new Map(Object.keys(current).map(k=>[norm(k),k]));
-      let changed=0;const seen=new Set();
+      const current=getProfiles(),originalNames=Object.keys(current),normMap=new Map(Object.keys(current).map(k=>[norm(k),k]));
+      let changed=0;const seen=new Set(),retained=new Set();
       for(let t=1;t<=4;t++){
         const entries=data.teams[String(t)];
         if(!Array.isArray(entries))continue;
         for(const r of entries){
           if(!r||typeof r.name!=="string"||r.name.length>100||!["M","F"].includes(r.gender)||!(/^\d{2,10}$/.test(String(r.workerNumber))))continue;
           const key=norm(r.name);if(seen.has(key))continue;seen.add(key);
-          const knownName=normMap.get(key)||r.name;
+          const candidates=Object.keys(current).filter(name=>!retained.has(name)&&Number(current[name]?.team)===t&&norm(name).length>=5&&(key.startsWith(norm(name))||norm(name).startsWith(key)));
+          const knownName=normMap.get(key)||(candidates.length===1?candidates[0]:r.name);
+          retained.add(knownName);
           const p=current[knownName]&&typeof current[knownName]==="object"?current[knownName]:{};
           current[knownName]=Object.assign({},p,{team:t,gender:r.gender,workerNumber:String(r.workerNumber),rosterSeedCurrentV2:true,rosterPrivateImport:true});
           normMap.set(key,knownName);changed++;
         }
       }
       if(changed<1)throw Error("Aucune ligne exploitable dans le fichier");
+      // Les fiches historiques restent conservées, mais hors équipe si absentes de la liste de référence.
+      let toReview=0;
+      for(const name of originalNames){
+        const p=current[name];
+        if(p&&[1,2,3,4].includes(Number(p.team))&&!retained.has(name)){
+          current[name]=Object.assign({},p,{team:0,rosterNeedsReview:true});toReview++;
+        }
+      }
       const deleted=getDeleted();
       for(const key of Array.from(deleted)){if(seen.has(key))deleted.delete(key)}
       const oldDel=JSON.parse(localStorage.getItem(DEL)||"[]");
@@ -158,7 +168,7 @@
       }catch{throw Error("Stockage de ce téléphone indisponible")}
       try{if(typeof agentProfiles!=="undefined")Object.assign(agentProfiles,current)}catch{}
       try{window.renderMyTeamAgentList&&window.renderMyTeamAgentList()}catch{}
-      status.textContent=changed+" fiches mises à jour sur ce téléphone. Les qualifications existantes ont été conservées.";
+      status.textContent=changed+" fiches mises à jour. "+(toReview?toReview+" ancienne(s) fiche(s) à vérifier dans Agents. ":"")+"Qualifications précédentes conservées.";
       render();
     }catch(err){status.textContent="Import non effectué : "+err.message}
     e.target.value="";
