@@ -38,11 +38,14 @@ const dayLabelEl=picker.closest('label');if(dayLabelEl)dayLabelEl.after(el);else
 const $=id=>document.getElementById(id);
 function entriesFor(day){
  const journal=load(OLD,{})[day]||{};
- const briefs=load(BRIEF,[]);
+ const briefs=load(BRIEF,[]),structured=load('myteam-board-events-v1',{}),actions=load('myteam-board-actions-v1',{});
+ const noVisits=load(KEY,{})[day]?.visitsDeclaredNone===true;
  return {
- visits:(Array.isArray(journal.visits)?journal.visits:[]).map(v=>({poste:String(v.poste||''),agents:String(v.agents||''),type:String(v.type||'Passage'),notes:String(v.notes||'')})),
+ visits:(noVisits?[]:Array.isArray(journal.visits)?journal.visits:[]).map(v=>({poste:String(v.poste||''),agents:String(v.agents||''),type:String(v.type||'Passage'),notes:String(v.notes||'')})),
  reminders:(Array.isArray(journal.reminders)?journal.reminders:[]).map(v=>({text:String(v.text||''),done:v.done===true})),
- briefs:(Array.isArray(briefs)?briefs:[]).filter(v=>v.date===day).map(v=>({kind:String(v.kind||'Transmission'),text:String(v.text||''),done:v.done===true}))
+ briefs:(Array.isArray(briefs)?briefs:[]).filter(v=>v.date===day).map(v=>({kind:String(v.kind||'Transmission'),text:String(v.text||''),done:v.done===true})),
+ operations:Array.isArray(structured[day])?structured[day]:[],
+ actions:Array.isArray(actions[day])?actions[day]:[]
  };
 }
 function currentRec(){
@@ -72,7 +75,10 @@ function currentSummary(fields,parts){
  html+=line('Mail',yesno(fields.mail))+line('Trello',yesno(fields.trello));
  if(fields.notes)html+=line('Notes',fields.notes);
  for(const x of fields.extra||[])if(x.label)html+=line(x.label,x.value||empty);
- html+='<p class="jb-muted">'+parts.visits.length+' déplacement(s) · '+parts.reminders.length+' rappel(s) · '+parts.briefs.length+' transmission(s)</p>';
+ const operations=Array.isArray(parts.operations)?parts.operations:[],actions=Array.isArray(parts.actions)?parts.actions:[];
+ html+='<p class="jb-muted">'+parts.visits.length+' déplacement(s) · '+parts.reminders.length+' rappel(s) · '+parts.briefs.length+' transmission(s) · '+operations.length+' intervention(s) · '+actions.filter(x=>x.status!=='done').length+' action(s) ouverte(s)</p>';
+ if(operations.length){html+='<h4>Modifications et interventions</h4>';for(const x of operations)html+=line((x.kind||'Information')+' · '+(x.title||'Sans objet'),[x.slot?'Horaire '+x.slot:'',x.effectiveDate?'Effet le '+dateLabel(x.effectiveDate):'',x.description||'',x.mail==='yes'?'Mail OK':''].filter(Boolean).join(' — '));}
+ if(actions.length){html+='<h4>Suivis / rappels</h4>';for(const x of actions)html+=line(x.status==='done'?'Fait':'À faire '+(x.dueDate?'le '+dateLabel(x.dueDate):''),[x.agent,x.title].filter(Boolean).join(' — '));}
  if(parts.visits.length){html+='<h4>Déplacements et visites</h4>';for(const x of parts.visits)html+=line((x.poste||'Poste non précisé')+' · '+(x.type||'Passage'),[x.agents,x.notes].filter(Boolean).join(' — '));}
  if(parts.briefs.length){html+='<h4>Transmissions</h4>';for(const x of parts.briefs)html+=line(x.kind+(x.done?' (fait)':' (à suivre)'),x.text);}
  if(parts.reminders.length){html+='<h4>Rappels</h4>';for(const x of parts.reminders)html+=line(x.done?'Fait':'À faire',x.text);}
@@ -132,7 +138,7 @@ $('jb-custom').addEventListener('click',e=>{
 $('jb-validate').onclick=()=>{
  const day=picker.value;if(!/^\d{4}-\d\d-\d\d$/.test(day))return;
  const fields=collect(),entries=entriesFor(day);
- if(!fields.start&&!fields.end&&!fields.station&&!fields.planNote&&!fields.notes&&!fields.extra.some(x=>x.value)&&fields.cde==='unknown'&&fields.plan==='unknown'&&fields.mail==='unknown'&&fields.trello==='unknown'&&!entries.visits.length&&!entries.reminders.length&&!entries.briefs.length){$('jb-status').textContent='La journée est vide : renseigne au moins une information.';return}
+ if(!fields.start&&!fields.end&&!fields.station&&!fields.planNote&&!fields.notes&&!fields.extra.some(x=>x.value)&&fields.cde==='unknown'&&fields.plan==='unknown'&&fields.mail==='unknown'&&fields.trello==='unknown'&&!entries.visits.length&&!entries.reminders.length&&!entries.briefs.length&&!entries.operations.length&&!entries.actions.length){$('jb-status').textContent='La journée est vide : renseigne au moins une information.';return}
  if(!confirm('Valider et archiver la journée du '+dateLabel(day)+' ? La fiche validée sera conservée dans l’historique.'))return;
  const all=load(KEY,{}),rec=all[day]||{draft:defaults(),validated:false,snapshots:[]};
  const snap={date:day,validatedAt:new Date().toISOString(),fields,entries};
@@ -159,6 +165,6 @@ $('jb-export').onclick=()=>{
 };
 picker.addEventListener('change',changeDay);
 window.addEventListener('focus',()=>{const item=currentRec();if(!item.validated)$('jb-current').innerHTML=currentSummary(item.draft||defaults(),entriesFor(picker.value));renderArchives()});
-window.addEventListener('myteam-board-updated',renderArchives);
+window.addEventListener('myteam-board-updated',()=>{renderCurrent();renderArchives()});
 changeDay();
 })();
