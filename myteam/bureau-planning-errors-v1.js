@@ -138,7 +138,6 @@
   // Bureau : un point d'entrée par espace, les sous-fonctions restent accessibles à l'intérieur.
   const categoryItems = [
     ['1 · Aujourd’hui — actions quotidiennes', [
-      ['today', '☀️', 'Tableau du jour', 'Alertes et remplacements'],
       ['parif', '📷', 'Plan PARIF'],
       ['main-courante', '📝', 'Main courante'],
       ['visits', '✅', 'Visites sur poste', 'Objectif : 3 par jour']
