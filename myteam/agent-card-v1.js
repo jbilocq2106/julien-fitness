@@ -38,7 +38,7 @@
   }
   function saveCases(list){
     const all=cases();all[selected]=list;
-    try{localStorage.setItem(CASES,JSON.stringify(all));return true}catch{return false}
+    try{localStorage.setItem(CASES,JSON.stringify(all));window.MyTeamRefreshReminders?.();return true}catch{return false}
   }
   function syncPermit(date,p){
     const worker=String(p.workerNumber||"").trim();
