@@ -120,7 +120,7 @@
    main.append(section);
    button.onclick=()=>{
      nav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===button));
-     main.querySelectorAll('section').forEach(s=>s.classList.toggle('hidden',s!==section));
+     main.querySelectorAll(':scope > section').forEach(s=>s.classList.toggle('hidden',s!==section));
      window.scrollTo(0,0);
    };
    $('mt-ws-manager').onclick=()=>open('manager');
