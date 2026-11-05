@@ -13,7 +13,7 @@
   const todaySection=document.createElement('section');
   todaySection.id='today';todaySection.className='hidden';
   todaySection.innerHTML=`
-    <div class="card mt-hero"><div class="mt-eyebrow">Mon tableau de bord</div><h2>☀️ Aujourd’hui</h2>
+    <div class="card mt-hero"><div class="mt-eyebrow">Mon tableau de bord</div><h2>Accueil</h2>
       <p class="mt-today-date" id="mt-date"></p><span class="mt-status-chip warn" id="mt-summary">Chargement des informations locales…</span></div>
     <div class="mt-columns"><div>
       <div class="card"><h3>👥 Absences à vérifier</h3><div id="mt-absences"></div>
@@ -36,13 +36,13 @@
   main.prepend(todaySection);
 
   const todayTab=document.createElement('button');
-  todayTab.type='button';todayTab.dataset.tab='today';todayTab.textContent='☀️ Aujourd’hui';topNav.prepend(todayTab);
+  todayTab.type='button';todayTab.dataset.tab='today';todayTab.textContent='☀️ Aujourd’hui';todayTab.hidden=true;topNav.prepend(todayTab);
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['today','☀️','Aujourd’hui'],['daily-journal','📖','Main courante'],['equipes','👥','Équipes'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']];
+  const navItems=[['daily-journal','📖','Main courante'],['equipes','👥','Équipes'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']];
   // Nouvelle organisation demandée : réinitialise une fois l'ancien ordre visuel, sans effacer aucune donnée de travail.
-  const NAV_ORDER_KEY='myteam_mobile_nav_order_v5';
+  const NAV_ORDER_KEY='myteam_mobile_nav_order_v6';
   const navDefinitions=[...navItems,['more','☰','Plus']];
   const defaults=navDefinitions.map(item=>item[0]);
   const storedOrder=read(NAV_ORDER_KEY,[]);
@@ -67,7 +67,7 @@
     // Priorité opérationnelle dans « Plus » ; seules les rubriques présentes sont affichées.
     const primary=new Set(navItems.map(x=>x[0]));
     const available=Array.from(topNav.querySelectorAll('button[data-tab]'))
-      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true'&&b.dataset.tab!=='planning');
+      .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true'&&b.dataset.tab!=='planning'&&b.dataset.tab!=='today');
     const groups=[
       ['Bureau et plannings', ['mt-bureau','planning-followup-simple','supervisors','prestation','composition','leave','agent-annual']],
       ['Actions et encadrement', ['team','visits','consignes','cde-memo','mt-management-workspace']],
