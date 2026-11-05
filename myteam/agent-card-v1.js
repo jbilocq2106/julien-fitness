@@ -224,8 +224,10 @@
     if(!existing.childElementCount){const el=document.createElement("p");el.className="ap-note";el.textContent="Aucune autre information enregistrée pour cet agent.";existing.append(el)}
   }
   function togglePersonal(){
-    $("ap-personal").hidden=false;
-    requestAnimationFrame(()=>$("ap-personal")?.scrollIntoView({behavior:"smooth",block:"start"}));
+    const panel=$("ap-personal"),journal=$("ap-personal-journal");
+    panel.classList.remove("hidden");journal.classList.remove("hidden");
+    panel.hidden=false;journal.hidden=false;
+    requestAnimationFrame(()=>panel.scrollIntoView({behavior:"smooth",block:"start"}));
   }
   function personMatches(name){
     const target=norm(selected),needle=norm(name);
@@ -298,16 +300,27 @@
     return card;
   }
   function open(name){
-    if(!Object.hasOwn(profiles(),name))return;
+    if(!Object.hasOwn(profiles(),name))return false;
+    if(root.classList.contains("hidden")){
+      document.querySelector('nav.tabs button[data-tab="equipes"]')?.click();
+      root.classList.remove("hidden");
+      document.querySelectorAll("main > section").forEach(sec=>{
+        if(sec!==root)sec.classList.add("hidden");
+      });
+    }
     selected=name;
     personalOpened=true;
     view.hidden=false;root.classList.add("ap-open");
+    $("ap-personal").classList.remove("hidden");
+    $("ap-personal-journal").classList.remove("hidden");
     $("ap-personal").hidden=false;
+    $("ap-personal-journal").hidden=false;
     $("ap-entry-form").hidden=true;
     $("ap-entry-form").reset();$("ap-entry-form").elements.date.value=isoToday();
     $("ap-entry-form").elements.type.value="remarque";
     $("ap-qual-message").textContent="";$("ap-entry-status").textContent="";
     render();
+    return true;
   }
   function close(){
     selected="";view.hidden=true;root.classList.remove("ap-open");window.scrollTo(0,0);
@@ -373,5 +386,9 @@
     if(b&&b.dataset.tab!=="equipes"&&selected)close();
   });
   window.addEventListener("focus",()=>{if(selected&&!root.classList.contains("hidden"))render()});
-  window.MyTeamAgentCard={open,close,refresh:()=>{if(selected)render()}};
+  window.MyTeamAgentCard={open,close,refresh:()=>{if(selected)render()},showPersonal:()=>{
+    if(!selected)return false;
+    togglePersonal();
+    return true;
+  }};
 })();
