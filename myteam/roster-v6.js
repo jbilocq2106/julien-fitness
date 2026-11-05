@@ -1,6 +1,15 @@
 (()=>{
   if(typeof agentProfiles==='undefined'||typeof renderAgents!=='function')return;
 
+  // A private imported roster is authoritative. Never repopulate removed/old
+  // team assignments from historic seed data after the user imports it.
+  if(Object.values(agentProfiles).some(p=>p?.rosterPrivateImport===true)){
+    try{renderAgents();window.renderMyTeamAgentList?.()}catch{}
+    const info=document.querySelector('#agent-import-status');
+    if(info)info.textContent='Équipes chargées depuis l’annuaire privé : composition et matricules conservés.';
+    return;
+  }
+
   const SEED_KEY='myteam_team_roster_current_v2';
   // La liste corrigée de l'équipe 3 comprend KRIEG et D'AVERSI.
   const normalizeRemoved=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
