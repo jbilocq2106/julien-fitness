@@ -121,7 +121,7 @@
     if(!btn)return;
     if(id==='today'){
       topNav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b===todayTab));
-      main.querySelectorAll('section').forEach(s=>s.classList.toggle('hidden',s!==todaySection));
+      main.querySelectorAll(':scope > section').forEach(s=>s.classList.toggle('hidden',s!==todaySection));
       renderToday();
     }else btn.click();
     markActive(id);window.scrollTo(0,0);
