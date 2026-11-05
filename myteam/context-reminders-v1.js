@@ -34,7 +34,7 @@ main.append(page);
 // Les échéances générales sont visibles d'abord, suivies des rappels agents sans date.
 const deadlines=document.getElementById('mt-reminders-panel');
 if(deadlines)page.prepend(deadlines);
-tab.addEventListener('click',()=>{nav.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===tab));main.querySelectorAll('section').forEach(x=>x.classList.toggle('hidden',x!==page));draw();window.scrollTo(0,0)});
+tab.addEventListener('click',()=>{nav.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===tab));main.querySelectorAll(':scope > section').forEach(x=>x.classList.toggle('hidden',x!==page));draw();window.scrollTo(0,0)});
 const tiles=document.createElement('div');tiles.id='mt-home-tiles';tiles.setAttribute('aria-label','Rubriques MyTEAM');
 [['today','☀️','Aujourd’hui'],['team','👥','Agents'],['leave','🏖️','Congés'],['planning','🗓️','Mon planning'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']].forEach(([id,icon,label])=>{
  const b=document.createElement('button');b.type='button';b.dataset.ctxTab=id;
