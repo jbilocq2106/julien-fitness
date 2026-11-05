@@ -115,7 +115,7 @@
     });
   };
   function activate(id){
-    if(id==='daily-journal'){window.location.assign('./ma-journee.html?v=20261105-2');return;}
+    if(id==='daily-journal'){window.location.assign('./ma-journee.html?v=20261105-4');return;}
     closeMore();
     const btn=Array.from(topNav.querySelectorAll('button[data-tab]')).find(b=>b.dataset.tab===id);
     if(!btn)return;
