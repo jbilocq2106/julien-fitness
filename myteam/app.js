@@ -301,9 +301,6 @@
       try{await load('./secure-backup-v1.js?v=20261020-2')}catch(error){console.error('Sauvegarde privée indisponible :',error)}
       try{await load('./cloud-sync-private-v1.js?v=3')}catch(error){console.error('Synchronisation privée indisponible :',error)}
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}
-      try{await load('./leave-board-photo-v1.js?v=20261102-2')}catch(error){console.error('Tableau des congés indisponible :',error)}
-      try{await load('./agent-leave-tracking-v1.js?v=20261023-10')}catch(error){console.error('Suivi des congés par agent indisponible :',error)}
-      try{await load('./leave-recap-v1.js?v=20261023-7')}catch(error){console.error('Récapitulatif des congés indisponible :',error)}
       try{await load('./bureau-planning-errors-v1.js?v=20261102-4')}catch(error){console.error('Bureau MyTEAM et erreurs planning indisponibles :',error)}
       try{await load('./workspaces-v1.js?v=20261023-6')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
       try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
@@ -317,6 +314,28 @@
       try{await load('./context-reminders-v1.js?v=20261102-2')}catch(error){console.error('Rappels visuels indisponibles :',error)}
       try{await load('./private-chatgpt-link-v1.js?v=20261102-1')}catch(error){console.error('Liaison privée ChatGPT indisponible :',error)}
       try{await load('./back-to-home-v1.js?v=20261102-1')}catch(error){console.error('Retour vers l’accueil MyTEAM indisponible :',error)}
+      // Congés : accès direct au Google Sheets partagé, sans les anciens formulaires locaux.
+      // Les données locales existantes restent sauvegardées (aucune suppression).
+      try{
+        const leaveSheetUrl='https://docs.google.com/spreadsheets/d/1XotAuGHevTOFN2-jOsjr0dzAjB7TRM6KAf5MarR2j9k/edit';
+        const leaveSection=document.getElementById('leave');
+        if(leaveSection){
+          leaveSection.className='hidden card';
+          leaveSection.innerHTML='<h2>Congés des agents</h2>'+
+            '<p>Le suivi des congés est désormais consultable dans le tableau partagé G4S.</p>'+
+            '<p><a href="'+leaveSheetUrl+'" target="_blank" rel="noopener noreferrer" style="display:block;border-radius:12px;padding:15px;text-align:center;background:#d66b2b;color:white;text-decoration:none;font-weight:750">Ouvrir EQ4 – Suivi agents G4S 2026 ↗</a></p>'+
+            '<p class="muted">Connexion au compte Google autorisé nécessaire. Les informations sont mises à jour dans Google Sheets.</p>';
+        }
+        // Conserve l'entrée « Congés » dans la navigation et ouvre la feuille directement.
+        // Couvre aussi les boutons générés par le menu « Plus » sur mobile.
+        document.addEventListener('click',event=>{
+          const clicked=event.target.closest?.('[data-tab="leave"],[data-mt-other="leave"]');
+          if(!clicked)return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          window.open(leaveSheetUrl,'_blank','noopener,noreferrer');
+        },true);
+      }catch(error){console.error('Lien des congés G4S indisponible :',error)}
     }
   })();
 })();
