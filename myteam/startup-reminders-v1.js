@@ -23,6 +23,19 @@
   style.id='mt-reminders-style';
   style.textContent=[
     '#mt-reminders-panel{border:1px solid #647e9d;background:#22364e}',
+    '#mt-context-reminders #mt-reminders-panel{margin:0 0 12px}',
+    '#mt-reminders-panel .mtr-head h3{font-size:20px;line-height:1.3}',
+    '.mtr-pills{display:flex;gap:6px;align-items:center;flex-wrap:wrap}',
+    '.mtr-pill{display:inline-flex;align-items:center;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:800;line-height:1.3;border:1px solid #60768c;background:#344e69;color:#f5f8fb}',
+    '.mtr-pill.overdue{background:#5c2b30;border-color:#bd6168;color:#fff1f1}',
+    '.mtr-pill.today{background:#66451f;border-color:#db9b4b;color:#fff1d9}',
+    '.mtr-pill.upcoming{background:#214b65;border-color:#508eaf;color:#e6f7ff}',
+    '.mtr-pill.undated{background:#3b4555;border-color:#778599;color:#e9ecf1}',
+    '.mtr-row{border:1px solid #526981!important;background:#1b2c41;border-radius:13px;padding:13px!important;margin:9px 0;gap:9px!important}',
+    '.mtr-row.urgent{border-left:4px solid #e8a456!important}',
+    '.mtr-row strong{font-size:15px!important;line-height:1.4}',
+    '.mtr-row p{font-size:13px!important;line-height:1.5!important}',
+    '.mtr-row .mtr-actions button{font-size:13px;min-height:42px}',
     '#mt-reminders-panel h3{margin:0 0 6px;font-size:19px}',
     '#mt-reminders-panel .mtr-sub{font-size:12px;color:#c8d6e5;line-height:1.5}',
     '.mtr-head{display:flex;align-items:center;justify-content:space-between;gap:9px}',
@@ -58,8 +71,8 @@
   const panel=document.createElement('div');
   panel.id='mt-reminders-panel';panel.className='card';
   panel.innerHTML=[
-    '<div class="mtr-head"><h3>Rappels importants</h3><span id="mtr-count" class="mtr-counter">0</span></div>',
-    '<p class="mtr-sub">Échéances de planning : rappel à J−2, J−1 et le jour même. Les statuts doivent être mis à jour dans les fiches. Consultation locale uniquement, sans notification extérieure.</p>',
+    '<div class="mtr-head"><h3>Rappels par échéance</h3><span id="mtr-count" class="mtr-counter">0</span></div>',
+    '<p class="mtr-sub">En retard, aujourd’hui, puis dates à venir. Les éléments sans date figurent à la fin. Données de cet appareil, sans synchronisation automatique avec ChatGPT.</p>',
     '<div id="mtr-list" role="status"></div>',
     '<button type="button" class="mtr-add-toggle" id="mtr-add">+ Ajouter un rappel personnel</button>',
     '<form id="mtr-form" hidden>',
@@ -69,7 +82,7 @@
     '<button type="submit">Enregistrer le rappel</button><p id="mtr-form-status" class="mtr-sub" role="status"></p>',
     '</form>'
   ].join('');
-  today.querySelector('.mt-hero')?.after(panel);
+  today.prepend(panel); // Le panneau sera transféré dans « Rappels » lorsque la rubrique sera chargée.
 
   const overlay=document.createElement('div');
   overlay.id='mtr-modal';overlay.hidden=true;
@@ -78,14 +91,14 @@
     '<header><h2 id="mtr-title">Rappels à traiter</h2><div class="mtr-sub" id="mtr-subtitle">Tâches enregistrées dans MyTEAM</div></header>',
     '<div class="mtr-modal-content" id="mtr-modal-list"></div>',
     '<footer><button type="button" class="mtr-close" id="mtr-dismiss">Fermer</button>',
-    '<button type="button" class="mtr-see" id="mtr-see">Voir dans Aujourd’hui</button></footer>',
+    '<button type="button" class="mtr-see" id="mtr-see">Voir les rappels</button></footer>',
     '</div>'
   ].join('');
   document.body.append(overlay);
 
   const manual=()=>arr(read(KEY,[])).filter(r=>r&&typeof r==='object'&&r.id&&r.done!==true);
   const saveManual=rows=>{try{localStorage.setItem(KEY,JSON.stringify(rows));return true;}catch{return false;}};
-  const item=(id,title,detail,level,tab,selector,popup,manualId)=>({id,title,detail,level,tab,selector,popup,manualId});
+  const item=(id,title,detail,level,tab,selector,popup,manualId=null,date=null)=>({id,title,detail,level,tab,selector,popup,manualId,date});
   function collect(){
     const rows=[];
     const allPlanning=[
@@ -94,34 +107,19 @@
       ...arr(read('myteam_planning_followups_v1',[])).map(r=>({...r,origin:'planning-followup-simple'}))
     ];
     const seen=new Set();
-    const dated={soon:[],next:[],old:[]};
-    let undated=0;
-    allPlanning.forEach(r=>{
-      if(!r||complete(r.status))return;
-      const unique=[norm(r.agent),String(r.date||''),norm(r.post),norm(r.detail||r.issue).slice(0,50)].join('|');
-      if(seen.has(unique))return;seen.add(unique);
-      const diff=offset(r.date);
-      if(diff===null){undated++;return;}
-      if(diff>=0&&diff<=2)dated.soon.push(r);
-      else if(diff>=3&&diff<=7)dated.next.push(r);
-      else if(diff>=-7&&diff<0)dated.old.push(r);
+    allPlanning.forEach((r,index)=>{
+      if(!r||complete(r.status)||['réglé','sans suite','done'].includes(norm(r.status)))return;
+      const key=[norm(r.agent),String(r.date||''),norm(r.post),norm(r.detail||r.issue||r.request).slice(0,60)].join('|');
+      if(seen.has(key))return;seen.add(key);
+      const when=validDate(r.date)?r.date:null;
+      const who=String(r.agent||'Agent non précisé').trim();
+      const post=String(r.post||'').trim();
+      const issue=String(r.detail||r.issue||r.request||'Situation à vérifier').trim();
+      const status=String(r.status||'En attente').trim();
+      rows.push(item('planning-'+index,'Planning · '+who+(post?' · '+post:''),
+        issue.slice(0,210)+' · '+status,
+        when&&offset(when)<=2?'urgent':'normal','planning-followup-simple',null,Boolean(when&&offset(when)<=2),null,when));
     });
-    if(dated.soon.length){
-      const earliest=dated.soon.reduce((v,r)=>!v||r.date<v?r.date:v,'');
-      const days=offset(earliest);
-      rows.push(item('planning-soon','Plannings agents : '+dated.soon.length+' anomalie(s) à vérifier',
-        'Prochaine date : '+fmt(earliest)+' · '+(days===0?"aujourd’hui":days===1?'J−1':'J−2')+'. Vérifier la fiche de prestation et les corrections demandées.',
-        'urgent','planning-followup-simple',null,true));
-    }
-    if(dated.old.length)rows.push(item('planning-old','Plannings agents : '+dated.old.length+' suivi(s) en retard',
-      'Dates de poste déjà passées ; vérifier la résolution sans conclure automatiquement à une erreur.',
-      'urgent','planning-followup-simple',null,true));
-    if(dated.next.length)rows.push(item('planning-next','Plannings agents : '+dated.next.length+' date(s) à anticiper',
-      'Dans les 3 à 7 prochains jours. Vérifier les réponses avant l’échéance.',
-      'normal','planning-followup-simple',null,false));
-    if(undated)rows.push(item('planning-undated',undated+' signalement(s) sans date confirmée',
-      'Compléter les dates des signalements pour activer le rappel J−2/J−1.',
-      'normal','planning-followup-simple',null,false));
 
     const certifications=arr(read('myteam_agent_certifications_v1',[]))
       .filter(r=>r&&validDate(r.date)&&r.status!=='done'&&r.agent&&r.time);
@@ -130,21 +128,18 @@
       if(due.length){
         rows.push(item('certifications-'+days,'Certifications '+label+' : '+due.length+' agent(s)',
           due.slice().sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(r=>r.time+' '+r.agent).join(' · ')+'. Vérifier les disponibilités et la fiche de prestation.',
-          'urgent','today','#mt-parif-g4s-board',true));
+          'urgent','today','#mt-parif-g4s-board',true,null,due[0].date));
       }
     }
 
     const leaves=arr(read('myteam_agent_leave_requests_v1',[]))
       .filter(r=>r&&!r.archived&&!['validated','rejected'].includes(r.gesperStatus));
-    const nearLeave=leaves.filter(r=>{const diff=offset(r.from);return diff!==null&&diff>=-2&&diff<=7&&(!validDate(r.to)||offset(r.to)>=0);});
-    const criticalLeave=nearLeave.filter(r=>offset(r.from)<=2);
-    if(criticalLeave.length)rows.push(item('leave-soon','Congés : '+criticalLeave.length+' demande(s) à vérifier',
-      'Début prévu aujourd’hui, dans les deux jours ou tout juste passé. Vérifier l’accord et le statut MyGesper.',
-      'urgent','team','#mt-agent-leaves',true));
-    const laterLeaves=nearLeave.length-criticalLeave.length;
-    if(laterLeaves)rows.push(item('leave-next','Congés : '+laterLeaves+' demande(s) proches',
-      'Début prévu dans les 3 à 7 jours ; suivre les validations MyGesper.',
-      'normal','leave',null,false));
+    leaves.forEach((r,index)=>{
+      const date=validDate(r.from)?r.from:null;
+      rows.push(item('leave-'+index,'Congé à vérifier · '+String(r.agent||'Agent non précisé'),
+        'Validation MyGesper à confirmer'+(validDate(r.to)?' · jusqu’au '+fmt(r.to):'')+'.',
+        date&&offset(date)<=2?'urgent':'normal','leave',null,Boolean(date&&offset(date)<=2),null,date));
+    });
 
     const pay=read('myteam_panato_training_pay_case_v1',null);
     if(pay&&typeof pay==='object'&&!['compliant','escalated'].includes(pay.state)){
@@ -152,7 +147,7 @@
       if(due!==null&&due<=2){
         rows.push(item('pay-check','Contrôle formation / paie à effectuer',
           due<0?'Échéance de contrôle dépassée ; dossier à vérifier.':'Échéance '+fmt(pay.dueFrom)+' · '+(due===0?"aujourd’hui":due===1?'J−1':'J−2')+'.',
-          'urgent','mt-bureau','#mt-panato-pay-case',true));
+          'urgent','mt-bureau','#mt-panato-pay-case',true,null,pay.dueFrom));
       }
     }
 
@@ -164,7 +159,7 @@
       const count=visitsToday.filter(r=>r&&r.done===true&&r.post).length;
       if(count<3)rows.push(item('visits-today','Visites sur poste : '+count+'/3 effectuées',
         (3-count)+' visite(s) à réaliser durant la journée travaillée, si la consigne s’applique à cette vacation.',
-        'normal','visits',null,true));
+        'normal','visits',null,true,null,date));
     }
     const consignes=read('myteam_consignes_tracking_v1',null);
     if(consignes&&typeof consignes==='object'&&consignes.versions&&consignes.revision){
@@ -181,15 +176,19 @@
 
     manual().forEach(r=>{
       const diff=offset(r.date);
-      if(diff===null||diff>7)return;
+      if(diff===null)return;
       const lvl=diff<=2||r.priority==='high'?'urgent':'normal';
       const when=diff<0?'En retard depuis '+Math.abs(diff)+' jour(s)':
         diff===0?"Aujourd’hui":'Dans '+diff+' jour(s)';
       rows.push(item('manual-'+r.id,r.title,
         when+' · échéance '+fmt(r.date),'urgent'===lvl?'urgent':'normal',
-        'today','#mt-reminders-panel',lvl==='urgent',r.id));
+        'context-reminders','#mt-reminders-panel',lvl==='urgent',r.id,r.date));
     });
-    return rows.sort((a,b)=>(a.level==='urgent'?0:1)-(b.level==='urgent'?0:1));
+    return rows.sort((a,b)=>{
+      const da=validDate(a.date)?a.date:'9999-12-31';
+      const db=validDate(b.date)?b.date:'9999-12-31';
+      return da.localeCompare(db)||(a.level==='urgent'?0:1)-(b.level==='urgent'?0:1)||a.title.localeCompare(b.title,'fr');
+    });
   }
 
   function navigate(r){
@@ -207,7 +206,12 @@
     }
     items.forEach(r=>{
       const box=document.createElement('div');box.className='mtr-row'+(r.level==='urgent'?' urgent':'');
-      const heading=document.createElement('strong');heading.textContent=(r.level==='urgent'?'À traiter · ':'À suivre · ')+r.title;
+      const diff=offset(r.date);
+      const pill=document.createElement('span');
+      pill.className='mtr-pill '+(diff===null?'undated':diff<0?'overdue':diff===0?'today':'upcoming');
+      pill.textContent=diff===null?'◷ Sans date':diff<0?'⚠️ En retard · '+fmt(r.date):diff===0?'🔴 Aujourd’hui · '+fmt(r.date):'📅 '+fmt(r.date)+(diff===1?' · Demain':'');
+      const pills=document.createElement('div');pills.className='mtr-pills';pills.append(pill);
+      const heading=document.createElement('strong');heading.textContent=r.title;
       const p=document.createElement('p');p.textContent=r.detail;
       const actions=document.createElement('div');actions.className='mtr-actions';
       const open=document.createElement('button');open.type='button';open.textContent=r.manualId?'Voir les rappels':'Ouvrir le suivi';open.onclick=()=>navigate(r);
@@ -221,7 +225,7 @@
         };
         actions.append(done);
       }
-      box.append(heading,p,actions);list.append(box);
+      box.append(pills,heading,p,actions);list.append(box);
     });
   }
   function showModal(){
@@ -234,7 +238,7 @@
   function hideModal(){overlay.hidden=true;document.body.style.overflow='';}
   function refresh(){
     const items=collect();
-    $('mtr-count').textContent=String(items.filter(x=>x.level==='urgent').length);
+    $('mtr-count').textContent=String(items.length)+' en attente';
     renderRows($('mtr-list'),items,false);
   }
 
@@ -255,7 +259,7 @@
   };
   $('mtr-dismiss').onclick=hideModal;
   $('mtr-see').onclick=()=>{
-    hideModal();nav.querySelector('[data-tab="today"]')?.click();
+    hideModal();nav.querySelector('[data-tab="context-reminders"]')?.click();
     panel.scrollIntoView({behavior:'smooth',block:'start'});
   };
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)hideModal();});
