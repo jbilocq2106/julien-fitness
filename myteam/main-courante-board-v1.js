@@ -14,7 +14,8 @@ const valid=v=>['unknown','yes','no','na'].includes(v)?v:'unknown';
 const pretty={unknown:'À vérifier',yes:'Oui / OK',no:'Non / non fait',na:'Sans objet'};
 const el=document.createElement('section');el.className='card';el.id='mt-board-log';
 el.innerHTML='<div class="jb-top"><div><h2>Journal de bord · CDE</h2><p>Chaque date est un brouillon jusqu’à validation. Aucun champ non renseigné n’est considéré comme effectué.</p></div><strong id="jb-state">Brouillon</strong></div>'+
-'<button type="button" id="jb-jump-archive">Consulter l’historique validé</button>''<fieldset id="jb-fields"><div class="jb-grid">'+
+'<button type="button" id="jb-jump-archive">Consulter l’historique validé</button>'+
+'<fieldset id="jb-fields"><div class="jb-grid">'+
 '<label>Début de service<input id="jb-start" type="time"></label><label>Fin de service<input id="jb-end" type="time"></label>'+
 '<label>CDE posté ?<select id="jb-cde"><option value="unknown">À renseigner</option><option value="yes">Oui</option><option value="no">Non</option></select></label>'+
 '<label>Poste / endroit<input id="jb-station" type="text" placeholder="Ex. E121, PARIF" maxlength="180"></label>'+
