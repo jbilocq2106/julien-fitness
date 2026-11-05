@@ -1,22 +1,22 @@
-/* MyTEAM — Android back gesture: return to app home rather than closing a subpage.
+/* MyTEAM — Android back gesture: return to reminders rather than closing a subpage.
    Internal browser history only: no changes to saved agent data. */
 (()=>{
   'use strict';
   const nav=document.querySelector('nav.tabs');
   const main=document.querySelector('main');
   if(!nav||!main||window.__myteamBackHomeInstalled)return;
-  const home=nav.querySelector('button[data-tab="today"]');
+  const home=nav.querySelector('button[data-tab="context-reminders"]');
   if(!home)return;
   window.__myteamBackHomeInstalled=true;
   const BACK_KEY='__myteamBackHome';
   let changingFromPop=false;
-  let active='today';
+  let active='context-reminders';
   function backHome(){
     const close=document.getElementById('mt-more-close');
     const menu=document.getElementById('mt-more-panel');
     if(menu&&!menu.hidden)close?.click();
     home.click();
-    active='today';
+    active='context-reminders';
     window.scrollTo(0,0);
   }
   const safeState=()=>{
@@ -31,10 +31,10 @@
     backHome();
     const previous=safeState();
     if(previous[BACK_KEY]==='guard'){
-      history.replaceState(mark('guard','today'),'',url());
+      history.replaceState(mark('guard','context-reminders'),'',url());
     }else{
-      history.replaceState(mark('base','today'),'',url());
-      history.pushState(mark('guard','today'),'',url());
+      history.replaceState(mark('base','context-reminders'),'',url());
+      history.pushState(mark('guard','context-reminders'),'',url());
     }
   }catch(error){
     console.warn('Historique interne MyTEAM indisponible',error);
