@@ -44,7 +44,7 @@
     "#equipes .eq-row:nth-child(odd){background:#f5f8fb}",
     "#equipes .eq-row.f{background:#fce7ee}",
     "#equipes .eq-num{font-size:10px;text-align:center;overflow-wrap:anywhere}",
-    "#equipes .eq-name{font-size:12px;font-weight:800;line-height:1.25;overflow-wrap:anywhere}",
+    "#equipes .eq-name{font-size:12px;font-weight:800;line-height:1.25;overflow-wrap:anywhere;text-align:left;border:0;background:transparent;padding:5px 0;min-height:45px;cursor:pointer;color:inherit;width:100%}",
     "#equipes .eq-name small{display:block;font-size:10px;font-weight:500;color:#52657a}",
     "#equipes .eq-qual{border:1px solid #8195ac;background:#f3f6fa;color:#25405b;border-radius:9px;min-height:34px;padding:5px 2px;text-align:center;font-weight:900}",
     "#equipes .eq-qual.yes{background:#d5f1de;border-color:#6ca784;color:#27653c}",
@@ -105,7 +105,7 @@
       return '<button class="eq-qual '+cls+'" type="button" data-eq-name="'+esc(name)+'" data-eq-field="'+field+'" title="'+title+'" aria-label="'+esc(name)+' '+title+'">'+label+'</button>';
     }
     $("eq-rows").innerHTML=found.length?found.map(r=>
-      '<div class="eq-row '+(r.gender==="F"?"f":"")+'"><span class="eq-num">'+esc(r.workerNumber||"—")+'</span><span class="eq-name">'+esc(r.name)+'<small>'+(r.gender==="F"?"Femme":r.gender==="M"?"Homme":"Genre à préciser")+'</small></span>'+qual(r.name,"rx",r.rx)+qual(r.name,"piste",r.piste)+'</div>'
+      '<div class="eq-row '+(r.gender==="F"?"f":"")+'"><span class="eq-num">'+esc(r.workerNumber||"—")+'</span><button type="button" class="eq-name" data-eq-agent="'+esc(r.name)+'" aria-label="Ouvrir la fiche de '+esc(r.name)+'">'+esc(r.name)+'<small>'+(r.gender==="F"?"Femme":r.gender==="M"?"Homme":"Genre à préciser")+'</small></button>'+qual(r.name,"rx",r.rx)+qual(r.name,"piste",r.piste)+'</div>'
     ).join(""):'<p class="eq-hint">Aucun agent dans ce filtre. Vérifie les données enregistrées sur ton téléphone.</p>';
   }
   $("eq-teams").addEventListener("click",e=>{const b=e.target.closest("[data-eq-team]");if(!b)return;team=Number(b.dataset.eqTeam);render()});
