@@ -43,7 +43,7 @@ function markChanged(){
 function importData(payload){
  if(payload?.schema!=='myteam-main-courante-v2'||payload.version!==2||!Array.isArray(payload.days)||payload.days.length>12||!payload.days.length)throw Error('Format de transfert non reconnu');
  const boards=read(BOARD,{}),eventStore=eventsData(),taskStore=actionData();
- let totalEvents=0,totalTasks=0,skipped=0,updatedDays=0,firstDate='';
+ let totalEvents=0,totalTasks=0,corrected=0,skipped=0,updatedDays=0,firstDate='';
  for(const d of payload.days){
   if(!iso(d.date))throw Error('Date de journée invalide');
   if(!firstDate)firstDate=d.date;
@@ -60,12 +60,21 @@ function importData(payload){
    else if(!next[k])next[k]=v;
   }
   if(Array.isArray(f.extra))next.extra=[...(Array.isArray(next.extra)?next.extra:[]),...f.extra.filter(x=>x&&typeof x.label==='string'&&typeof x.value==='string').slice(0,12).map(x=>({label:x.label.slice(0,100),value:x.value.slice(0,1000)}))];
-  old.draft=next;boards[d.date]=old;updatedDays++;
+  old.draft=next;if(d.visitsDeclaredNone===true)old.visitsDeclaredNone=true;boards[d.date]=old;updatedDays++;
   const events=Array.isArray(eventStore[d.date])?eventStore[d.date]:[];
   const ids=new Set(events.map(x=>x.id));
   for(const x of d.entries){
    if(!x||typeof x.id!=='string'||!/^mc-[a-z0-9-]{5,100}$/.test(x.id)||typeof x.title!=='string'||!x.title.trim())continue;
-   if(ids.has(x.id))continue;
+   const existingIndex=events.findIndex(y=>y.id===x.id);
+   if(existingIndex>=0){
+     const previous=events[existingIndex];
+     // Explicit correction: user has confirmed that this training was actually completed.
+     if(x.kind==='Formation terminée'&&previous.kind!=='Formation terminée'&&/Rise Up Cybersecurity/i.test(x.title)){
+       events[existingIndex]={...previous,kind:'Formation terminée',title:String(x.title).slice(0,220),description:String(x.description||'').slice(0,4000),state:'done'};
+       corrected++;
+     }
+     continue;
+   }
    const item={id:x.id,kind:String(x.kind||'Information').slice(0,70),effectiveDate:iso(x.effectiveDate)?x.effectiveDate:d.date,slot:String(x.slot||'').slice(0,70),title:x.title.trim().slice(0,220),description:String(x.description||'').slice(0,4000),mail:['yes','no','unknown','na'].includes(x.mail)?x.mail:'unknown',state:['done','pending','info'].includes(x.state)?x.state:'info',agent:String(x.agent||'').slice(0,180)};
    events.push(item);ids.add(item.id);totalEvents++;
   }
@@ -85,7 +94,7 @@ function importData(payload){
  localStorage.setItem(EVENTS,JSON.stringify(eventStore));
  localStorage.setItem(TASKS,JSON.stringify(taskStore));
  picker.value=firstDate;markChanged();
- return updatedDays+' journée(s), '+totalEvents+' intervention(s), '+totalTasks+' rappel(s) classés'+(skipped?' ; '+skipped+' journée(s) déjà validée(s) ignorée(s)':'')+'. Les qualifications et rappels déjà terminés sont conservés.';
+ return updatedDays+' journée(s), '+totalEvents+' intervention(s), '+corrected+' formation(s) corrigée(s), '+totalTasks+' rappel(s) classés'+(skipped?' ; '+skipped+' journée(s) déjà validée(s) ignorée(s)':'')+'. Les qualifications et rappels déjà terminés sont conservés.';
 }
 async function handleFile(e){
  const file=e.target.files?.[0];if(!file)return;
