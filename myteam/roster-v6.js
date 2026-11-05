@@ -60,6 +60,8 @@
       const existing=findExisting(seedName);
       const name=existing||seedName;
       const p=agentProfiles[name]||{};
+      // Ne pas réintroduire les anciens agents absents de l'annuaire privé actualisé.
+      if(p.rosterNeedsReview===true)continue;
       const next={...p};
       // Matricules et qualifications ne sont pas encore renseignés pour ces nouveaux agents.
       if(seedName==='JACQUINET Thomas'||seedName==='MARGINALE Marie-Joseph'){
