@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 const PROFILE='myteam_agent_profiles_v1',DELETED='myteam_deleted_agents_v1';
-const CASES='myteam_agent_casebook_v1',GENERAL='myteam_general_notes_v2';
+const CASES='myteam_agent_casebook_v1',GENERAL='myteam_general_notes_v2',ARCHIVE='myteam_agent_archives_v2',OVERRIDES='myteam_team_cycle_overrides_v1';
 const $=id=>document.getElementById(id);
 const read=(key,fallback)=>{try{const x=JSON.parse(localStorage.getItem(key)||'null');return x===null?fallback:x}catch{return fallback}};
 const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
@@ -17,13 +17,64 @@ const casebook=()=>{const c=read(CASES,{});return object(c)?c:{}};
 const general=()=>{const a=read(GENERAL,[]);return Array.isArray(a)?a:[]};
 const seed=object(window.MyTeamRosterSeed)?window.MyTeamRosterSeed:{};
 const saved=()=>new Set((Array.isArray(read(DELETED,[]))?read(DELETED,[]):[]).map(norm));
+const archiveEntries=()=>{const r=read(ARCHIVE,{});return object(r)?r:{}};
+const isArchived=name=>Boolean(archiveEntries()[norm(name)]);
+function archiveAgent(name,departureDate=''){
+ const person=agent(name,true);if(!person)return false;
+ const data=archiveEntries();data[norm(person.name)]={name:person.name,departureDate:validDate(departureDate)?departureDate:dateNow(),archivedAt:new Date().toISOString()};
+ try{localStorage.setItem(ARCHIVE,JSON.stringify(data));renderAgents();renderHome();return true}catch{return false}
+}
+function restoreAgent(name){
+ const data=archiveEntries(),key=norm(name);if(!data[key])return false;
+ delete data[key];
+ try{localStorage.setItem(ARCHIVE,JSON.stringify(data));renderAgents();renderHome();return true}catch{return false}
+}
+function deleteAgent(name){
+ const person=agent(name,true);if(!person)return false;
+ const p=profiles(),cases=casebook(),a=archiveEntries(),del=read(DELETED,[]);
+ for(const k of Object.keys(p))if(same(k,name))delete p[k];
+ for(const k of Object.keys(cases))if(same(k,name))delete cases[k];
+ delete a[norm(name)];
+ const removed=Array.isArray(del)?del:[];
+ if(!removed.some(x=>same(x,name)))removed.push(name);
+ const payload=[[PROFILE,p],[CASES,cases],[ARCHIVE,a],[DELETED,removed]];
+ const backup=payload.map(([key])=>[key,localStorage.getItem(key)]);
+ const changed=[];
+ try{for(const [key,data] of payload){localStorage.setItem(key,JSON.stringify(data));changed.push(key)}}
+ catch{
+  for(const key of changed){const old=backup.find(x=>x[0]===key)?.[1];try{old===null?localStorage.removeItem(key):localStorage.setItem(key,old)}catch{}}
+  return false;
+ }
+ if(same(selectedAgent,name)){selectedAgent='';$('agent-panel')?.classList.add('hidden')}
+ renderAgents();renderHome();return true;
+}
+function renameAgent(oldName,newName){
+ const target=agent(oldName,true),candidate=String(newName||'').trim().replace(/\s+/g,' ').slice(0,100);
+ if(!target||candidate.length<3)return false;
+ if(!same(target.name,candidate)&&agent(candidate,true))return false;
+ const p=profiles(),c=casebook(),a=archiveEntries(),del=read(DELETED,[]);
+ const oldKey=Object.keys(p).find(k=>same(k,oldName));
+ const oldCase=Object.keys(c).find(k=>same(k,oldName));
+ const old=oldKey?p[oldKey]:{team:target.team,gender:target.gender,manualAdded:true};
+ if(oldKey)delete p[oldKey];
+ p[candidate]={...old,team:target.team,manualAdded:true,previousNames:[...new Set([...(Array.isArray(old.previousNames)?old.previousNames:[]),target.name])]};
+ if(oldCase){const list=c[oldCase];delete c[oldCase];c[candidate]=list;}
+ if(a[norm(oldName)]){const value=a[norm(oldName)];delete a[norm(oldName)];a[norm(candidate)]={...value,name:candidate}}
+ const removed=Array.isArray(del)?del:[];
+ if(!same(target.name,candidate)&&!removed.some(x=>same(x,oldName)))removed.push(oldName);
+ const writes=[[PROFILE,p],[CASES,c],[ARCHIVE,a],[DELETED,removed]],backup=writes.map(([key])=>[key,localStorage.getItem(key)]),done=[];
+ try{for(const [key,value] of writes){localStorage.setItem(key,JSON.stringify(value));done.push(key)}}
+ catch{for(const key of done){const previous=backup.find(x=>x[0]===key)?.[1];try{previous===null?localStorage.removeItem(key):localStorage.setItem(key,previous)}catch{}}return false}
+ if(same(selectedAgent,oldName))selectedAgent=candidate;
+ renderAgents();renderHome();return true;
+}
 let selectedAgent='',editing=null,activeTab='home',showAllReminders=false,planMonth=dateNow().slice(0,7);
 const same=(a,b)=>norm(a)===norm(b);
 const meta=(t)=>({'rappel':'Rappel','alarme':'Alerte','positif':'Point positif','remarque':'Remarque'})[t]||'Note';
 const canDone=r=>['rappel','alarme'].includes(r.type);
 const noteSort=(a,b)=>String(b.date||b.createdAt||'').localeCompare(String(a.date||a.createdAt||''))||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
 
-function agents(){
+function agents(includeArchived=false){
  const p=profiles(),removed=saved(),all=new Map();
  const authoritative=Object.values(p).some(x=>x?.rosterPrivateImport===true);
  if(!authoritative){
@@ -42,9 +93,9 @@ function agents(){
   const base=all.get(k)||{};
   all.set(k,{name,team:Number.isInteger(Number(data?.team))?Number(data.team):(base.team||0),gender:data?.gender||base.gender||'',profile:true});
  }
- return [...all.values()].sort((a,b)=>(a.team===4?0:1)-(b.team===4?0:1)||a.team-b.team||a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
+ return [...all.values()].filter(a=>includeArchived||!isArchived(a.name)).sort((a,b)=>(a.team===4?0:1)-(b.team===4?0:1)||a.team-b.team||a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
 }
-function agent(name){return agents().find(a=>same(a.name,name))||null;}
+function agent(name,includeArchived=false){return agents(includeArchived).find(a=>same(a.name,name))||null;}
 function ownNotes(name){
  const all=casebook(),rows=[];
  for(const [key,entries] of Object.entries(all)){
@@ -141,20 +192,24 @@ function renderSearch(){
   '<p class="empty">Aucun résultat dans les notes accessibles sur cet appareil.</p>';
 }
 function renderAgents(){
- const q=norm($('agent-search').value),filter=$('agent-filter').value;
- const all=agents().filter(a=>(filter==='all'||a.team===Number(filter))&&(!q||norm([a.name,profiles()[a.name]?.workerNumber].join(' ')).includes(q)));
+ const q=norm($('agent-search').value),filter=$('agent-filter').value,status=$('agent-status-filter')?.value||'active';
+ const all=agents(true).filter(a=>(status==='all'||(status==='archived')===isArchived(a.name))&&(filter==='all'||a.team===Number(filter))&&(!q||norm([a.name,profiles()[a.name]?.workerNumber].join(' ')).includes(q)));
  $('agents-count').textContent=all.length+' agent(s)';
- $('agent-results').innerHTML=all.length?all.map(a=>'<div class="agent-row"><button type="button" data-open-agent="'+esc(a.name)+'"><strong>'+esc(a.name)+'</strong><small>Équipe '+(a.team||'à définir')+
-  (profiles()[a.name]?.workerNumber?' · Matricule '+esc(profiles()[a.name].workerNumber):'')+'</small></button><span class="agent-arrow" aria-hidden="true">›</span></div>').join(''):
+ $('agent-results').innerHTML=all.length?all.map(a=>'<div class="agent-row" data-long-agent="'+esc(a.name)+'"><button type="button" data-open-agent="'+esc(a.name)+'"><strong>'+esc(a.name)+'</strong><small>Équipe '+(a.team||'à définir')+
+  (profiles()[a.name]?.workerNumber?' · Matricule '+esc(profiles()[a.name].workerNumber):'')+
+  (isArchived(a.name)?' · Archivé'+(archiveEntries()[norm(a.name)]?.departureDate?' le '+fmtDate(archiveEntries()[norm(a.name)].departureDate):''):'')+
+  '</small></button><span class="agent-arrow" aria-hidden="true">›</span></div>').join(''):
   '<p class="empty">Aucun agent correspondant à la recherche.</p>';
 }
+
 function openAgent(name){
- const a=agent(name);if(!a)return;
+ const a=agent(name,true);if(!a)return;
  selectedAgent=a.name;
  activate('team');
  $('agent-panel').classList.remove('hidden');
  $('note-form').classList.add('hidden');
  $('agent-title').textContent=a.name;
+ $('agent-archive-status').textContent=isArchived(a.name)?'Agent archivé · départ '+fmtDate(archiveEntries()[norm(a.name)]?.departureDate)+' · historique conservé':'Agent actif';
  $('agent-subtitle').textContent='Équipe '+(a.team||'à définir')+' · '+ownNotes(a.name).length+' note(s) enregistrée(s)';
  const p=profiles()[a.name]||{};
  const f=$('qualification-form');
@@ -186,7 +241,7 @@ function renderTimeline(){
 }
 function qualificationSave(ev){
  ev.preventDefault();
- const a=agent(selectedAgent);if(!a)return;
+ const a=agent(selectedAgent,true);if(!a)return;
  const f=ev.currentTarget,p=profiles(),k=Object.keys(p).find(k=>same(k,a.name))||a.name;
  const existing=p[k]||{},newp={...existing,team:Number(f.elements.team.value),workerNumber:String(f.elements.workerNumber.value).trim().slice(0,20)};
  for(const key of ['rxCertified','pistePermit']){
@@ -204,7 +259,7 @@ function qualificationSave(ev){
 }
 function prepareSelect(value){
  const opts='<option value="__general__">Information générale (sans agent)</option>'+
-  agents().map(a=>'<option value="'+esc(a.name)+'">'+esc(a.name)+' · équipe '+(a.team||'à définir')+'</option>').join('');
+  agents(name?true:false).map(a=>'<option value="'+esc(a.name)+'">'+esc(a.name)+' · équipe '+(a.team||'à définir')+'</option>').join('');
  $('note-primary').innerHTML=opts;
  $('note-primary').value=value&&agent(value)?agent(value).name:'__general__';
 }
@@ -322,6 +377,7 @@ function activate(id){
  window.scrollTo(0,0);
 }
 function cycle(date){
+ const overrides=read(OVERRIDES,{});if(object(overrides)&&['m','a','n','r'].includes(overrides[date]))return overrides[date];
  const [year,month,day]=date.split('-').map(Number);
  const offset=Math.round((Date.UTC(year,month-1,day)-Date.UTC(2026,9,17))/86400000);
  const index=((offset%8)+8)%8;
@@ -339,15 +395,15 @@ function renderPlanning(){
  for(let day=1;day<=days;day++){
   const date=v+'-'+String(day).padStart(2,'0'),c=cycle(date);
   const lbl={m:'Matin',a:'Après-midi',n:'Nuit',r:'Repos'}[c];
-  cells.push('<div class="cycle-day '+c+(date===dateNow()?' is-today':'')+'" title="'+lbl+' '+fmtDate(date)+'"><strong>'+day+'</strong><span>'+lbl+'</span></div>');
+  cells.push('<div class="cycle-day '+c+(date===dateNow()?' is-today':'')+'" data-long-cycle="'+date+'" title="Appui long : modifier · '+lbl+' '+fmtDate(date)+'"><strong>'+day+'</strong><span>'+lbl+(read(OVERRIDES,{})[date]?' *':'')+'</span></div>');
  }
  $('team-calendar').innerHTML=cells.join('');
  const d=$('supervisor-date').value||dateNow();
  const rota=window.MyTeamSupervisors?.forDate?.(d)||[];
- $('supervisor-summary').innerHTML=rota.length?rota.map(r=>'<div class="sup-line"><span>'+esc(r.name)+'</span><strong>'+esc(r.shift)+'</strong></div>').join(''):
+ $('supervisor-summary').innerHTML=rota.length?rota.map(r=>'<div class="sup-line" data-long-supervisors="1"><span>'+esc(r.name)+'</span><strong>'+esc(r.shift)+'</strong></div>').join(''):
   '<p class="empty">Planning superviseurs indisponible.</p>';
  const all=agents();
- $('teams-overview').innerHTML=[1,2,3,4].map(team=>'<div class="team-count"><strong>Équipe '+team+'</strong><span>'+all.filter(a=>a.team===team).length+' agents</span></div>').join('');
+ $('teams-overview').innerHTML=[1,2,3,4].map(team=>'<div class="team-count" data-long-team="'+team+'"><strong>Équipe '+team+'</strong><span>'+all.filter(a=>a.team===team).length+' agents</span></div>').join('');
 }
 function showSupervisors(){
  const b=document.querySelector('nav.tabs [data-tab="supervisors"]');
@@ -362,10 +418,27 @@ function addAgent(ev){
  ev.preventDefault();
  const f=ev.currentTarget,name=String(f.elements.name.value||'').trim().replace(/\s+/g,' ').slice(0,100),team=Number(f.elements.team.value);
  if(name.length<3||!Number.isInteger(team)||team<0||team>4){$('add-agent-status').textContent='Nom ou équipe invalide.';return}
- if(agent(name)){$('add-agent-status').textContent='Cet agent figure déjà dans l’annuaire.';return}
- const p=profiles();p[name]={team,manualAdded:true};
- try{localStorage.setItem(PROFILE,JSON.stringify(p));$('add-agent-status').textContent='Fiche créée.';f.reset();renderAgents();openAgent(name)}
- catch{$('add-agent-status').textContent='Impossible d’enregistrer la nouvelle fiche.'}
+ if(agent(name,true)){$('add-agent-status').textContent='Cet agent est déjà présent, actif ou archivé.';return}
+ const dates={rxExpiry:f.elements.rxExpiry.value,permitExpiry:f.elements.permitExpiry.value};
+ if(Object.values(dates).some(d=>d&&!validDate(d))){$('add-agent-status').textContent='Date de validité incorrecte.';return}
+ const workerNumber=String(f.elements.workerNumber.value||'').trim();
+ if(workerNumber&&!/^[0-9]{3,20}$/.test(workerNumber)){$('add-agent-status').textContent='Matricule : chiffres uniquement (3 à 20).';return}
+ const rx=f.elements.rxCertified.value,piste=f.elements.pistePermit.value;
+ const profile={team,manualAdded:true,workerNumber,...dates};
+ if(rx!=='')profile.rxCertified=rx==='true';
+ if(piste!=='')profile.pistePermit=piste==='true';
+ const p=profiles();p[name]=profile;
+ // Réintroduction explicite après une suppression passée : retirer l’ancien marqueur.
+ const removed=read(DELETED,[]),clean=Array.isArray(removed)?removed.filter(v=>!same(v,name)):[];
+ const oldp=localStorage.getItem(PROFILE),oldd=localStorage.getItem(DELETED);
+ try{
+  localStorage.setItem(PROFILE,JSON.stringify(p));
+  localStorage.setItem(DELETED,JSON.stringify(clean));
+  $('add-agent-status').textContent='Fiche créée avec qualifications.';f.reset();renderAgents();openAgent(name);
+ }catch{
+  try{oldp===null?localStorage.removeItem(PROFILE):localStorage.setItem(PROFILE,oldp);oldd===null?localStorage.removeItem(DELETED):localStorage.setItem(DELETED,oldd)}catch{}
+  $('add-agent-status').textContent='Impossible d’enregistrer la fiche.';
+ }
 }
 function exportAll(){
  const keys={};
@@ -411,6 +484,7 @@ function init(){
  $('history-search').addEventListener('input',renderSearch);
  $('agent-search').addEventListener('input',renderAgents);
  $('agent-filter').addEventListener('change',renderAgents);
+ $('agent-status-filter').addEventListener('change',renderAgents);
  $('agent-note-search').addEventListener('input',renderTimeline);
  $('agent-note-filter').addEventListener('change',renderTimeline);
  $('qualification-form').addEventListener('submit',qualificationSave);
@@ -433,5 +507,6 @@ function init(){
  renderHome();renderAgents();renderPlanning();activate('home');
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
+window.MyTeamReboot={agents,agent,openAgent,openComposer,findNote,markDone,markExternalDone,archiveAgent,restoreAgent,deleteAgent,renameAgent,isArchived,archiveEntries,renderAgents,renderTimeline,renderHome,renderPlanning,activate,showSupervisors,validDate,dateNow,fmtDate,norm,same,profiles,casebook,read,exportAll,selected:()=>selectedAgent};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
