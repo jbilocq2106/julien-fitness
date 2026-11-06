@@ -5,7 +5,8 @@ const core=window.MyTeamVisitsCore,api=window.MyTeamReboot;if(!core||!api)return
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const currentShift=()=>{const h=new Date().getHours();return h>=5&&h<13?'morning':h>=13&&h<21?'afternoon':'night'};
-let day=new Date().getHours()<5?core.datePlus(core.today(),-1):core.today(),shift=currentShift(),editing='',selected=new Map(),allHistory=false;
+const inferredShift=date=>({m:'morning',a:'afternoon',n:'night',r:'other'})[api.cycle?.(date)]||currentShift();
+let day=new Date().getHours()<5?core.datePlus(core.today(),-1):core.today(),shift=inferredShift(day),editing='',selected=new Map(),allHistory=false;
 const section=document.createElement('section');section.id='visits';section.className='screen hidden';
 section.innerHTML=[
 '<div class="row-between"><div><h2>Ma tournée</h2><p class="hint">Passages simples et rapports signés : deux actions distinctes.</p></div><button type="button" id="v-back" class="small-button">Accueil</button></div>',
@@ -228,7 +229,7 @@ follow.addEventListener('submit',e=>{
 
 function readShiftForm(){const f=form.elements;return {date:f.date.value,shift:f.shift.value}}
 $('v-date').value=day;$('v-shift').value=shift;
-$('v-date').onchange=e=>{if(core.valid(e.target.value)){day=e.target.value;refresh()}};
+$('v-date').onchange=e=>{if(core.valid(e.target.value)){day=e.target.value;shift=inferredShift(day);refresh()}};
 $('v-shift').onchange=e=>{if(core.shiftNames[e.target.value]){shift=e.target.value;refresh()}};
 $('v-new-pass').onclick=()=>openForm('passage');
 $('v-new-report').onclick=()=>openForm('report');
