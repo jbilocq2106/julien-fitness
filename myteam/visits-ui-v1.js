@@ -46,6 +46,23 @@ const card=document.createElement('div');card.id='v-home-card';card.className='c
 const home=$('home');const grid=home?.querySelector('.quick-grid');if(home)home.insertBefore(card,grid||home.firstChild);
 const profile=document.createElement('section');profile.id='v-profile';profile.className='visit-profile';
 const agentPanel=$('agent-panel');agentPanel?.insertBefore(profile,agentPanel.querySelector('#agent-timeline'));
+const follow=document.createElement('form');
+follow.id='v-follow-form';follow.className='card hidden';
+follow.innerHTML=[
+ '<div class="row-between"><h3>Suivi des consignes</h3><button type="button" id="v-follow-close" class="text-button">Fermer</button></div>',
+ '<p id="v-follow-agent" class="hint"></p>',
+ '<label>Résultat de la vérification<select name="outcome">',
+ '<option value="confirmed-phone">Validation déclarée par téléphone</option>',
+ '<option value="still-pending">Toujours non validées · à relancer</option>',
+ '<option value="confirmed-site">Consignes vérifiées sur place · OK</option>',
+ '</select></label>',
+ '<label>Date<input name="date" type="date" required></label>',
+ '<label>Observation ou interlocuteur (facultatif)<input name="note" maxlength="350"></label>',
+ '<button type="submit" class="primary">Enregistrer la confirmation</button>',
+ '<p id="v-follow-msg" class="hint" role="status"></p>'
+].join('');
+section.insertBefore(follow,$('v-form'));
+let followAgent='';
 const form=$('v-form');
 function stateText(s){return core.statuses[s]||core.statuses.unknown}
 function refresh(){
@@ -182,19 +199,33 @@ function save(e){
  }catch(err){$('v-form-msg').textContent=err.message||'Enregistrement impossible.'}
 }
 function callAgent(name){
- const state=core.agentState(name);
- const answer=prompt('Consignes de '+name+' :\n1 = Validées par téléphone\n2 = Toujours non validées\n3 = Vérifiées sur place et OK','1');
- if(answer===null)return;
- const v={'1':{result:'confirmed',method:'phone'},'2':{result:'pending',method:'phone'},'3':{result:'confirmed',method:'on-site'}}[answer.trim()];
- if(!v)return alert('Choisis 1, 2 ou 3.');
- const date=prompt('Date de la confirmation (AAAA-MM-JJ) :',core.today());
- if(date===null)return;
- if(!core.valid(date))return alert('Date invalide. Aucune modification enregistrée.');
- const note=prompt('Observation / interlocuteur (facultatif) :','');
- if(note===null)return;
- try{core.saveFollowup(name,v.result,v.method,date,note,state.sourceVisitId);refresh()}
- catch(e){alert('Enregistrement impossible : '+e.message)}
+ const a=core.staff().find(x=>core.same(x.name,name));if(!a)return;
+ followAgent=a.name;
+ api.activate('visits');
+ $('v-follow-agent').textContent=a.name+' · '+stateText(core.agentState(a.name).status);
+ follow.elements.outcome.value='confirmed-phone';
+ follow.elements.date.value=core.today();
+ follow.elements.note.value='';
+ $('v-follow-msg').textContent='Une déclaration par téléphone ne devient pas un contrôle sur place.';
+ follow.classList.remove('hidden');
+ follow.scrollIntoView({behavior:'smooth',block:'center'});
 }
+$('v-follow-close').onclick=()=>{followAgent='';follow.classList.add('hidden')};
+follow.addEventListener('submit',e=>{
+ e.preventDefault();if(!followAgent)return;
+ const f=follow.elements,answer=f.outcome.value,date=f.date.value;
+ const mapped={
+  'confirmed-phone':{result:'confirmed',method:'phone'},
+  'still-pending':{result:'pending',method:'phone'},
+  'confirmed-site':{result:'confirmed',method:'on-site'}
+ }[answer];
+ if(!mapped||!core.valid(date))return $('v-follow-msg').textContent='Choisis un résultat et une date valides.';
+ try{
+  core.saveFollowup(followAgent,mapped.result,mapped.method,date,f.note.value,core.agentState(followAgent).sourceVisitId);
+  follow.classList.add('hidden');followAgent='';refresh();
+ }catch(err){$('v-follow-msg').textContent=err.message||'Enregistrement impossible.'}
+});
+
 function readShiftForm(){const f=form.elements;return {date:f.date.value,shift:f.shift.value}}
 $('v-date').value=day;$('v-shift').value=shift;
 $('v-date').onchange=e=>{if(core.valid(e.target.value)){day=e.target.value;refresh()}};
