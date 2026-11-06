@@ -32,7 +32,7 @@ function open(){
 const trim=s=>String(s||'').trim();
 function matchAgent(label){
  const q=core.norm(label);if(q.length<3)return null;
- const all=core.staff();
+ const all=core.allStaff?core.allStaff():core.staff();
  const exact=all.filter(x=>core.norm(x.name)===q);
  if(exact.length===1)return exact[0];
  const possible=all.filter(x=>{
@@ -69,11 +69,12 @@ function analyze(text,date=core.today()){
    const signed=core.lastSigned(p.name,date),state=core.agentState(p.name);
    const pending=['pending','notasked'].includes(state.status);
    const profile=api.profiles()[p.name]||{};
-   return {...p,signed,state,pending,rx:profile.rxCertified,piste:profile.pistePermit};
+   const absent=Boolean(window.MyTeamAbsences?.isAbsent?.(p.name,date));
+   return {...p,signed,state,pending,absent,returnDate:absent?window.MyTeamAbsences?.expectedReturn?.(p.name,date):'',rx:profile.rxCertified,piste:profile.pistePermit};
   });
-  const eligible=people.filter(p=>!p.signed).length;
-  const urgent=people.filter(p=>p.pending).length;
-  const score=eligible*10+urgent*6+people.filter(p=>!p.state.lastSeen).length*4;
+  const eligible=people.filter(p=>!p.signed&&!p.absent).length;
+  const urgent=people.filter(p=>p.pending&&!p.absent).length;
+  const score=eligible*10+urgent*6+people.filter(p=>!p.state.lastSeen&&!p.absent).length*4;
   return {...v,people,eligible,urgent,score};
  }).sort((a,b)=>b.eligible-a.eligible||b.urgent-a.urgent||b.score-a.score||a.post.localeCompare(b.post));
  const data=analyzed.filter(v=>v.people.length>0);
@@ -92,15 +93,17 @@ function render(){
  if(!data.length){$('v-plan-result').innerHTML=dateNotice+'<p class="visit-warning">Aucun poste avec agent G4S identifié. Ne programme pas de visite sur ces seuls éléments : vérifie les noms inconnus ou transmets un plan plus complet.</p>'+excluded+
   (errors.length?'<p class="hint">'+errors.length+' ligne(s) non comprises.</p>':'');return}
  const eligible=data.filter(x=>x.eligible>0).length;
- $('v-plan-result').innerHTML=dateNotice+'<h4>Postes prioritaires : '+Math.min(3,eligible)+' sur 3 envisagés</h4>'+
+ const inconsistent=data.filter(x=>x.people.some(p=>p.absent));
+ const absentWarning=inconsistent.length?'<p class="visit-warning"><strong>Incohérence : agent(s) absent(s) figurant sur le plan.</strong> '+inconsistent.map(x=>x.post+' : '+x.people.filter(p=>p.absent).map(p=>p.name).join(', ')).join(' ; ')+'</p>':'';
+ $('v-plan-result').innerHTML=dateNotice+absentWarning+'<h4>Postes prioritaires : '+Math.min(3,eligible)+' sur 3 envisagés</h4>'+
  (eligible<3?'<p class="visit-warning">Moins de trois postes sans doublon dans ce plan. Vérifie les autres affectations ou la présence d’autres agents.</p>':'')+
  data.map((r,i)=>'<div class="visit-plan-row"><div class="row-between"><strong>'+esc(r.post)+(i<3&&r.eligible?' · Prioritaire':'')+'</strong><small>'+r.eligible+' agent(s) sans rapport signé récent</small></div>'+
-  '<p>'+r.people.map(x=>esc(x.name)+(x.signed?' (déjà signé '+api.fmtDate(x.signed.date)+')':x.pending?' (relance consignes)':'')).join(', ')+'</p>'+
+  '<p>'+r.people.map(x=>esc(x.name)+(x.absent?' (ABSENT'+(x.returnDate?', retour '+api.fmtDate(x.returnDate):'')+')':x.signed?' (déjà signé '+api.fmtDate(x.signed.date)+')':x.pending?' (relance consignes)':'')).join(', ')+'</p>'+
   (r.unresolved.length?'<p class="visit-warning">Noms à confirmer : '+esc(r.unresolved.join(', '))+'</p>':'')+
    (r.nonG4s.length?'<small>Hors G4S explicitement indiqués (exclus) : '+esc(r.nonG4s.join(', '))+'</small>':'')+
   (r.people.some(x=>x.rx===undefined||x.piste===undefined)?'<small>Qualifications RX/permis incomplètes pour certains agents : vérifier si le poste les exige.</small>':'')+
-  '<div class="visit-buttons"><button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="passage" '+(sourceMatches?'':'disabled')+'>Passage</button>'+
-  '<button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="report" '+(sourceMatches?'':'disabled')+'>Rapport</button></div></div>').join('')+
+  '<div class="visit-buttons"><button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="passage" '+(sourceMatches&&r.eligible>0?'':'disabled')+'>Passage</button>'+
+  '<button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="report" '+(sourceMatches&&r.eligible>0?'':'disabled')+'>Rapport</button></div></div>').join('')+
  excluded+
  (errors.length?'<p class="hint">'+errors.length+' ligne(s) non analysée(s) : '+esc(errors.slice(0,3).join(' | '))+'</p>':'');
 }
@@ -113,6 +116,7 @@ function summaryText(){
   'Date inscrite sur le plan : '+($('v-plan-source-date').value||'INCONNUE — vérification nécessaire')+'.',
   'Rapports SIGNÉS déjà effectués sur cette vacation : '+n.signed+'/3.',
   'Règle impérative : proposer uniquement des postes avec au moins un agent G4S identifié sur le plan. Un poste sans G4S n’est pas une visite obligatoire, même s’il appartient à PARIF. Les noms inconnus doivent être signalés à vérifier.',
+  'Important : si un agent est noté en absence confirmée dans MyTEAM, ne pas lui proposer de visite ou de rappel avant son retour. Signaler son apparition sur le plan ou la fiche de prestations.',
   'Règles : distinguer simples passages, rapports de visite signés et consignes validées.',
   'Éviter les doublons de RAPPORTS SIGNÉS au même agent sur 7 jours glissants.',
   'Un rapport signé compte pour UN, même avec plusieurs agents présents.',
@@ -155,7 +159,7 @@ $('v-plan-result').addEventListener('click',e=>{
  const b=e.target.closest('[data-v-plan-row]');if(!b)return;
  const r=ranked[Number(b.dataset.vPlanRow)];
  if(!r)return;
- visit()?.openForm(b.dataset.vPlanKind,r.people.map(x=>x.name));
+ visit()?.openForm(b.dataset.vPlanKind,r.people.filter(x=>!x.absent).map(x=>x.name));
  $('v-form').elements.post.value=r.post;
 });
 const cached=read();
