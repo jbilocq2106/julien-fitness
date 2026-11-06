@@ -26,7 +26,7 @@ main{padding:15px 13px 28px;max-width:940px;margin:auto}main>.screen{animation:s
 .primary{background:var(--accent);border-color:var(--accent);color:#101c2f;font-weight:850}
 .small-button{font-size:12px;min-height:38px;padding:8px 10px;border-color:#66758a;white-space:nowrap}
 .text-button{border:0;background:transparent;color:#ffbd93;font-size:13px;padding:6px 0;min-height:31px}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;padding:8px 5px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;background:#17253c;border-top:1px solid #43546d;z-index:50;box-shadow:0 -4px 16px #0003}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;padding:8px 5px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;background:#17253c;border-top:1px solid #43546d;z-index:50;box-shadow:0 -4px 16px #0003}
 .tabs button[data-tab]{min-width:0;border:0;padding:8px 1px;border-radius:11px;min-height:59px;background:transparent;color:#c1cede;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
 .tabs button[data-tab].active{background:#304966;color:#fff}
 .tabs .nav-symbol{font-size:24px;line-height:1.05;font-weight:600}
@@ -88,3 +88,38 @@ summary{cursor:pointer;font-weight:700}
 @media(min-width:740px){main{padding:20px 28px}.quick-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.bottom-nav{max-width:940px;left:50%;transform:translateX(-50%)}}
 .note-versions{margin:9px 0;padding:9px 12px;border-radius:9px;background:#263850;border:1px solid #455773}
 .note-versions summary{font-size:12px;color:#ffd0ac}
+
+/* Journal de vacation et édition par appui long */
+.bottom-nav .nav-symbol{font-size:22px}
+.bottom-nav button[data-tab]{font-size:10px;padding-inline:0}
+#journal .row-between h2{margin:0}
+#journal #journal-form{border-color:#8d643d;background:#222e43}
+#journal .journal-check{display:flex;align-items:center;gap:11px;padding:11px 0}
+#journal .journal-check input{width:22px;height:22px;min-height:0;margin:0;accent-color:#eb8b4d}
+#journal .journal-entry{padding:15px 0;border-top:1px solid #475b72;touch-action:pan-y}
+#journal .journal-entry:first-child{border-top:0}
+#journal .journal-entry strong{color:#f8d8c3;font-size:14px}
+#journal .journal-entry p{font-size:14px;white-space:pre-wrap}
+#journal .journal-meta{display:flex;flex-wrap:wrap;gap:6px}
+#journal .journal-meta span{background:#304258;border-radius:7px;padding:4px 7px;color:#cedcea;font-size:11px}
+#journal .journal-reminder{margin:12px 0 5px;padding:11px;background:#493523;border:1px solid #a67437;border-radius:12px;font-size:13px}
+#journal .journal-reminder.is-done{background:#203b35;border-color:#388667}
+#journal .journal-reminder span{display:block;font-weight:800;padding-bottom:4px}
+#journal .journal-reminder small{display:block;color:#aee3cb;margin-top:3px}
+#journal .journal-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:11px}
+#journal .journal-actions button{min-height:38px;padding:7px 11px;font-size:12px}
+#journal input[type=date],#journal input[type=time]{max-width:100%}
+#journal-form.hidden{display:none!important}
+.mt-long-overlay[hidden]{display:none!important}
+.mt-long-overlay{position:fixed;inset:0;z-index:3000;display:flex;align-items:flex-end;justify-content:center;overscroll-behavior:contain}
+.mt-long-shade{position:absolute;inset:0;background:rgba(0,0,0,.68)}
+.mt-long-sheet{position:relative;width:100%;max-width:620px;max-height:85dvh;overflow-y:auto;background:#1c304c;border:1px solid #5a718d;border-radius:20px 20px 0 0;padding:19px 17px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -12px 45px #0007}
+.mt-long-sheet h3{margin:0}
+#mt-long-items{display:grid;gap:9px;margin-top:17px}
+#mt-long-items button{width:100%;text-align:left;background:#30445f;border:1px solid #647994}
+#mt-long-items button.danger-option{background:#4a2630;border-color:#9b5360}
+.mt-long-editor form{display:grid;gap:9px}
+.mt-long-editor label{margin:3px 0}
+.mt-long-editor form button[type=submit]{margin-top:9px}
+[data-long-agent],[data-long-note],[data-long-journal],[data-long-reminder-source],[data-long-cycle],[data-long-supervisors],[data-long-team]{touch-action:pan-y}
+@media(max-width:360px){.bottom-nav .nav-symbol{font-size:20px}.bottom-nav button[data-tab]{font-size:9px}.bottom-nav{padding-inline:2px}}
