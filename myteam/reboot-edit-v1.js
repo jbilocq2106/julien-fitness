@@ -8,7 +8,7 @@ const read=(key,def)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null')
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=api.dateNow;
-const TARGET='[data-long-agent],[data-long-note],[data-long-journal],[data-long-reminder-source],[data-long-cycle],[data-long-supervisors],[data-long-team],[data-long-search],#hours h2,#salary h2,#hours .card,#salary .card,[data-v-long]';
+const TARGET='[data-long-agent],[data-long-note],[data-long-journal],[data-long-reminder-source],[data-long-cycle],[data-long-supervisors],[data-long-team],[data-long-search],#hours h2,#salary h2,#hours .card,#salary .card,[data-v-long],[data-long-absence]';
 let current=null,backupPrepared=false,hold=null,suppressUntil=0;
 const overlay=document.createElement('div');
 overlay.id='mt-long-overlay';overlay.className='mt-long-overlay';overlay.hidden=true;
@@ -65,6 +65,7 @@ function menus(kind,value){
  if(kind==='hours')return [choice('Saisir ou corriger une vacation','hours-edit')];
  if(kind==='salary')return [choice('Modifier les paramètres de salaire','salary-edit')];
  if(kind==='visit')return [choice('Corriger ce passage / rapport','visit-edit')];
+ if(kind==='absence')return [choice('Modifier cette absence','absence-edit'),choice('Afficher l’historique des corrections','absence-history')];
  if(kind==='search')return [choice('Ouvrir la fiche / l’événement','search-open')];
  return [];
 }
@@ -75,7 +76,7 @@ function openMenu(kind,value){
  $('mt-long-title').textContent={
   agent:'Agent · '+value,note:'Historique personnel',journal:'Journal de vacation',reminder:'Rappel daté',
   cycle:'Vacations du '+api.fmtDate(value),supervisors:'Superviseurs',team:'Équipe '+value,
-  hours:'Mes heures',salary:'Salaire',search:'Historique',visit:'Rapport ou passage'
+  hours:'Mes heures',salary:'Salaire',search:'Historique',visit:'Rapport ou passage',absence:'Absence agent'
  }[kind]||'Modifier';
  $('mt-long-items').innerHTML=m.join('');
  overlay.hidden=false;
@@ -94,6 +95,7 @@ function resolveTarget(target){
  if(t.hasAttribute('data-long-team'))return {kind:'team',value:t.dataset.longTeam};
  if(t.hasAttribute('data-long-search'))return {kind:'search',value:[t.dataset.longSearch,t.dataset.longSearchAgent].join('||')};
  if(t.hasAttribute('data-v-long'))return {kind:'visit',value:t.dataset.vLong};
+ if(t.hasAttribute('data-long-absence'))return {kind:'absence',value:t.dataset.longAbsence};
  if(t.closest('#hours'))return {kind:'hours',value:''};
  if(t.closest('#salary'))return {kind:'salary',value:''};
  return null;
@@ -401,6 +403,23 @@ function act(action){
  if(action==='hours-edit')return editHours();
  if(action==='salary-edit')return editSalary();
  if(action==='visit-edit'){const v=window.MyTeamVisitsCore?.visits?.().find(x=>x.id===value);if(v)window.MyTeamVisits?.openForm?.(v.kind,[],v.id);return}
+ if(action==='absence-edit'){
+  const v=window.MyTeamAbsences?.read?.().find(x=>x.id===value);
+  if(v)window.MyTeamAbsencesUI?.open?.(v);
+  return;
+ }
+ if(action==='absence-history'){
+  const v=window.MyTeamAbsences?.read?.().find(x=>x.id===value);
+  if(!v)return;
+  closeEditor();
+  $('mt-edit-title').textContent='Corrections · '+v.agent;
+  const container=$('mt-edit-body');
+  const revisions=Array.isArray(v.revisions)?v.revisions:[];
+  container.innerHTML=revisions.length?'<div class="hint">Versions antérieures conservées : '+revisions.length+'</div>'+
+   revisions.slice().reverse().map((r,i)=>'<div class="legacy-entry"><small>'+api.fmtDate(r.changedAt?.slice(0,10))+'</small><p>'+esc(r.previous?.type||'')+' · '+esc(r.previous?.start||'')+' au '+esc(r.previous?.end||'')+' · Retour '+esc(r.previous?.returnDate||'non renseigné')+'</p></div>').join(''):
+    '<p class="hint">Aucune correction antérieure.</p>';
+  editor.hidden=false;return;
+ }
  if(action==='search-open'){
   const [id,name]=value.split('||');
   if(name&&api.agent(name,true))api.openAgent(name);
