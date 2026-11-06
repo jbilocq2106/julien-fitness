@@ -1,0 +1,42 @@
+/* MyTEAM — congés/absences et fin de vacation. Mobile d'abord. */
+:root{--v-note:#b6cadf}
+#absences .row-between h2,#closing .row-between h2{margin:0}
+#absences #absence-form.hidden,#closing .hidden{display:none!important}
+#absences .card,#closing .card{overflow-wrap:anywhere}
+#absences input[type=file]{width:100%;max-width:100%;font-size:12px}
+#absences .absence-item{padding:13px 0;border-top:1px solid #405675;touch-action:pan-y}
+#absences .absence-item:first-child{border-top:0}
+#absences .absence-item p{margin:6px 0;color:#dbe6f5;font-size:13px}
+#absences .absence-item small{color:#bdcfe2;font-size:11px}
+#absences .absence-item .absence-ongoing{background:#684b2b;border-radius:6px;padding:2px 5px;color:#ffe0a6}
+#absences .absence-item .absence-warning{display:block;color:#ffd19b;padding-bottom:4px}
+#absences .absence-conflict{border:1px solid #df9055;border-radius:10px;padding:11px;background:#4b3533;margin-top:10px}
+#absences .absence-conflict strong{font-size:13px;color:#ffcc95}
+#absences .absence-conflict p{font-size:13px;margin:6px 0}
+#absences #absence-audit-result{margin-top:14px}
+#absences .form-grid label{font-size:13px}
+#close-assignment{border-color:#68829a}
+#close-assignment form{display:grid;gap:6px}
+#closing label{font-size:13px}
+#closing textarea{font-size:13px;line-height:1.42;white-space:pre-wrap;width:100%;min-height:200px}
+#closing .visit-summary{margin:0}
+#closing .visit-buttons button{min-height:46px}
+#closing .close-version-group{padding:13px 0;border-top:1px solid #4b5d73}
+#closing .close-version-group:first-child{border-top:0}
+#closing .close-version-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 0}
+#closing .close-version-row small{flex:1;min-width:130px}
+#closing .close-version-row button{font-size:11px;min-height:32px;padding:6px 9px}
+#closing .close-version-group textarea{max-height:185px}
+#closing #close-status{padding:8px 1px}
+#closing #close-backup-status,#closing #close-personal-status{font-size:11px;color:#afdfc1}
+#closing #close-backup-text,#closing #close-personal-text{background:#16253b;border-color:#567490}
+#mt-closing-home{border-color:#71879d}
+#mt-closing-home h3{margin:0}
+#mt-closing-home .visit-buttons{margin:6px 0}
+#mt-closing-home .hint{margin:5px 0}
+.nav-symbol{line-height:1}
+.bottom-nav{grid-template-columns:repeat(7,minmax(0,1fr))!important;padding-inline:3px;gap:1px}
+.bottom-nav button[data-tab]{min-width:0;font-size:9px!important;padding-inline:0!important}
+.bottom-nav button .nav-symbol{font-size:19px!important}
+@media(max-width:390px){.bottom-nav button[data-tab]{font-size:8px!important}.bottom-nav button .nav-symbol{font-size:18px!important}}
+@media(max-width:350px){.bottom-nav{overflow-x:auto;display:flex!important;scrollbar-width:none}.bottom-nav button[data-tab]{flex:0 0 48px}.bottom-nav::-webkit-scrollbar{display:none}}
