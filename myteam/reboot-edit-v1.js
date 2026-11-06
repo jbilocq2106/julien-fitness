@@ -47,7 +47,14 @@ function menus(kind,value){
  if(kind==='journal')return [choice('Corriger cet événement','journal-edit'),choice('Confirmer le rappel comme fait','journal-done')];
  if(kind==='reminder'){
   const src=value.split('||')[0];
-  return [choice('Modifier / consulter','reminder-edit'),choice('Confirmer comme fait','reminder-done'),
+  return [
+   choice('Prochain matin · 05h00','reminder-next-morning'),
+   choice('Prochain après-midi · 13h00','reminder-next-afternoon'),
+   choice('Prochaine nuit · 21h00','reminder-next-night'),
+   choice('Choisir une autre date / heure','reminder-custom-date'),
+   choice('Retirer la date prévue','reminder-clear-plan'),
+   choice('Modifier / consulter','reminder-edit'),
+   choice('Confirmer comme fait','reminder-done'),
     ...(src==='journal'?[choice('Voir dans le journal','reminder-open')]:[])];
  }
  if(kind==='cycle')return [
@@ -174,7 +181,73 @@ function editExternal(source,id){
  rows[idx]=data;
  try{localStorage.setItem(k,JSON.stringify(rows));api.renderHome()}catch{alert('Modification non enregistrée.')}
 }
+/* Planification indépendante de l'échéance réelle : ne marque jamais un rappel fait. */
+const REMINDER_PLAN_KEY='myteam_reminder_plans_v1';
+const planIndex=(source,id,who)=>JSON.stringify([source,String(id),who||'']);
+function nextShift(kind,from=new Date()){
+ const slots={morning:{code:0,time:'05:00'},afternoon:{code:1,time:'13:00'},night:{code:2,time:'21:00'}};
+ const wanted=slots[kind];if(!wanted)return null;
+ const anchor=Date.UTC(2026,9,25),y=from.getFullYear(),m=from.getMonth(),day=from.getDate();
+ for(let delta=0;delta<24;delta++){
+  const date=new Date(y,m,day+delta),diff=Math.round((Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())-anchor)/86400000);
+  const phase=((diff%8)+8)%8,slot=phase<2?0:phase<4?1:phase<6?2:3;
+  if(slot!==wanted.code)continue;
+  const [hh,mm]=wanted.time.split(':').map(Number);
+  const candidate=new Date(date.getFullYear(),date.getMonth(),date.getDate(),hh,mm,0,0);
+  if(candidate.getTime()>from.getTime()){
+   const iso=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');
+   return {date:iso,time:wanted.time};
+  }
+ }
+ return null;
+}
+function setReminderPlan(raw,slot){
+ const [source,id,...agentParts]=raw.split('||'),who=agentParts.join('||');
+ if(!source||!id)return;
+ const all=read(REMINDER_PLAN_KEY,{});
+ const plans=all&&typeof all==='object'&&!Array.isArray(all)?all:{};
+ const key=planIndex(source,id,who),previous=plans[key];
+ if(slot){
+  plans[key]={date:slot.date,time:slot.time,updatedAt:new Date().toISOString(),
+    history:[...(Array.isArray(previous?.history)?previous.history:[]),
+      ...(previous?.date?[{date:previous.date,time:previous.time,changedAt:new Date().toISOString()}]:[])]};
+ }else delete plans[key];
+ try{
+  localStorage.setItem(REMINDER_PLAN_KEY,JSON.stringify(plans));
+  api.renderHome();
+  window.MyTeamAlertScheduler?.render?.();
+ }catch{alert('Impossible de conserver la date prévue sur ce téléphone.');return}
+ const info=slot?'Date prévue : '+api.fmtDate(slot.date)+' à '+slot.time+'. Le rappel reste à faire.':'Date prévue supprimée. Le rappel reste à faire.';
+ const visible=document.createElement('div');visible.setAttribute('role','status');visible.className='mt-reminder-confirmation';visible.textContent=info;
+ document.body.append(visible);setTimeout(()=>visible.remove(),4000);
+}
+function chooseReminderDate(raw){
+ closeEditor();
+ $('mt-edit-title').textContent='Quand prévois-tu de le faire ?';
+ $('mt-edit-body').innerHTML='<form id="mt-plan-form"><p class="hint">La date prévue est différente de la date limite. Le rappel restera ouvert jusqu’à confirmation.</p>'+
+ '<label>Date prévue<input name="date" type="date" required></label>'+
+ '<label>Heure<input name="time" type="time" required></label>'+
+ '<button type="submit" class="primary">Enregistrer la date prévue</button>'+
+ '<p id="mt-plan-form-status" class="hint" role="status"></p></form>';
+ const [source,id,...who]=raw.split('||');
+ const all=read(REMINDER_PLAN_KEY,{}),current=all?.[planIndex(source,id,who.join('||'))];
+ const f=$('mt-plan-form'),now=api.dateNow();
+ f.elements.date.value=current?.date||now;f.elements.time.value=current?.time||'08:00';
+ f.addEventListener('submit',e=>{
+  e.preventDefault();const date=f.elements.date.value,time=f.elements.time.value;
+  if(!api.validDate(date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){$('mt-plan-form-status').textContent='Date ou heure invalide.';return}
+  setReminderPlan(raw,{date,time});closeEditor();
+ });
+ editor.hidden=false;
+}
 function reminderAction(action,raw){
+ if(action==='reminder-next-morning'||action==='reminder-next-afternoon'||action==='reminder-next-night'){
+  const kind=action.slice('reminder-next-'.length),slot=nextShift(kind);
+  if(slot)setReminderPlan(raw,slot);else alert('Aucune vacation correspondante trouvée dans le cycle.');
+  return;
+ }
+ if(action==='reminder-custom-date')return chooseReminderDate(raw);
+ if(action==='reminder-clear-plan')return setReminderPlan(raw,null);
  const [source,id,who]=raw.split('||');
  if(source==='journal'){
   const j=window.MyTeamJournal,record=j?.get(id);
@@ -319,5 +392,6 @@ function act(action){
   else if(window.MyTeamJournal?.get(id))window.MyTeamJournal.openJournal(id);
  }
 }
+window.MyTeamReminderPlanner={nextShift,setReminderPlan,planIndex};
 $('mt-long-items').addEventListener('click',e=>{const b=e.target.closest('[data-long-action]');if(b)act(b.dataset.longAction)});
 })();
