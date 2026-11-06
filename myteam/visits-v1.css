@@ -1,0 +1,64 @@
+
+/* Visites : contrôles rapides et lisibles sur téléphone */
+#v-home-card .visit-summary{margin:7px 0}
+#visits h2{margin-bottom:2px}
+#visits .card{overflow-wrap:anywhere}
+#visits .visit-summary,#v-home-card .visit-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+#v-home-card .visit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.visit-summary>div{display:flex;flex-direction:column;gap:4px;background:#283e57;padding:11px 8px;border-radius:12px;text-align:center;min-width:0}
+.visit-summary strong{font-size:22px;color:#fff}
+.visit-summary small{font-size:11px;color:#bed3e6}
+.visit-bar{height:9px;border-radius:20px;background:#415069;overflow:hidden;margin:13px 0}
+#v-progress{height:100%;width:0;background:#38a883;transition:width .2s}
+.visit-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+.visit-buttons button{width:100%;min-height:48px;font-size:13px;line-height:1.2;padding:10px 8px}
+.visit-alert{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:11px 0;border-top:1px solid #445774}
+.visit-alert:first-child{border-top:0}
+.visit-alert>div:first-child{min-width:0;flex:1;display:grid;gap:4px}
+.visit-alert strong{font-size:13px}
+.visit-alert small{font-size:11px;color:#efc597}
+.visit-actions{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.visit-alert .visit-actions{display:grid;grid-template-columns:1fr;gap:5px}
+.visit-actions button{min-height:33px;padding:6px 9px;font-size:12px}
+.visit-entry{border-top:1px solid #3c4c65;padding:13px 0;touch-action:pan-y}
+.visit-entry:first-child{border-top:0}
+.visit-entry .row-between{align-items:flex-start}
+.visit-entry .row-between strong{font-size:14px}
+.visit-entry .row-between small{max-width:42%;text-align:right;font-size:11px}
+.visit-entry p{margin:6px 0 5px;font-size:13px}
+.visit-entry>small{font-weight:750;color:#d3e7f3}
+#v-form{border:1px solid #8b725b;background:#23344a}
+#v-form.hidden{display:none!important}
+#v-form label{margin-top:9px}
+#v-form .row-between h4{margin:12px 0}
+.visit-checkbox{display:flex;gap:10px;align-items:center;background:#31435b;padding:11px;border-radius:10px;font-size:14px}
+.visit-checkbox input{width:23px;height:23px;min-height:0;margin:0;accent-color:#e8783c;flex-shrink:0}
+.visit-agent-pick{max-height:245px;overflow:auto;border:1px solid #455d79;border-radius:11px;padding:5px}
+.visit-pick{display:flex;align-items:center;gap:9px;padding:7px 6px!important;margin:0!important;border-bottom:1px solid #354860}
+.visit-pick:last-child{border-bottom:0}
+.visit-pick input{height:22px;width:22px;min-height:0;margin:0;accent-color:#e8783c;flex-shrink:0}
+.visit-pick span{font-size:13px}
+.visit-pick small{display:block;font-size:11px;color:#b6cbe0}
+.visit-selected{background:#2c405b;padding:12px;margin:9px 0;border-radius:12px;border:1px solid #526882}
+.visit-selected .row-between button{font-size:12px;min-height:34px;padding:5px 8px}
+.visit-selected label{margin:7px 0}
+.visit-warning{color:#ffc082!important;font-size:12px;display:block;line-height:1.5}
+.visit-ok{color:#7eddb6!important;font-size:12px}
+#v-duplicate{margin:9px 0}
+.visit-profile{margin:18px 0;padding:14px 0;border-top:2px solid #496582}
+.visit-profile h4{margin:0}
+.visit-profile-row{padding:9px 0;border-top:1px solid #435773}
+.visit-profile-row p{margin:2px 0 4px;font-size:13px}
+.visit-profile-row small{font-size:12px;color:#c2d7ec}
+#v-plan-box{border-color:#5a7997;background:#23364f}
+#v-plan-result{margin-top:10px}
+.visit-plan-row{padding:12px 0;border-top:1px solid #4a5f79}
+.visit-plan-row p{font-size:13px}
+.visit-plan-row .row-between strong{font-size:14px}
+.visit-plan-row .row-between small{font-size:11px;text-align:right}
+#mt-alert-next .visit-alert{flex-wrap:wrap}
+#mt-alert-next .visit-alert button{min-width:92px}
+#v-share-fallback{width:100%;min-height:150px}
+#mt-alert-settings .row-between h3{margin:0}
+#mt-alert-settings .hint{margin:6px 0}
+@media(max-width:360px){.visit-summary strong{font-size:18px}.visit-summary small{font-size:10px}.visit-alert{flex-direction:column;align-items:stretch}.visit-alert .visit-actions{display:flex}}
