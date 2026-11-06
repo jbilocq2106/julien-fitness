@@ -118,7 +118,7 @@
       if(due!==null&&due<=2){
         rows.push(item('pay-check','Contrôle formation / paie à effectuer',
           due<0?'Échéance de contrôle dépassée ; dossier à vérifier.':'Échéance '+fmt(pay.dueFrom)+' · '+(due===0?"aujourd’hui":due===1?'J−1':'J−2')+'.',
-          'urgent','mt-bureau','#mt-panato-pay-case',true,null,pay.dueFrom));
+          'urgent','team','#mt-panato-pay-case',true,null,pay.dueFrom));
       }
     }
 
