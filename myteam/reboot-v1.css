@@ -86,3 +86,5 @@ summary{cursor:pointer;font-weight:700}
 #salary .card,#hours .card{background:#24344a}
 #hours label,#salary label{color:#e9f1fd}
 @media(min-width:740px){main{padding:20px 28px}.quick-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.bottom-nav{max-width:940px;left:50%;transform:translateX(-50%)}}
+.note-versions{margin:9px 0;padding:9px 12px;border-radius:9px;background:#263850;border:1px solid #455773}
+.note-versions summary{font-size:12px;color:#ffd0ac}
