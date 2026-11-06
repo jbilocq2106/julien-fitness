@@ -31,14 +31,14 @@ function sortRows(){
 }
 function presentStatus(record){
  if(record.status==='requested')return 'Demandé';
- if(record.status==='accepted')return 'Accepté (non validé)';
+ if(record.status==='accepted')return 'Accepté MyGesper';
  if(record.status==='refused')return 'Refusé';
  return record.type==='sick'?'Arrêt confirmé':'Validé';
 }
 function render(){
  selection();
  const dates=core.read(),now=api.dateNow(),query=api.norm($('absence-search').value);
- const active=dates.filter(x=>core.active(x,now)),future=dates.filter(x=>x.status==='confirmed'&&(x.start||x.observedAt)>now);
+ const active=dates.filter(x=>core.active(x,now)),future=dates.filter(x=>['confirmed','accepted'].includes(x.status)&&(x.start||x.observedAt)>now);
  $('absence-active-count').textContent=String(new Set(active.map(x=>api.norm(x.agent))).size);
  $('absence-future-count').textContent=String(new Set(future.map(x=>api.norm(x.agent))).size);
  const rows=sortRows().filter(x=>{
@@ -52,7 +52,7 @@ function render(){
    '<p>'+esc(core.TYPES[x.type]||x.type)+' · '+(x.start?'Du '+api.fmtDate(x.start):'Début non communiqué')+
     (x.end?' au '+api.fmtDate(x.end):'')+(x.returnDate?' · Retour '+api.fmtDate(x.returnDate):'')+'</p>'+
    (absent?'<small class="absence-warning">Agent absent — pas de contrôle ni de rappel pendant l’absence</small>':'')+
-   (x.status==='accepted'?'<small class="absence-warning">Accepté n’est pas Validé dans MyGesper</small>':'')+
+   (x.status==='accepted'?'<small>Congé accepté MyGesper · indisponibilité prise en compte.</small>':'')+
    (x.notes?'<small>'+esc(x.notes)+'</small>':'')+
    '<div class="visit-actions"><button type="button" data-absence-edit="'+esc(x.id)+'">Modifier</button></div></div>';
  }).join(''):'<p class="empty">Aucune absence correspondant au filtre.</p>';
