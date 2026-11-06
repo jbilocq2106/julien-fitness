@@ -25,6 +25,11 @@ const items=()=>{const rows=[];
  const manual=read('myteam_manual_reminders_v1',[]);
  if(Array.isArray(manual))manual.filter(e=>e?.done!==true&&valid(e.date||e.due)).forEach((e,i)=>rows.push({
   id:String(e.id??i),source:'manual',title:e.title||e.text||'Rappel',detail:e.description||'',date:e.date||e.due,time:e.time||'09:00'}));
+ const context=read('myteam_agent_context_reminders_v1',[]);
+ if(Array.isArray(context))context.filter(e=>e&&e.status!=='done'&&valid(e.due||e.date)).forEach((e,i)=>rows.push({
+   id:String(e.id??i),source:'context',title:'Suivi · '+String(e.agent||'Agent'),
+   detail:String(e.text||''),date:e.due||e.date,time:e.time||'09:00'
+ }));
  const seen=new Set();
  return rows.filter(x=>{const key=x.source+'|'+x.id;if(seen.has(key))return false;seen.add(key);return true})
   .sort((a,b)=>a.date.localeCompare(b.date)||String(a.time||'').localeCompare(String(b.time||'')));
@@ -40,9 +45,11 @@ card.innerHTML=[
 const home=$('home');home?.insertBefore(card,home.querySelector('.backup-card'));
 function calendarUrl(x){
  const day=x.date.replace(/-/g,''),time=/^\d\d:\d\d$/.test(x.time||'')?x.time:'09:00';
- const [hh,mm]=time.split(':').map(Number),end=(hh*60+mm+15)%(24*60);
+ const [hh,mm]=time.split(':').map(Number);
  const start=day+'T'+String(hh).padStart(2,'0')+String(mm).padStart(2,'0')+'00';
- const finish=day+'T'+String(Math.floor(end/60)).padStart(2,'0')+String(end%60).padStart(2,'0')+'00';
+ const endDate=new Date(x.date+'T'+time+':00');endDate.setMinutes(endDate.getMinutes()+15);
+ const finish=[endDate.getFullYear(),String(endDate.getMonth()+1).padStart(2,'0'),String(endDate.getDate()).padStart(2,'0')].join('')+
+ 'T'+String(endDate.getHours()).padStart(2,'0')+String(endDate.getMinutes()).padStart(2,'0')+'00';
  const params=new URLSearchParams({action:'TEMPLATE',text:'MyTEAM : '+x.title,dates:start+'/'+finish,details:(x.detail||'')+'\nRappel MyTEAM : confirmer une fois effectué.',ctz:'Europe/Paris'});
  return 'https://calendar.google.com/calendar/render?'+params.toString();
 }
@@ -94,8 +101,9 @@ function ics(){
  for(let i=0;i<all.length;i++){
   const r=all[i],time=/^\d\d:\d\d$/.test(r.time||'')?r.time:'09:00';
   const day=r.date.replace(/-/g,''),start=day+'T'+time.replace(':','')+'00';
-  const t=Number(time.slice(0,2))*60+Number(time.slice(3))+15;
-  const end=day+'T'+String(Math.floor(t/60)%24).padStart(2,'0')+String(t%60).padStart(2,'0')+'00';
+  const endDate=new Date(r.date+'T'+time+':00');endDate.setMinutes(endDate.getMinutes()+15);
+  const end=[endDate.getFullYear(),String(endDate.getMonth()+1).padStart(2,'0'),String(endDate.getDate()).padStart(2,'0')].join('')+
+   'T'+String(endDate.getHours()).padStart(2,'0')+String(endDate.getMinutes()).padStart(2,'0')+'00';
   out.push('BEGIN:VEVENT','UID:myteam-'+r.source+'-'+String(r.id).replace(/[^a-zA-Z0-9_-]/g,'')+'@local',
    'DTSTAMP:'+stamp+'Z','DTSTART;TZID=Europe/Paris:'+start,'DTEND;TZID=Europe/Paris:'+end,
    'SUMMARY:'+escape('MyTEAM : '+r.title),'DESCRIPTION:'+escape(r.detail||'Rappel MyTEAM'),
