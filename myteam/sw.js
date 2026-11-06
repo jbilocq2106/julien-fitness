@@ -1,13 +1,13 @@
 /* MyTEAM v2 : version autonome, réseau prioritaire, sans import PARIF. */
-const CACHE='myteam-reboot-20261106-v3';
+const CACHE='myteam-reboot-20261106-v4';
 const ROOT='/julien-fitness/myteam/';
 const ASSETS=[
  './','./index.html',
  './reboot-v1.css?v=20261106-4',
  './reboot-seed-v1.js?v=20261106-1',
  './reboot-v1.js?v=20261106-4',
- './journal-v1.js?v=20261106-1',
- './reboot-edit-v1.js?v=20261106-2',
+ './journal-v1.js?v=20261106-2',
+ './reboot-edit-v1.js?v=20261106-3',
  './hours-reboot-v1.js?v=20261106-1',
  './salary-forecast-v3.js?v=20261027-1',
  './supervisors-rota-v1.js?v=20261029-4',
