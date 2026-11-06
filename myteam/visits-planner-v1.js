@@ -31,6 +31,8 @@ function open(){
 }
 const trim=s=>String(s||'').trim();
 function matchAgent(label){
+ const corrected=window.MyTeamAbsences?.matchName?.(label,false);
+ if(corrected&&(core.allStaff?core.allStaff():core.staff()).some(a=>core.same(a.name,corrected.name)))return corrected;
  const q=core.norm(label);if(q.length<3)return null;
  const all=core.allStaff?core.allStaff():core.staff();
  const exact=all.filter(x=>core.norm(x.name)===q);
