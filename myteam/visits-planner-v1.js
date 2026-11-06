@@ -14,6 +14,7 @@ const box=document.createElement('section');
 box.id='v-plan-box';box.className='card hidden';
 box.innerHTML=[
  '<div class="row-between"><h3>Tournée à partir du plan</h3><button type="button" id="v-plan-hide" class="text-button">Fermer</button></div>',
+ '<p class="hint">Seuls les postes avec au moins un agent G4S identifié doivent être envisagés dans ta tournée. Cela vaut aussi pour les postes mixtes PARIF/G4S. Poste sans G4S identifié : écarté, ou à confirmer si des noms sont inconnus.</p>',
  '<p class="hint">Colle les postes et leurs agents (photo analysée dans ChatGPT ou liste relevée). Exemple : E84 : Henrat, Sandstrom, Marginale.</p>',
  '<textarea id="v-plan-text" rows="5" placeholder="E84 : Henrat, Sandstrom, Marginale\nE85 : Lebrun, Jacotez"></textarea>',
  '<div class="visit-buttons"><button type="button" id="v-plan-run" class="primary">Proposer la tournée</button><button type="button" id="v-plan-share">Partager le suivi avec ChatGPT</button></div>',
@@ -56,7 +57,7 @@ function parse(text){
 }
 function analyze(text,date=core.today()){
  const {rows,errors}=parse(text);
- const data=rows.map(v=>{
+ const analyzed=rows.map(v=>{
   const people=v.people.map(p=>{
    const signed=core.lastSigned(p.name,date),state=core.agentState(p.name);
    const pending=['pending','notasked'].includes(state.status);
@@ -68,13 +69,18 @@ function analyze(text,date=core.today()){
   const score=eligible*10+urgent*6+people.filter(p=>!p.state.lastSeen).length*4;
   return {...v,people,eligible,urgent,score};
  }).sort((a,b)=>b.eligible-a.eligible||b.urgent-a.urgent||b.score-a.score||a.post.localeCompare(b.post));
- return {data,errors};
+ const data=analyzed.filter(v=>v.people.length>0);
+ const skipped=analyzed.filter(v=>v.people.length===0);
+ return {data,skipped,errors};
 }
 function render(){
  const text=$('v-plan-text').value,date=$('v-date').value||core.today();
  if(!text.trim())return $('v-plan-result').innerHTML='<p class="hint">Ajoute au moins une ligne de poste.</p>';
- const {data,errors}=analyze(text,date);ranked=data;
- if(!data.length)return $('v-plan-result').innerHTML='<p class="visit-warning">Aucune ligne de poste comprise. Utilise le format E84 : Agent 1, Agent 2.</p>';
+ const {data,skipped,errors}=analyze(text,date);ranked=data;
+ const excluded=skipped.length?'<details class="visit-skipped"><summary>'+skipped.length+' poste(s) écarté(s) : aucun agent G4S identifié</summary>'+
+  skipped.map(v=>'<p><strong>'+esc(v.post)+'</strong> — '+(v.unresolved.length?'Noms non reconnus : '+esc(v.unresolved.join(', '))+'. Présence G4S à vérifier.':'Aucun agent G4S dans les noms fournis.')+'</p>').join('')+'</details>':'';
+ if(!data.length){$('v-plan-result').innerHTML='<p class="visit-warning">Aucun poste avec agent G4S identifié. Ne programme pas de visite sur ces seuls éléments : vérifie les noms inconnus ou transmets un plan plus complet.</p>'+excluded+
+  (errors.length?'<p class="hint">'+errors.length+' ligne(s) non comprises.</p>':'');return}
  const eligible=data.filter(x=>x.eligible>0).length;
  $('v-plan-result').innerHTML='<h4>Postes prioritaires : '+Math.min(3,eligible)+' sur 3 envisagés</h4>'+
  (eligible<3?'<p class="visit-warning">Moins de trois postes sans doublon dans ce plan. Vérifie les autres affectations ou la présence d’autres agents.</p>':'')+
@@ -84,6 +90,7 @@ function render(){
   (r.people.some(x=>x.rx===undefined||x.piste===undefined)?'<small>Qualifications RX/permis incomplètes pour certains agents : vérifier si le poste les exige.</small>':'')+
   '<div class="visit-buttons"><button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="passage">Passage</button>'+
   '<button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="report">Rapport</button></div></div>').join('')+
+ excluded+
  (errors.length?'<p class="hint">'+errors.length+' ligne(s) non analysée(s) : '+esc(errors.slice(0,3).join(' | '))+'</p>':'');
 }
 function summaryText(){
@@ -93,6 +100,7 @@ function summaryText(){
   'MyTEAM — Contexte privé pour analyser la photo du plan que je joins dans ChatGPT.',
   'Date de vacation : '+date+', '+(core.shiftNames[shift]||shift)+'.',
   'Rapports SIGNÉS déjà effectués sur cette vacation : '+n.signed+'/3.',
+  'Règle impérative : proposer uniquement des postes avec au moins un agent G4S identifié sur le plan. Un poste sans G4S n’est pas une visite obligatoire, même s’il appartient à PARIF. Les noms inconnus doivent être signalés à vérifier.',
   'Règles : distinguer simples passages, rapports de visite signés et consignes validées.',
   'Éviter les doublons de RAPPORTS SIGNÉS au même agent sur 7 jours glissants.',
   'Un rapport signé compte pour UN, même avec plusieurs agents présents.',
@@ -107,7 +115,7 @@ function summaryText(){
   ' | Dernier passage : '+(row.passage?row.passage.date+' '+row.passage.post+' ('+row.passage.kind+')':'aucun')+
   ' | Consignes : '+row.consignes+' | Relance : '+(row.due||'non'));
  if($('v-plan-text').value.trim())lines.push('POSTES RECOPIÉS DU PLAN :\n'+$('v-plan-text').value.trim().slice(0,9500));
- lines.push('Analyse la photo jointe dans ChatGPT : donne une tournée priorisée de 3 rapports signés utiles, des simples passages/relances, et les éventuels noms incertains. Ne prétends pas connaître une affectation non visible.');
+ lines.push('Analyse la photo jointe : identifie les postes accueillant des G4S, exclue de la tournée tous les postes sans G4S, puis propose 3 rapports signés utiles sans doublons. Signale les noms incertains plutôt que d’inventer une présence G4S.');
  return lines.join('\n');
 }
 async function share(){
