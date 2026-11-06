@@ -147,6 +147,7 @@ function removeAgent(name){
  else alert('Suppression impossible.');
 }
 document.addEventListener('click',e=>{if(e.target.id==='export-data')backupPrepared=true},true);
+$('agent-manage')?.addEventListener('click',()=>{const name=api.selected();if(name)openMenu('agent',name)});
 function editExternal(source,id){
  const k=source==='manual'?'myteam_manual_reminders_v1':source==='context'?'myteam_agent_context_reminders_v1':'';
  if(!k)return;
@@ -177,7 +178,7 @@ function reminderAction(action,raw){
   const j=window.MyTeamJournal,record=j?.get(id);
   if(!record)return;
   if(action==='reminder-done')j.markDone(id);
-  else if(action==='reminder-edit')j.openForm(record);
+  else if(action==='reminder-edit'){j.openJournal(id);j.openForm(record);}
   else j.openJournal(id);
   return;
  }
