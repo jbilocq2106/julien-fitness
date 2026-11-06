@@ -85,6 +85,7 @@ function render(){
  const text=$('v-plan-text').value,date=$('v-date').value||core.today(),sourceDate=$('v-plan-source-date').value;
  if(!text.trim())return $('v-plan-result').innerHTML='<p class="hint">Ajoute au moins une ligne de poste.</p>';
  const sourceValid=core.valid(sourceDate),sourceMatches=sourceValid&&sourceDate===date;
+ const posted=Boolean(window.MyTeamVacation?.isPosted?.(date,$('v-shift').value));
  const dateNotice=!sourceValid?'<p class="visit-warning"><strong>Date du plan non indiquée.</strong> Analyse indicative uniquement. Vérifie la date source avant de préparer un rapport.</p>':
   !sourceMatches?'<p class="visit-warning"><strong>Plan du '+esc(api.fmtDate(sourceDate))+'.</strong> Il ne prouve aucune affectation pour le '+esc(api.fmtDate(date))+'. Actions de tournée désactivées.</p>':'';
  const {data,skipped,errors}=analyze(text,date);ranked=data;
@@ -95,15 +96,15 @@ function render(){
  const eligible=data.filter(x=>x.eligible>0).length;
  const inconsistent=data.filter(x=>x.people.some(p=>p.absent));
  const absentWarning=inconsistent.length?'<p class="visit-warning"><strong>Incohérence : agent(s) absent(s) figurant sur le plan.</strong> '+inconsistent.map(x=>x.post+' : '+x.people.filter(p=>p.absent).map(p=>p.name).join(', ')).join(' ; ')+'</p>':'';
- $('v-plan-result').innerHTML=dateNotice+absentWarning+'<h4>Postes prioritaires : '+Math.min(3,eligible)+' sur 3 envisagés</h4>'+
+ $('v-plan-result').innerHTML=dateNotice+(posted?'<p class="visit-warning">Tu es déclaré posté pendant cette vacation : aucune tournée ni rapport à réaliser.</p>':'')+absentWarning+'<h4>Postes prioritaires : '+(posted?0:Math.min(3,eligible))+' sur 3 envisagés</h4>'+
  (eligible<3?'<p class="visit-warning">Moins de trois postes sans doublon dans ce plan. Vérifie les autres affectations ou la présence d’autres agents.</p>':'')+
  data.map((r,i)=>'<div class="visit-plan-row"><div class="row-between"><strong>'+esc(r.post)+(i<3&&r.eligible?' · Prioritaire':'')+'</strong><small>'+r.eligible+' agent(s) sans rapport signé récent</small></div>'+
   '<p>'+r.people.map(x=>esc(x.name)+(x.absent?' (ABSENT'+(x.returnDate?', retour '+api.fmtDate(x.returnDate):'')+')':x.signed?' (déjà signé '+api.fmtDate(x.signed.date)+')':x.pending?' (relance consignes)':'')).join(', ')+'</p>'+
   (r.unresolved.length?'<p class="visit-warning">Noms à confirmer : '+esc(r.unresolved.join(', '))+'</p>':'')+
    (r.nonG4s.length?'<small>Hors G4S explicitement indiqués (exclus) : '+esc(r.nonG4s.join(', '))+'</small>':'')+
   (r.people.some(x=>x.rx===undefined||x.piste===undefined)?'<small>Qualifications RX/permis incomplètes pour certains agents : vérifier si le poste les exige.</small>':'')+
-  '<div class="visit-buttons"><button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="passage" '+(sourceMatches&&r.eligible>0?'':'disabled')+'>Passage</button>'+
-  '<button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="report" '+(sourceMatches&&r.eligible>0?'':'disabled')+'>Rapport</button></div></div>').join('')+
+  '<div class="visit-buttons"><button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="passage" '+(sourceMatches&&!posted&&r.eligible>0?'':'disabled')+'>Passage</button>'+
+  '<button type="button" data-v-plan-row="'+i+'" data-v-plan-kind="report" '+(sourceMatches&&!posted&&r.eligible>0?'':'disabled')+'>Rapport</button></div></div>').join('')+
  excluded+
  (errors.length?'<p class="hint">'+errors.length+' ligne(s) non analysée(s) : '+esc(errors.slice(0,3).join(' | '))+'</p>':'');
 }
