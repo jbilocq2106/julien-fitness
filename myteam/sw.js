@@ -1,37 +1,45 @@
-const CACHE='myteam-v3-shell-v112-clean';
-const ASSETS=['./','./index.html','./ma-journee.html?v=20261106-clean1','./main-courante-history-v1.js?v=20261105-1','./main-courante-board-v1.js?v=20261105-4','./main-courante-chat-import-v1.js?v=20261106-clean1','./cycle-summary-a4-v1.js?v=20261105-1','./app.js?v=20261106-clean1','./pwa-install-v1.js?v=20261017-1','./hours-v1.js?v=20261021-4','./salary-forecast-v3.js?v=20261027-1','./agents-migration-v3.js?v=20261023-1','./roster-v6.js?v=20261105-2','./equipes-v2.js?v=20261105-agent-card1','./agent-card-v1.js?v=20261106-fixsections','./permit-validity-v1.js?v=20261105-2','./composition-v1.js?v=20261018-3','./mobile-shell-v1.js?v=20261106-clean1','./mobile-shell-v1.css?v=20261105-1','./mobile-polish-v1.js?v=20261018-1','./mobile-polish-v1.css?v=20261018-1','./secure-backup-v1.js?v=20261020-2','./cloud-sync-private-v1.js?v=3','./quick-entry-v1.js?v=20261018-1','./quick-entry-v1.css?v=20261018-1','./leave-board-photo-v1.js?v=20261102-2','./agent-annual-calendar-v1.js?v=20261105-subsections1','./extras-equity-v1.js?v=20261102-1','./private-day-import-v1.js?v=20261106-clean1','./startup-reminders-v1.js?v=20261106-clean1','./context-reminders-v1.js?v=20261106-clean1','./back-to-home-v1.js?v=20261105-reminders1','./private-chatgpt-link-v1.js?v=20261102-1','./agent-leave-tracking-v1.js?v=20261023-10','./leave-recap-v1.js?v=20261023-7','./workspaces-v1.js?v=20261105-subsections1','./priority-panato-pay-v1.js?v=20261106-clean1','./leave-board-photo-v1.css?v=20261102-2','./myteam-guidance-manager-v1.js?v=2','./manifest.webmanifest','./myteam-512-hd.png?v=2','./myteam-192-hd.png?v=2','./myteam-512-hd.png?v=2'];
-ASSETS.push('./post-visits-v1.js?v=20261019-1','./post-visits-v1.css?v=20261019-1','./today-operations-v1.js?v=20261019-1');
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.allSettled(ASSETS.map(url=>c.add(url)))).catch(()=>{}));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('myteam-v2-')||k.startsWith('myteam-v3-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
-async function enhance(response){if(!response)return response;const type=response.headers.get('content-type')||'';if(!type.includes('text/html'))return response;let html=await response.text();if(!html.includes('private-import-v1.js'))html=html.replace('<script src="./app.js"></script>','<script src="./private-import-v1.js?v=5"></script><script src="./app.js?v=20261025-1"></script>');else html=html.replace('<script src="./app.js"></script>','<script src="./app.js?v=20261025-1"></script>');if(!html.includes('myteam-512-hd.png'))html=html.replace('<link rel="manifest" href="./manifest.webmanifest?v=2">','<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./myteam-512-hd.png?v=2" type="image/png"><link rel="apple-touch-icon" href="./myteam-512-hd.png?v=2">');const headers=new Headers(response.headers);headers.delete('content-length');return new Response(html,{status:response.status,statusText:response.statusText,headers});}
-// Chargement réseau prioritaire des pages et scripts : aucune ancienne fiche après mise à jour.
+/* MyTEAM v2 : version autonome, réseau prioritaire, sans import PARIF. */
+const CACHE='myteam-reboot-20261106-v1';
+const ROOT='/julien-fitness/myteam/';
+const ASSETS=[
+ './','./index.html',
+ './reboot-v1.css?v=20261106-1',
+ './reboot-seed-v1.js?v=20261106-1',
+ './reboot-v1.js?v=20261106-1',
+ './hours-reboot-v1.js?v=20261106-1',
+ './salary-forecast-v3.js?v=20261027-1',
+ './supervisors-rota-v1.js?v=20261029-4',
+ './manifest.webmanifest?v=20261106-reboot1',
+ './myteam-192-hd.png?v=2','./myteam-512-hd.png?v=2'
+];
+self.addEventListener('install',e=>{
+ self.skipWaiting();
+ e.waitUntil(caches.open(CACHE).then(cache=>Promise.allSettled(ASSETS.map(url=>cache.add(url)))).catch(()=>{}));
+});
+self.addEventListener('activate',e=>{
+ e.waitUntil(caches.keys().then(keys=>Promise.all(keys
+  .filter(k=>k.startsWith('myteam-')&&k!==CACHE)
+  .map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
 self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const req=e.request,url=new URL(req.url);
-  if(url.origin!==location.origin||!url.pathname.startsWith('/julien-fitness/myteam/'))return;
-  const isShell=url.pathname.endsWith('/myteam/')||url.pathname.endsWith('/myteam/index.html');
-  const alwaysFresh=isShell||/\.(?:js|css)$/.test(url.pathname);
-  e.respondWith((async()=>{
-    const fetchFresh=async()=>{
-      const response=await fetch(req,{cache:'no-store'});
-      if(response.ok){
-        const cache=await caches.open(CACHE);
-        await cache.put(req,response.clone()).catch(()=>{});
-      }
-      return isShell?enhance(response):response;
-    };
-    if(alwaysFresh){
-      try{return await fetchFresh()}
-      catch{
-        const old=await caches.match(req);
-        if(old)return isShell?enhance(old):old;
-        const fallback=await caches.match('./index.html');
-        if(isShell&&fallback)return enhance(fallback);
-        return Response.error();
-      }
-    }
-    const cached=await caches.match(req);
-    if(cached){e.waitUntil(fetchFresh().catch(()=>{}));return cached}
-    try{return await fetchFresh()}catch{return Response.error()}
-  })());
+ const req=e.request;if(req.method!=='GET')return;
+ const url=new URL(req.url);
+ if(url.origin!==self.location.origin||!url.pathname.startsWith(ROOT))return;
+ const html=url.pathname.endsWith('/myteam/')||url.pathname.endsWith('/index.html')||url.pathname.endsWith('/myteam');
+ const fresh=html||/\.(?:js|css|webmanifest)$/.test(url.pathname);
+ e.respondWith((async()=>{
+  const get=async()=>{
+   const response=await fetch(req,{cache:fresh?'no-store':'default'});
+   if(response.ok){const cache=await caches.open(CACHE);await cache.put(req,response.clone()).catch(()=>{});}
+   return response;
+  };
+  if(fresh){try{return await get()}catch{
+   const cached=await caches.match(req);if(cached)return cached;
+   if(html){const fallback=await caches.match('./index.html');if(fallback)return fallback;}
+   return Response.error();
+  }}
+  const cached=await caches.match(req);
+  if(cached){e.waitUntil(get().catch(()=>{}));return cached}
+  try{return await get()}catch{return Response.error()}
+ })());
 });
