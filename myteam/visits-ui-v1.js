@@ -75,23 +75,26 @@ function open(date=day,vacation=shift){
  api.activate('visits');refresh();
 }
 function renderHome(){
- const n=core.count(day,shift),p=core.pending().length;
+ const n=core.count(day,shift),p=core.pending().length,posted=window.MyTeamVacation?.isPosted?.(day,shift),partial=window.MyTeamVacation?.modeOf?.(day,shift)?.mode==='partial';
  card.innerHTML=[
  '<div class="row-between"><h3>Ma tournée · '+api.fmtDate(day)+'</h3><button type="button" id="v-home-open" class="small-button">Ouvrir</button></div>',
- '<div class="visit-summary"><div><strong>'+n.signed+' / 3</strong><small>Rapports signés</small></div><div><strong>'+p+'</strong><small>Relances</small></div></div>',
- '<p class="hint">Un simple passage ne compte jamais dans les 3 rapports.</p>',
+ '<div class="visit-summary"><div><strong>'+(posted?'N/A':partial?n.signed+' · adapté':n.signed+' / 3')+'</strong><small>Rapports signés</small></div><div><strong>'+p+'</strong><small>Relances</small></div></div>',
+ '<p class="hint">'+(posted?'Vacation postée : visites non applicables.':partial?'Vacations partiellement postée : objectif à adapter.':'Un simple passage ne compte jamais dans les 3 rapports.')+'</p>',
  '<div class="visit-buttons"><button type="button" id="v-home-pass">+ Passage</button><button type="button" class="primary" id="v-home-report">+ Rapport</button></div>'
  ].join('');
  card.querySelector('#v-home-open').onclick=()=>open();
+ card.querySelector('#v-home-pass').disabled=Boolean(posted);
+ card.querySelector('#v-home-report').disabled=Boolean(posted);
  card.querySelector('#v-home-pass').onclick=()=>openForm('passage');
  card.querySelector('#v-home-report').onclick=()=>openForm('report');
 }
 function renderCounts(){
  $('v-date').value=day;$('v-shift').value=shift;
- const n=core.count(day,shift),p=core.pending().length;
- $('v-count').textContent=n.signed+' / 3';$('v-pass-count').textContent=n.passages;$('v-pending-count').textContent=p;
- $('v-progress').style.width=Math.min(100,n.signed/3*100)+'%';
- $('v-count-msg').textContent=n.signed>=3?'Objectif atteint sur cette vacation.':(3-n.signed)+' rapport(s) signé(s) restant(s) pour cette vacation.';
+ const n=core.count(day,shift),p=core.pending().length,posted=window.MyTeamVacation?.isPosted?.(day,shift),partial=window.MyTeamVacation?.modeOf?.(day,shift)?.mode==='partial';
+ $('v-count').textContent=posted?'N/A':partial?n.signed+' · adapté':n.signed+' / 3';$('v-pass-count').textContent=n.passages;$('v-pending-count').textContent=p;
+ $('v-progress').style.width=posted?'0%':Math.min(100,n.signed/3*100)+'%';
+ $('v-count-msg').textContent=posted?'Non applicable : tu es posté sur cette vacation.':partial?'Vacation partiellement postée : objectif de rapports à adapter.':n.signed>=3?'Objectif atteint sur cette vacation.':(3-n.signed)+' rapport(s) signé(s) restant(s) pour cette vacation.';
+ $('v-new-pass').disabled=Boolean(posted);$('v-new-report').disabled=Boolean(posted);
 }
 function renderAlerts(){
  const data=core.pending();
@@ -144,7 +147,7 @@ function showKind(){
 }
 function pickAgents(){
  const q=core.norm($('v-agent-search').value);
- const list=core.staff().filter(x=>core.norm(x.name+' '+(api.profiles()[x.name]?.workerNumber||'')).includes(q)).slice(0,q?90:50);
+ const list=core.staff(form.elements.date.value).filter(x=>core.norm(x.name+' '+(api.profiles()[x.name]?.workerNumber||'')).includes(q)).slice(0,q?90:50);
  $('v-agent-pick').innerHTML=list.length?list.map(p=>'<label class="visit-pick"><input type="checkbox" data-v-pick="'+esc(p.name)+'"'+(selected.has(core.norm(p.name))?' checked':'')+
  '><span>'+esc(p.name)+'<small>Équipe '+(p.team||'?')+'</small></span></label>').join(''):
  '<p class="empty">Agent introuvable. Crée d’abord sa fiche depuis Agents.</p>';
@@ -171,8 +174,9 @@ function duplicates(){
 function openForm(kind='passage',names=[],id=''){
  const previous=id?core.visits().find(x=>x.id===id):null;
  editing=previous?.id||'';selected=new Map();
+ if(window.MyTeamVacation?.isPosted?.(previous?.date||day,previous?.shift||shift)){alert('Tu es déclaré posté pendant cette vacation. Modifie ton affectation avant d’enregistrer une visite.');window.MyTeamVacation.open(true,previous?.date||day,previous?.shift||shift);return}
  if(previous){for(const a of previous.agents)selected.set(core.norm(a.name),{name:a.name,status:a.status,note:a.note||''})}
- else for(const name of names){const a=core.staff().find(x=>core.same(x.name,name));if(a)selected.set(core.norm(a.name),{name:a.name,status:'unknown',note:''})}
+ else for(const name of names){const a=core.staff(day).find(x=>core.same(x.name,name));if(a)selected.set(core.norm(a.name),{name:a.name,status:'unknown',note:''})}
  api.activate('visits');
  const f=form.elements;
  f.date.value=previous?.date||day;f.shift.value=previous?.shift||shift;f.time.value=previous?.time||'';
@@ -263,7 +267,7 @@ $('v-apply-status').onclick=()=>{
 };
 form.elements.kind.onchange=showKind;
 form.elements.signed.onchange=duplicates;
-form.elements.date.onchange=()=>{form.elements.followDue.value=core.datePlus(form.elements.date.value,1);renderSelected()};
+form.elements.date.onchange=()=>{form.elements.followDue.value=core.datePlus(form.elements.date.value,1);renderSelected();pickAgents()};
 form.addEventListener('submit',save);
 section.addEventListener('click',e=>{
  const call=e.target.closest('[data-v-call]');if(call){callAgent(call.dataset.vCall);return}
@@ -272,6 +276,8 @@ section.addEventListener('click',e=>{
 });
 document.addEventListener('click',e=>{if(e.target.closest('[data-open-agent]'))setTimeout(renderProfile,0)});
 window.addEventListener('myteam-visits-updated',refresh);
+window.addEventListener('myteam-vacation-updated',refresh);
+window.addEventListener('myteam-absences-updated',()=>{refresh();pickAgents()});
 window.addEventListener('focus',()=>{if(document.visibilityState!=='hidden')refresh()});
 window.MyTeamVisits={open,openForm,renderHome,renderProfile,renderHistory,renderAlerts,callAgent,refresh};
 refresh();
