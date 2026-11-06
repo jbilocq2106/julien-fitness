@@ -5,7 +5,7 @@ const core=window.MyTeamVisitsCore,api=window.MyTeamReboot;if(!core||!api)return
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const currentShift=()=>{const h=new Date().getHours();return h>=5&&h<13?'morning':h>=13&&h<21?'afternoon':'night'};
-let day=core.today(),shift=currentShift(),editing='',selected=new Map(),allHistory=false;
+let day=new Date().getHours()<5?core.datePlus(core.today(),-1):core.today(),shift=currentShift(),editing='',selected=new Map(),allHistory=false;
 const section=document.createElement('section');section.id='visits';section.className='screen hidden';
 section.innerHTML=[
 '<div class="row-between"><div><h2>Ma tournée</h2><p class="hint">Passages simples et rapports signés : deux actions distinctes.</p></div><button type="button" id="v-back" class="small-button">Accueil</button></div>',
@@ -59,7 +59,7 @@ function open(date=day,vacation=shift){
 function renderHome(){
  const n=core.count(day,shift),p=core.pending().length;
  card.innerHTML=[
- '<div class="row-between"><h3>Ma tournée</h3><button type="button" id="v-home-open" class="small-button">Ouvrir</button></div>',
+ '<div class="row-between"><h3>Ma tournée · '+api.fmtDate(day)+'</h3><button type="button" id="v-home-open" class="small-button">Ouvrir</button></div>',
  '<div class="visit-summary"><div><strong>'+n.signed+' / 3</strong><small>Rapports signés</small></div><div><strong>'+p+'</strong><small>Relances</small></div></div>',
  '<p class="hint">Un simple passage ne compte jamais dans les 3 rapports.</p>',
  '<div class="visit-buttons"><button type="button" id="v-home-pass">+ Passage</button><button type="button" class="primary" id="v-home-report">+ Rapport</button></div>'
