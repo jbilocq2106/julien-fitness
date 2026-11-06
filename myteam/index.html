@@ -9,6 +9,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="./myteam-512-hd.png?v=2">
 <link rel="stylesheet" href="./reboot-v1.css?v=20261106-5">
 <link rel="stylesheet" href="./visits-v1.css?v=20261106-1">
+<link rel="stylesheet" href="./vacation-v1.css?v=20261106-1">
 </head>
 <body>
 <header class="app-header">
@@ -178,6 +179,51 @@
     <p id="journal-form-status" class="hint" role="status"></p>
   </form>
 </section>
+<section id="absences" class="screen hidden">
+  <div class="row-between"><div><h2>Absences agents</h2><p class="hint">Maladie, congés, congé parental et cure</p></div><button id="absence-new" class="small-button primary" type="button">+ Ajouter</button></div>
+  <div class="card">
+    <div class="visit-summary">
+      <div><strong id="absence-active-count">0</strong><small>Absents aujourd'hui</small></div>
+      <div><strong id="absence-future-count">0</strong><small>Absences à venir</small></div>
+    </div>
+    <p class="hint">Un agent en absence confirmée ne doit pas être affecté à un poste. Ses rappels sont suspendus jusqu'à son retour ; ils ne sont jamais marqués comme faits.</p>
+    <label>Rechercher un agent<input id="absence-search" type="search" placeholder="Nom, type d'absence…"></label>
+    <div class="row-between"><h3>Suivi des agents</h3><button type="button" class="text-button" id="absence-show-all">Tout l'historique</button></div>
+    <div id="absence-results"></div>
+    <p id="absence-save-status" class="hint" role="status"></p>
+  </div>
+  <form id="absence-form" class="card hidden" aria-label="Ajouter ou modifier une absence">
+    <div class="row-between"><h3 id="absence-form-title">Nouvelle absence</h3><button type="button" class="text-button" id="absence-cancel">Fermer</button></div>
+    <label>Agent<input name="agent" list="absence-agents" required autocomplete="off" placeholder="Nom de l'agent"></label>
+    <datalist id="absence-agents"></datalist>
+    <div class="form-grid">
+      <label>Nature de l'absence<select name="type"><option value="sick">Maladie</option><option value="leave">Congé</option><option value="parental">Congé parental</option><option value="cure">Cure</option></select></label>
+      <label>Statut<select name="status"><option value="confirmed">Validé / confirmé</option><option value="requested">Demandé</option><option value="accepted">Accepté (non validé)</option><option value="refused">Refusé</option></select></label>
+      <label>Début (facultatif si congé parental en cours)<input name="start" type="date"></label>
+      <label>Dernier jour d'absence<input name="end" type="date"></label>
+      <label>Retour prévu (facultatif)<input name="returnDate" type="date"></label>
+    </div>
+    <p class="hint">Pour un congé parental déjà commencé dont tu ignores la date de début, laisse le début vide : les contrôles s'appliqueront à partir de la date de saisie, sans inventer de date antérieure.</p>
+    <label>Observation administrative (facultative)<textarea name="notes" rows="2" maxlength="750" placeholder="Information nécessaire au suivi, sans détails médicaux"></textarea></label>
+    <button class="primary" type="submit">Enregistrer l'absence</button>
+    <p id="absence-form-msg" class="hint" role="status"></p>
+  </form>
+  <details class="card">
+    <summary>Importer des absences depuis un fichier privé</summary>
+    <p class="hint">Import au format JSON, uniquement sur cet appareil. Les agents absents ne sont pas publiés sur GitHub.</p>
+    <input type="file" id="absence-import-file" accept=".json,application/json">
+    <p id="absence-import-status" class="hint" role="status"></p>
+  </details>
+  <div class="card">
+    <h3>Contrôler le plan et la fiche de prestations</h3>
+    <label>Date contrôlée<input id="absence-audit-date" type="date"></label>
+    <label>Type de document<select id="absence-audit-source"><option value="plan PARIF">Plan PARIF</option><option value="fiche de prestations">Fiche de prestations</option></select></label>
+    <label>Postes et agents relevés<textarea id="absence-audit-text" rows="5" placeholder="E84 : ADAM Manon, SANDSTROM Mike&#10;E85 : OUINNE Melyse, JACOTEZ Tim"></textarea></label>
+    <button type="button" id="absence-audit-run" class="primary">Vérifier les incohérences</button>
+    <div id="absence-audit-result" aria-live="polite"></div>
+    <p class="hint">Pour une photo, transmets-la ici dans ChatGPT : cette vérification dans MyTEAM utilise les affectations recopiées ou collées.</p>
+  </div>
+</section>
 <section id="hours" class="screen hidden card"><h2>Mes heures</h2><p class="hint">Appui long pour corriger ou ajouter des heures prestées.</p></section>
 <section id="salary" class="screen hidden card"><h2>Salaire</h2><p class="hint">Appui long pour modifier les paramètres ou renseigner la paie réelle.</p></section>
 </main>
@@ -186,6 +232,7 @@
   <button type="button" data-tab="team"><span class="nav-symbol">♙</span><span>Agents</span></button>
   <button type="button" data-tab="planning"><span class="nav-symbol">▦</span><span>Planning</span></button>
   <button type="button" data-tab="journal"><span class="nav-symbol">≡</span><span>Journal</span></button>
+  <button type="button" data-tab="absences"><span class="nav-symbol">✚</span><span>Absences</span></button>
   <button type="button" data-tab="hours"><span class="nav-symbol">◷</span><span>Heures</span></button>
   <button type="button" data-tab="salary"><span class="nav-symbol">€</span><span>Salaire</span></button>
 </nav>
@@ -195,10 +242,14 @@
 <script src="./supervisors-rota-v1.js?v=20261029-4"></script>
 <script src="./reboot-v1.js?v=20261106-7"></script>
 <script src="./journal-v1.js?v=20261106-3"></script>
+<script src="./absences-core-v1.js?v=20261106-1"></script>
 <script src="./reboot-edit-v1.js?v=20261106-5"></script>
+<script src="./absences-ui-v1.js?v=20261106-1"></script>
 <script src="./visits-core-v1.js?v=20261106-2"></script>
 <script src="./visits-ui-v1.js?v=20261106-4"></script>
 <script src="./visits-planner-v1.js?v=20261106-2"></script>
 <script src="./visits-alerts-v1.js?v=20261106-3"></script>
+<script src="./vacation-pdf-v1.js?v=20261106-1"></script>
+<script src="./vacation-close-v1.js?v=20261106-1"></script>
 </body>
 </html>
