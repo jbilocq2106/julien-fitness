@@ -175,6 +175,7 @@ function reminders(){
  const dedup=new Set(),savedPlans=read('myteam_reminder_plans_v1',{});
  const plans=object(savedPlans)?savedPlans:{};
  return rows.filter(r=>{const k=[r.source,r.id,r.agent].join('|');if(dedup.has(k))return false;dedup.add(k);return true})
+   .filter(r=>!window.MyTeamAbsences?.shouldDeferReminder?.(r,dateNow()))
    .map(r=>({...r,planned:plans[JSON.stringify([r.source,String(r.id),r.agent||''])]||null}))
    .sort((a,b)=>{
     const ka=validDate(a.planned?.date)?a.planned.date:validDate(a.date)?a.date:'9999-12-31';
@@ -244,6 +245,8 @@ function openAgent(name){
  $('agent-note-filter').value='all';
  $('agent-legacy-content').innerHTML=legacy(a.name);
  renderTimeline();
+ window.MyTeamVisits?.renderProfile?.();
+ window.MyTeamAbsencesUI?.renderAgent?.();
  $('agent-panel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderTimeline(){
@@ -385,11 +388,13 @@ function markExternalDone(source,id){
 }
 function activate(id){
  const target=id==='team'?'team':id;
- if(!['home','team','planning','hours','salary','journal','visits'].includes(target))return;
+ if(!['home','team','planning','hours','salary','journal','visits','absences','closing'].includes(target))return;
  activeTab=target;
  document.querySelectorAll('main > section').forEach(s=>s.classList.toggle('hidden',s.id!==target));
  document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(target==='visits'?'team':target)));
  if(target==='visits')window.MyTeamVisits?.renderHome?.();
+ if(target==='absences')window.MyTeamAbsencesUI?.render?.();
+ if(target==='closing')window.MyTeamVacation?.load?.();
  if(target==='home')renderHome();
  if(target==='team')renderAgents();
  if(target==='planning')renderPlanning();
@@ -417,7 +422,8 @@ function renderPlanning(){
  for(let day=1;day<=days;day++){
   const date=v+'-'+String(day).padStart(2,'0'),c=cycle(date);
   const lbl={m:'Matin',a:'Après-midi',n:'Nuit',r:'Repos'}[c];
-  cells.push('<div class="cycle-day '+c+(date===dateNow()?' is-today':'')+'" data-long-cycle="'+date+'" title="Appui long : modifier · '+lbl+' '+fmtDate(date)+'"><strong>'+day+'</strong><span>'+lbl+(read(OVERRIDES,{})[date]?' *':'')+'</span></div>');
+  const posted=['morning','afternoon','night'].some(phase=>window.MyTeamVacation?.isPosted?.(date,phase));
+  cells.push('<div class="cycle-day '+c+(date===dateNow()?' is-today':'')+'" data-long-cycle="'+date+'" title="Appui long : modifier · '+lbl+' '+fmtDate(date)+'"><strong>'+day+'</strong><span>'+lbl+(read(OVERRIDES,{})[date]?' *':'')+(posted?' · POSTÉ':'')+'</span></div>');
  }
  $('team-calendar').innerHTML=cells.join('');
  const d=$('supervisor-date').value||dateNow();
@@ -530,6 +536,8 @@ function init(){
  window.addEventListener('focus',()=>{renderHome();renderAgents()});
  window.addEventListener('myteam-journal-updated',()=>{renderHome();if(selectedAgent){$('agent-legacy-content').innerHTML=legacy(selectedAgent)}});
  window.addEventListener('myteam-visits-updated',()=>{renderHome();if(activeTab==='team'&&selectedAgent)window.MyTeamVisits?.renderProfile?.()});
+ window.addEventListener('myteam-absences-updated',()=>{renderHome();renderPlanning();if(activeTab==='team'&&selectedAgent)window.MyTeamAbsencesUI?.renderAgent?.()});
+ window.addEventListener('myteam-vacation-updated',()=>{renderHome();renderPlanning()});
  renderHome();renderAgents();renderPlanning();activate('home');
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
