@@ -63,7 +63,12 @@ function renameAgent(oldName,newName){
  if(a[norm(oldName)]){const value=a[norm(oldName)];delete a[norm(oldName)];a[norm(candidate)]={...value,name:candidate}}
  const removed=Array.isArray(del)?del:[];
  if(!same(target.name,candidate)&&!removed.some(x=>same(x,oldName)))removed.push(oldName);
- const writes=[[PROFILE,p],[CASES,c],[ARCHIVE,a],[DELETED,removed]],backup=writes.map(([key])=>[key,localStorage.getItem(key)]),done=[];
+ const visitsKey='myteam_field_visits_v1',followKey='myteam_visit_followups_v1';
+ const logged=read(visitsKey,[]),called=read(followKey,[]);
+ const migratedVisits=Array.isArray(logged)?logged.map(v=>({...v,agents:Array.isArray(v.agents)?v.agents.map(person=>same(person.name,oldName)?{...person,name:candidate}:person):[]})):[];
+ const migratedCalls=Array.isArray(called)?called.map(x=>same(x.agent,oldName)?{...x,agent:candidate}:x):[];
+ const writes=[[PROFILE,p],[CASES,c],[ARCHIVE,a],[DELETED,removed],[visitsKey,migratedVisits],[followKey,migratedCalls]],
+ backup=writes.map(([key])=>[key,localStorage.getItem(key)]),done=[];
  try{for(const [key,value] of writes){localStorage.setItem(key,JSON.stringify(value));done.push(key)}}
  catch{for(const key of done){const previous=backup.find(x=>x[0]===key)?.[1];try{previous===null?localStorage.removeItem(key):localStorage.setItem(key,previous)}catch{}}return false}
  if(same(selectedAgent,oldName))selectedAgent=candidate;
@@ -132,7 +137,7 @@ function legacy(name){
  const fields=[['Remarques anciennes',row?.notes],['Rappels historiques',row?.reminderNotes],['Historique RX',row?.rxLog],['Retards',row?.lateLog],['Absences administratives',row?.sickLog]];
  const rows=fields.filter(([,value])=>String(value||'').trim()).map(([title,value])=>'<div class="legacy-entry"><strong>'+esc(title)+'</strong><div>'+esc(value)+'</div></div>');
  if(Array.isArray(row?.otherCertifications)&&row.otherCertifications.length)rows.push('<div class="legacy-entry"><strong>Autres certifications</strong><div>'+row.otherCertifications.map(x=>esc(x.label||'Certification')+(x.expiry?' · '+esc(fmtDate(x.expiry)):'')).join('<br>')+'</div></div>');
- journal().filter(x=>String(x.agents||'').split(/[;,]/).some(v=>same(v.trim(),name))).forEach(x=>rows.push('<div class="legacy-entry"><strong>Journal de vacation · '+esc(fmtDate(x.date))+'</strong><div>'+esc(x.description)+(x.post?' · '+esc(x.post):'')+'</div></div>'));
+ journal().filter(x=>String(x.agents||'').split(/[;,]/).some(v=>[name,...(Array.isArray(row?.previousNames)?row.previousNames:[])].some(n=>same(v.trim(),n)))).forEach(x=>rows.push('<div class="legacy-entry"><strong>Journal de vacation · '+esc(fmtDate(x.date))+'</strong><div>'+esc(x.description)+(x.post?' · '+esc(x.post):'')+'</div></div>'));
  archived().filter(x=>x.agent&&same(x.agent,name)).forEach(x=>rows.push('<div class="legacy-entry"><strong>'+esc(x.source)+' · '+esc(fmtDate(x.date))+'</strong><div>'+esc(x.text)+'</div></div>'));
  return rows.join('')||'<p class="hint">Aucune ancienne information disponible pour cet agent.</p>';
 }
