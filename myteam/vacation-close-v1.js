@@ -181,8 +181,10 @@ function loadMode(){
  updateMode();
 }
 function statusFor(type){
- const n=getVersions(type).length;
- return n?'Validé · version '+n:'Brouillon';
+ const versions=getVersions(type),n=versions.length;
+ if(!n)return 'Brouillon non validé';
+ const current=fields[type].value.trim();
+ return current===String(versions[n-1].text||'').trim()?'Validé · version '+n:'Modifié depuis la version '+n+' · à revalider';
 }
 function summary(){
  const count=vis.count(currentDate,currentShift),mode=modeOf(currentDate,currentShift);
@@ -219,6 +221,23 @@ function renderVersions(){
    '<p class="hint">Aucune version validée.</p>')+'</div>';
  }).join('');
 }
+function missingClosures(){
+ const now=new Date(),seen=new Set(),modes=read(MODE,{});
+ if(object(modes))for(const k of Object.keys(modes))seen.add(k);
+ for(const v of vis.visits())if(api.validDate(v.date)&&shiftNames[v.shift])seen.add(key(v.date,v.shift));
+ const due=[];
+ for(const id of seen){
+  const [date,shift]=id.split('|');
+  if(!api.validDate(date)||!shiftNames[shift]||shift==='other')continue;
+  const end=new Date(date+'T00:00:00');
+  const endTime={morning:[0,13],afternoon:[0,21],night:[1,5]}[shift];
+  end.setDate(end.getDate()+endTime[0]);end.setHours(endTime[1],0,0,0);
+  if(end>now||now.getTime()-end.getTime()>21*86400000)continue;
+  const doc=stored(date,shift),backup=doc?.validated?.backup||[],personal=doc?.validated?.personal||[];
+  if(!backup.length||!personal.length)due.push({date,shift,backup:backup.length>0,personal:personal.length>0});
+ }
+ return due.sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.shift).localeCompare(String(a.shift)));
+}
 function renderHome(){
  const now=initialDate(),shift=shiftNow(),mode=modeOf(now,shift),docs=stored(now,shift),n=vis.count(now,shift);
  card.innerHTML='<div class="row-between"><h3>Ma vacation · '+api.fmtDate(now)+'</h3><button type="button" id="close-home-open" class="small-button">Fin de vacation</button></div>'+
@@ -229,6 +248,16 @@ function renderHome(){
   '<div class="visit-buttons"><button type="button" id="close-home-mode">Mon affectation</button>'+
   '<button type="button" id="close-home-summary" class="primary">Bilan / PDF</button></div>'+
   (docs?.validated?.backup?.length||docs?.validated?.personal?.length?'<p class="hint">Une version du bilan est déjà validée. Les corrections créeront une nouvelle version.</p>':'');
+ const due=missingClosures();
+ if(due.length){
+  const missed=due[0];
+  const box=document.createElement('div');box.className='close-missing';
+  box.innerHTML='<strong>Vacation précédente à clôturer</strong><p>'+api.fmtDate(missed.date)+' · '+esc(shiftNames[missed.shift])+
+    ' — '+(!missed.backup&&!missed.personal?'deux documents à valider':!missed.backup?'transmission à valider':'historique à valider')+'</p>'+
+    '<button type="button" class="small-button" id="close-missing-open">Préparer le bilan</button>';
+  card.append(box);
+  box.querySelector('button').onclick=()=>open(false,missed.date,missed.shift);
+ }
  card.querySelector('#close-home-open').onclick=()=>open();
  card.querySelector('#close-home-mode').onclick=()=>open(true);
  card.querySelector('#close-home-summary').onclick=()=>open();
@@ -299,6 +328,7 @@ mform.addEventListener('submit',e=>{
 });
 function changePeriod(){
  if(!api.validDate(fields.date.value)||!shiftNames[fields.shift.value])return;
+ clearTimeout(autosave);
  saveDraft(true);
  currentDate=fields.date.value;currentShift=fields.shift.value;
  load();
@@ -325,10 +355,11 @@ $('close-versions').addEventListener('click',e=>{
 });
 let autosave;
 for(const type of draftKinds)fields[type].addEventListener('input',()=>{
+ $('close-'+type+'-status').textContent=statusFor(type);
  clearTimeout(autosave);autosave=setTimeout(()=>saveDraft(true),850);
 });
 window.addEventListener('myteam-vacation-updated',()=>{renderHome();summary()});
 window.addEventListener('focus',renderHome);
-window.MyTeamVacation={MODE,DOC,modeOf,isPosted,storeMode,stored,allDocs,makeDraft,facts,open,renderHome,saveDraft,load,exportVersion};
+window.MyTeamVacation={MODE,DOC,modeOf,isPosted,storeMode,stored,allDocs,makeDraft,facts,missingClosures,open,renderHome,saveDraft,load,exportVersion};
 renderHome();
 })();
