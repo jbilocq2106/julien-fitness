@@ -143,6 +143,8 @@ function allEvents(){
   notes.forEach(x=>{if(object(x)&&x.text)out.push({...x,agent:name,source:'Suivi personnel'})});
  }
  general().forEach(x=>{if(object(x)&&x.text)out.push({...x,agent:'',source:'Note générale'})});
+ (window.MyTeamVisitsCore?.visits?.()||[]).forEach(v=>(v.agents||[]).forEach(p=>out.push({id:v.id,date:v.date,agent:p.name,text:(v.kind==='report'?'Rapport':'Passage')+' · '+v.post+' · '+(p.note||'')+' · '+(p.status||'non renseigné'),source:'Visites sur poste'})));
+ (window.MyTeamVisitsCore?.followups?.()||[]).forEach(f=>out.push({id:f.id,date:f.date,agent:f.agent,text:'Confirmation des consignes · '+f.method+' · '+f.result+' · '+(f.note||''),source:'Suivi consignes'}));
  journal().forEach(x=>{if(object(x)&&x.description)out.push({id:x.id,date:x.date,agent:x.agents||'',text:x.description,post:x.post,source:'Journal de vacation',journal:true})});
  archived().forEach(x=>out.push(x));
  for(const [name,p] of Object.entries(profiles())){
@@ -164,6 +166,7 @@ function reminders(){
  journal().filter(r=>object(r)&&r.hasReminder&&validDate(r.due)&&r.done!==true).forEach(r=>rows.push({id:r.id,agent:r.agents||'',title:'Journal · '+(r.category==='planning'?'Changement de planning':'Événement'),detail:r.reminderText||r.description,date:r.due,source:'journal'}));
  const context=read('myteam_agent_context_reminders_v1',[]);
  if(Array.isArray(context))context.filter(r=>object(r)&&r.status!=='done').forEach((r,i)=>rows.push({id:String(r.id??i),agent:r.agent||'',title:'Rappel · '+String(r.agent||'Agent'),detail:r.text||'',date:r.due||'',source:'context'}));
+ const visiting=window.MyTeamVisitsCore?.pendingReminders?.()||[];rows.push(...visiting);
  const dedup=new Set();
  return rows.filter(r=>{const k=[r.source,r.id,r.agent].join('|');if(dedup.has(k))return false;dedup.add(k);return true})
    .sort((a,b)=>(validDate(a.date)?a.date:'9999-12-31').localeCompare(validDate(b.date)?b.date:'9999-12-31')||a.title.localeCompare(b.title,'fr'));
@@ -181,6 +184,7 @@ function renderHome(){
   (r.source==='general'?'<button type="button" data-mark-done="'+esc(r.id)+'">Fait</button>':'')+
   (r.source==='manual'||r.source==='context'?'<button type="button" data-mark-external="'+esc(r.source)+'" data-mark-id="'+esc(r.id)+'">Fait</button>':'')+
   (r.source==='journal'?'<button type="button" data-open-journal="'+esc(r.id)+'">Voir</button>':'')+
+  (r.source==='visits'?'<button type="button" data-open-visit-agent="'+esc(r.agent)+'">Relancer</button>':'')+
   '</div>').join(''):'<div class="empty">Aucun rappel ouvert enregistré sur cet appareil.</div>';
  const g=general().slice().sort(noteSort).slice(0,5);
  $('general-notes').innerHTML=g.length?g.map(r=>'<div class="general-item" data-long-note="'+esc(r.id)+'"><small>'+esc(fmtDate(r.date))+' · '+esc(meta(r.type))+'</small><p>'+esc(crop(r.text,220))+'</p><button type="button" class="text-button" data-edit-note="'+esc(r.id)+'">Corriger</button></div>').join(''):'<p class="empty">Aucune note générale pour l’instant.</p>';
@@ -370,10 +374,11 @@ function markExternalDone(source,id){
 }
 function activate(id){
  const target=id==='team'?'team':id;
- if(!['home','team','planning','hours','salary','journal'].includes(target))return;
+ if(!['home','team','planning','hours','salary','journal','visits'].includes(target))return;
  activeTab=target;
  document.querySelectorAll('main > section').forEach(s=>s.classList.toggle('hidden',s.id!==target));
- document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===target));
+ document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===(target==='visits'?'team':target)));
+ if(target==='visits')window.MyTeamVisits?.renderHome?.();
  if(target==='home')renderHome();
  if(target==='team')renderAgents();
  if(target==='planning')renderPlanning();
@@ -472,6 +477,7 @@ function init(){
   const tab=e.target.closest('button[data-tab]');
   if(tab&&!tab.closest('nav.tabs')){activate(tab.dataset.tab);return}
   const journalLink=e.target.closest('[data-open-journal]');if(journalLink){window.MyTeamJournal?.openJournal?.(journalLink.dataset.openJournal);return}
+  const visitRelance=e.target.closest('[data-open-visit-agent]');if(visitRelance){window.MyTeamVisits?.open?.();window.MyTeamVisits?.callAgent?.(visitRelance.dataset.openVisitAgent);return}
   const open=e.target.closest('[data-open-agent]');
   if(open){openAgent(open.dataset.openAgent);return}
   const edit=e.target.closest('[data-edit-note]');
@@ -512,6 +518,7 @@ function init(){
  window.addEventListener('myteam-supervisors-updated',()=>{if(activeTab==='planning')renderPlanning()});
  window.addEventListener('focus',()=>{renderHome();renderAgents()});
  window.addEventListener('myteam-journal-updated',()=>{renderHome();if(selectedAgent){$('agent-legacy-content').innerHTML=legacy(selectedAgent)}});
+ window.addEventListener('myteam-visits-updated',()=>{renderHome();if(activeTab==='team'&&selectedAgent)window.MyTeamVisits?.renderProfile?.()});
  renderHome();renderAgents();renderPlanning();activate('home');
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
