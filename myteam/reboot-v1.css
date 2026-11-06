@@ -118,6 +118,14 @@ summary{cursor:pointer;font-weight:700}
 #mt-long-items{display:grid;gap:9px;margin-top:17px}
 #mt-long-items button{width:100%;text-align:left;background:#30445f;border:1px solid #647994}
 #mt-long-items button.danger-option{background:#4a2630;border-color:#9b5360}
+/* Statut d'absence prioritaire dans le menu d'un agent. */
+#mt-long-items .mt-agent-absence-alert{background:#5c202b;border:2px solid #f57786;border-radius:14px;padding:14px;color:#fff;box-shadow:inset 4px 0 #ff8a98}
+#mt-long-items .mt-agent-absence-heading{color:#ffebed;font-size:15px;font-weight:900;letter-spacing:.035em;margin-bottom:9px}
+#mt-long-items .mt-agent-absence-line{display:grid;gap:4px;padding:8px 0;border-top:1px solid #ffffff40;font-size:13px;line-height:1.4}
+#mt-long-items .mt-agent-absence-line strong{color:#fff;font-size:15px}
+#mt-long-items .mt-agent-absence-line span{color:#ffe0e4}
+#mt-long-items .mt-agent-absence-alert button.mt-agent-absence-open{margin-top:10px;min-height:46px;color:#fff;font-weight:750;background:#a42e43;border:1px solid #ffc0c7;text-align:center}
+
 .mt-long-editor form{display:grid;gap:9px}
 .mt-long-editor label{margin:3px 0}
 .mt-long-editor form button[type=submit]{margin-top:9px}
