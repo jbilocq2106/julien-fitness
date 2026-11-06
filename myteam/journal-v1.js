@@ -76,6 +76,7 @@ function resetForm(){
  updateReminderVisibility();
 }
 function openForm(row=null){
+ window.MyTeamReboot?.activate?.('journal');
  resetForm();
  if(row){
   editing=row.id;
