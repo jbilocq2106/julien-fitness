@@ -101,36 +101,7 @@
   const item=(id,title,detail,level,tab,selector,popup,manualId=null,date=null,agentName=null,caseId=null)=>({id,title,detail,level,tab,selector,popup,manualId,date,agentName,caseId});
   function collect(){
     const rows=[];
-    const allPlanning=[
-      ...arr(read('myteam_planning_issues_v1',[])).map(r=>({...r,origin:'planning-issues'})),
-      ...arr(read('myteam_planning_errors_v1',[])).map(r=>({...r,origin:'planning-errors'})),
-      ...arr(read('myteam_planning_followups_v1',[])).map(r=>({...r,origin:'planning-followup-simple'}))
-    ];
-    const seen=new Set();
-    allPlanning.forEach((r,index)=>{
-      if(!r||complete(r.status)||['réglé','sans suite','done'].includes(norm(r.status)))return;
-      const key=[norm(r.agent),String(r.date||''),norm(r.post),norm(r.detail||r.issue||r.request).slice(0,60)].join('|');
-      if(seen.has(key))return;seen.add(key);
-      const when=validDate(r.date)?r.date:null;
-      const who=String(r.agent||'Agent non précisé').trim();
-      const post=String(r.post||'').trim();
-      const issue=String(r.detail||r.issue||r.request||'Situation à vérifier').trim();
-      const status=String(r.status||'En attente').trim();
-      rows.push(item('planning-'+index,'Planning · '+who+(post?' · '+post:''),
-        issue.slice(0,210)+' · '+status,
-        when&&offset(when)<=2?'urgent':'normal','planning-followup-simple',null,Boolean(when&&offset(when)<=2),null,when));
-    });
-
-    const certifications=arr(read('myteam_agent_certifications_v1',[]))
-      .filter(r=>r&&validDate(r.date)&&r.status!=='done'&&r.agent&&r.time);
-    for(const [days,label] of [[1,'demain'],[0,"aujourd'hui"]]){
-      const due=certifications.filter(r=>offset(r.date)===days);
-      if(due.length){
-        rows.push(item('certifications-'+days,'Certifications '+label+' : '+due.length+' agent(s)',
-          due.slice().sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(r=>r.time+' '+r.agent).join(' · ')+'. Vérifier les disponibilités et la fiche de prestation.',
-          'urgent','today','#mt-parif-g4s-board',true,null,due[0].date));
-      }
-    }
+    // Planning PARIF désactivé : anciens brouillons conservés mais non présentés en alertes.
 
     const leaves=arr(read('myteam_agent_leave_requests_v1',[]))
       .filter(r=>r&&!r.archived&&!['validated','rejected'].includes(r.gesperStatus));
