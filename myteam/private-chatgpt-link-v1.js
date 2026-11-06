@@ -7,7 +7,7 @@ if(window.MyTeamPrivateInbox)return;
 const PREFIX='#mt-private-reminders-v1=';
 const incoming=location.hash.startsWith(PREFIX)?location.hash.slice(PREFIX.length):'';
 if(incoming)history.replaceState(null,'',location.pathname+location.search);
-const root=document.getElementById('mt-context-reminders');
+const root=document.getElementById('myteam-private-link-root')||document.getElementById('mt-context-reminders');
 if(!root)return;
 const STORE='myteam_agent_context_reminders_v1';
 const DB='myteam_private_inbox_keys_v1', BUCKET='pair';
@@ -28,8 +28,8 @@ style.textContent=[
 '#mt-private-inbox-dialog .mt-pi-apply{background:#216d52}'
 ].join('');document.head.append(style);
 const panel=document.createElement('div');panel.id='mt-private-inbox';
-panel.innerHTML='<h3>Liaison privée avec ChatGPT</h3><p>Active une fois la liaison sur ce téléphone, puis copie ici ta clé publique dans ChatGPT. Tu ne dois jamais transmettre ta clé privée ni la phrase secrète de ta sauvegarde.</p><button type="button" id="mt-pi-public">Copier ma clé publique</button><p id="mt-pi-status" role="status">Vérification de la liaison…</p><textarea id="mt-pi-public-fallback" hidden readonly aria-label="Clé publique à copier"></textarea><p class="muted">Les rappels reçus par lien chiffré sont d’abord affichés pour confirmation. Rien n’est publié sur GitHub.</p>';
-root.querySelector('.card')?.append(panel);
+panel.innerHTML='<h3>Connexion privée avec ChatGPT</h3><p>Active une fois la liaison sur ce téléphone, puis copie ici ta clé publique dans ChatGPT. Tu ne dois jamais transmettre ta clé privée ni la phrase secrète de ta sauvegarde.</p><button type="button" id="mt-pi-public">Copier ma clé publique</button><p id="mt-pi-status" role="status">Vérification de la liaison…</p><textarea id="mt-pi-public-fallback" hidden readonly aria-label="Clé publique à copier"></textarea><p class="muted">Les rappels reçus par lien chiffré sont d’abord affichés pour confirmation. Rien n’est publié sur GitHub.</p>';
+root.append(panel);
 function setStatus(s){$('mt-pi-status').textContent=s}
 function dbOpen(){
  return new Promise((resolve,reject)=>{
@@ -117,11 +117,13 @@ function modal(items,error){
     const fresh=items.filter(r=>!ids.has(r.id)).map(r=>({...r,createdAt:now,source:'Lien privé ChatGPT'}));
     if(fresh.length)localStorage.setItem(STORE,JSON.stringify([...old,...fresh]));
     window.MyTeamContextReminders?.refresh();
+    window.MyTeamReboot?.renderHome?.();
+    window.dispatchEvent(new Event('myteam-private-imported'));
     title.textContent='Rappels enregistrés';
     info.textContent=fresh.length+' nouveau(x) rappel(s). '+(items.length-fresh.length)+' rappel(s) déjà présents, sans doublon.';
     Array.from(dialog.querySelectorAll('.mt-pi-item')).forEach(x=>x.remove());
     apply.remove();cancel.textContent='Voir mes rappels';
-    cancel.onclick=()=>{overlay.remove();document.querySelector('nav.tabs [data-tab="context-reminders"]')?.click()};
+    cancel.onclick=()=>{overlay.remove();window.MyTeamReboot?.activate?.('home')};
    }catch(e){status.textContent='Enregistrement impossible : '+e.message}
   };
   dialog.append(apply);
