@@ -19,6 +19,7 @@
    if(!p||!validDate(p.day))throw Error('Format du transfert incorrect.');
    // Version 2 : groupes compacts PARIF / certification, sans noms dans le code public.
    if(p.version===2){
+     throw Error('L’import des affectations PARIF est désactivé dans MyTEAM. Les anciennes données restent conservées.');
      if(!Array.isArray(p.parif)||p.parif.length>8||!Array.isArray(p.certifications)||p.certifications.length>30)throw Error('Listes de planning incorrectes.');
      const assignments=[],certs=[];
      p.parif.forEach((g,gi)=>{
@@ -60,7 +61,7 @@
  box.style.cssText='position:fixed;inset:0;z-index:2500;background:#07121bea;display:flex;align-items:center;justify-content:center;padding:14px';
  const dialog=document.createElement('div');dialog.style.cssText='width:min(100%,600px);max-height:90dvh;overflow:auto;background:#213149;color:#fff;border:1px solid #8298b2;border-radius:16px;padding:18px;box-shadow:0 15px 70px #000b;font:15px system-ui';
  const title=document.createElement('h2');title.textContent='Importer dans MyTEAM';title.style.margin='0 0 10px';dialog.append(title);
- const sub=document.createElement('p');sub.style.cssText='font-size:13px;line-height:1.6;color:#d5e4f4';sub.textContent=error||'Prévisualisation : les notes seront enregistrées uniquement sur cet appareil après confirmation. Aucune modification du planning officiel.';dialog.append(sub);
+ const sub=document.createElement('p');sub.style.cssText='font-size:13px;line-height:1.6;color:#d5e4f4';sub.textContent=error||'Prévisualisation : les notes seront enregistrées uniquement sur cet appareil après confirmation. Aucune modification des données officielles.';dialog.append(sub);
  if(payload){
    const summary=document.createElement('p');summary.textContent='Date : '+payload.day+' · '+payload.logs.length+' entrées de main courante · '+payload.reminders.length+' rappel(s) · '+payload.extras.length+' activation(s) extra · '+payload.assignments.length+' affectation(s) G4S · '+payload.certs.length+' certification(s).';dialog.append(summary);
    const list=document.createElement('div');list.style.cssText='max-height:46dvh;overflow:auto;border-top:1px solid #546a85;border-bottom:1px solid #546a85;margin-bottom:12px';
@@ -97,6 +98,6 @@
    clearHash();title.textContent='Notes enregistrées';sub.textContent=changed.length?'Les entrées ont été ajoutées sans écraser les données existantes.':'Ces notes étaient déjà présentes. Aucun doublon créé.';
    dialog.querySelector('div[style*="max-height: 46dvh"]')?.remove();
    apply.remove();close.textContent='Ouvrir ma journée';close.onclick=()=>{box.remove();document.querySelector('nav.tabs [data-tab="today"]')?.click();(payload.version===2?document.getElementById('mt-parif-g4s-board'):document.getElementById('mt-ops-host'))?.scrollIntoView({behavior:'smooth'})};
-   status.textContent='Retrouve ces données dans Aujourd’hui → Planning PARIF G4S, Certifications, Main courante, Rappels et Extras.';
+   status.textContent='Retrouve ces données dans la main courante, les rappels et le suivi des extras.';
  };
 })();
