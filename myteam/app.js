@@ -294,7 +294,7 @@
     }finally{
       try{await load('./parif-plan-v1.js?v=20261018-11')}catch(error){console.error('Plan PARIF indisponible :',error)}
       try{await load('./equipes-v2.js?v=20261105-agent-card1')}catch(error){console.error('Vue Équipes indisponible :',error)}
-      try{await load('./agent-card-v1.js?v=20261105-fix5')}catch(error){console.error('Fiche individuelle agent indisponible :',error)}
+      try{await load('./agent-card-v1.js?v=20261106-fixsections')}catch(error){console.error('Fiche individuelle agent indisponible :',error)}
       try{await load('./mobile-shell-v1.js?v=20261105-7')}catch(error){console.error('Navigation mobile indisponible :',error)}
       try{await load('./permit-validity-v1.js?v=20261105-2')}catch(error){console.error('Suivi des permis indisponible :',error)}
       try{await load('./post-qualifications-check-v1.js?v=20261105-1')}catch(error){console.error('Contrôle des postes indisponible :',error)}
