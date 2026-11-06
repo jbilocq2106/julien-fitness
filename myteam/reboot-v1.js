@@ -123,6 +123,8 @@ function renderHome(){
   '<div class="reminder-card"><div class="reminder-info"><div class="reminder-date">'+(validDate(r.date)?esc(fmtDate(r.date)):'Sans échéance')+'</div>'+
   '<strong>'+esc(r.title)+'</strong><p>'+esc(crop(r.detail,240))+'</p><span class="status-open">À faire</span></div>'+
   (r.agent&&agent(r.agent)?'<button type="button" data-open-agent="'+esc(agent(r.agent).name)+'" aria-label="Ouvrir la fiche">Ouvrir</button>':'')+
+  (r.source==='general'?'<button type="button" data-mark-done="'+esc(r.id)+'">Fait</button>':'')+
+  (r.source==='manual'||r.source==='context'?'<button type="button" data-mark-external="'+esc(r.source)+'" data-mark-id="'+esc(r.id)+'">Fait</button>':'')+
   '</div>').join(''):'<div class="empty">Aucun rappel ouvert enregistré sur cet appareil.</div>';
  const g=general().slice().sort(noteSort).slice(0,5);
  $('general-notes').innerHTML=g.length?g.map(r=>'<div class="general-item"><small>'+esc(fmtDate(r.date))+' · '+esc(meta(r.type))+'</small><p>'+esc(crop(r.text,220))+'</p><button type="button" class="text-button" data-edit-note="'+esc(r.id)+'">Corriger</button></div>').join(''):'<p class="empty">Aucune note générale pour l’instant.</p>';
@@ -177,6 +179,7 @@ function renderTimeline(){
   '<p class="timeline-text">'+esc(r.text||'')+'</p>'+
   (validDate(r.due)?'<small>Échéance : '+esc(fmtDate(r.due))+'</small>':'')+
   (canDone(r)?'<p class="'+(r.done?'status-done':'status-open')+'">'+(r.done?'Fait (confirmé)':'À faire')+'</p>':'')+
+  (Array.isArray(r.revisions)&&r.revisions.length?'<details class="note-versions"><summary>'+r.revisions.length+' ancienne(s) version(s)</summary>'+r.revisions.map(v=>'<div class="legacy-entry"><small>Correction '+esc(String(v.changedAt||'').slice(0,10))+' · fait du '+esc(fmtDate(v.date))+'</small><p>'+esc(v.text||'')+'</p></div>').join('')+'</details>':'')+
   '<div class="timeline-actions"><button type="button" data-edit-note="'+esc(r.id)+'">Corriger la note</button>'+
   (canDone(r)&&r.done!==true?'<button type="button" data-mark-done="'+esc(r.id)+'">Marquer fait</button>':'')+'</div></div>').join(''):
   '<div class="empty">Aucune note pour ce filtre. Utilise « + Note » pour ajouter un événement daté.</div>';
@@ -297,6 +300,14 @@ function markDone(id){
   renderTimeline();renderHome();
  }catch{alert('Confirmation non enregistrée : stockage indisponible.')}
 }
+function markExternalDone(source,id){
+ const key=source==='manual'?'myteam_manual_reminders_v1':source==='context'?'myteam_agent_context_reminders_v1':'';
+ if(!key||!confirm('Confirmer que cette action est réellement terminée ?'))return;
+ const rows=read(key,[]);
+ if(!Array.isArray(rows))return;
+ const changed=rows.map((r,i)=>r&&String(r.id??i)===String(id)?(source==='manual'?{...r,done:true,doneAt:new Date().toISOString()}:{...r,status:'done',updatedAt:new Date().toISOString()}):r);
+ try{localStorage.setItem(key,JSON.stringify(changed));renderHome()}catch{alert('Enregistrement impossible sur cet appareil.')}
+}
 function activate(id){
  const target=id==='team'?'team':id;
  if(!['home','team','planning','hours','salary'].includes(target))return;
@@ -308,7 +319,7 @@ function activate(id){
  if(target==='planning')renderPlanning();
  if(target==='hours')window.MyTeamRenderHours?.();
  if(target==='salary')window.MyTeamRenderSalary?.();
- window.scrollTo({top:0,behavior:'instant'});
+ window.scrollTo(0,0);
 }
 function cycle(date){
  const [year,month,day]=date.split('-').map(Number);
@@ -385,6 +396,8 @@ function init(){
   if(open){openAgent(open.dataset.openAgent);return}
   const edit=e.target.closest('[data-edit-note]');
   if(edit){const found=findNote(edit.dataset.editNote);if(found)openComposer(found.agent,found.note);return}
+  const external=e.target.closest('[data-mark-external]');
+  if(external){markExternalDone(external.dataset.markExternal,external.dataset.markId);return}
   const done=e.target.closest('[data-mark-done]');
   if(done){markDone(done.dataset.markDone);return}
   const action=e.target.closest('[data-action]');
