@@ -68,16 +68,18 @@ function makeDraft(date,shift,kind,includeOpen=true){
   (a?.post?' · '+a.post:'')+(a?.mode==='partial'?' · posté '+a.start+'–'+a.end:'');
  const objective=a?.mode==='posted'?'Rapports de visite : NON APPLICABLE (vacation entièrement postée)':
   a?.mode==='partial'?'Rapports signés : '+count.signed+' — objectif à adapter (vacation partiellement postée)':
-  a?.mode==='mobile'?'Rapports signés : '+count.signed+'/3'+(count.signed<3?' — objectif non atteint':' — objectif atteint'):
+  a?.mode==='mobile'?'Rapports signés saisis dans Ma tournée : '+count.signed+'/3'+(count.signed<3?' — à vérifier':' — objectif atteint'):
   'Rapports signés : '+count.signed+' — affectation à préciser avant clôture';
  const notes=[];
- notes.push(title,context,objective,'Passages simples : '+count.passages);
+ notes.push(title,context,objective,'Passages simples saisis dans Ma tournée : '+count.passages,'Les passages/rapports décrits dans le journal sont présentés séparément et ne modifient pas le compteur des rapports signés.');
  const reports=f.reports.filter(x=>x.kind==='report'),passages=f.reports.filter(x=>x.kind==='passage');
- const changed=f.logs.filter(x=>x.category==='planning'||x.category==='extra');
- const events=f.logs.filter(x=>x.category!=='planning'&&x.category!=='extra');
+ const journalVisits=f.logs.filter(x=>x.activity==='site_visit');
+ const changed=f.logs.filter(x=>x.activity!=='site_visit'&&(x.category==='planning'||x.category==='extra'));
+ const events=f.logs.filter(x=>x.activity!=='site_visit'&&x.category!=='planning'&&x.category!=='extra');
  const add=(label,rows)=>{notes.push('',label);if(!rows.length)notes.push('Aucun élément enregistré.');else rows.forEach(x=>notes.push('- '+x))};
  if(kind==='backup'){
   add('Changements de planning / extras',changed.map(lineLog));
+  add('Passages et contrôles consignés dans le journal (signature non présumée)',journalVisits.map(lineLog));
   add('Événements et appels utiles à la relève',events.map(lineLog));
   const issues=f.reports.flatMap(v=>(v.agents||[]).filter(p=>['pending','notasked'].includes(p.status)).map(p=>p.name+' · '+v.post+' : consignes '+(p.status==='pending'?'non validées':'non demandées')));
   add('Consignes à régulariser',issues);
@@ -90,6 +92,7 @@ function makeDraft(date,shift,kind,includeOpen=true){
  }else{
   add('Rapports de visite sur poste',reports.map(lineVisit));
   add('Passages simples',passages.map(lineVisit));
+  add('Visites et passages issus du journal (sans impact sur le compteur signé)',journalVisits.map(lineLog));
   add('Changements de planning / extras',changed.map(lineLog));
   add('Événements, appels et faits de service',events.map(lineLog));
   const oldEntries=[...f.oldEvents,...f.oldLogs].map(x=>[x.title,x.description,x.text].filter(Boolean).join(' · ')).filter(Boolean);
@@ -108,6 +111,10 @@ section.innerHTML=[
  '<label>Date de vacation<input type="date" id="close-date"></label>',
  '<label>Vacation<select id="close-shift"><option value="morning">Matin 05–13</option><option value="afternoon">Après-midi 13–21</option><option value="night">Nuit 21–05</option><option value="other">Autre</option></select></label>',
  '</div><div id="close-status" class="hint"></div></div>',
+ '<div class="card" id="close-history-import"><h3>Récupérer des événements dictés dans ChatGPT</h3>',
+ '<p class="hint">Les notes des conversations précédentes ne se synchronisent pas directement. Importe le fichier JSON privé préparé dans ChatGPT : les événements seront ajoutés au journal sans effacer les entrées existantes.</p>',
+ '<label>Fichier des événements à relire<input id="close-import-file" type="file" accept=".json,application/json"></label>',
+ '<p id="close-import-status" class="hint" role="status">Après import, les deux brouillons peuvent être recomposés. Aucun rapport n’est marqué signé automatiquement.</p></div>',
  '<div class="card" id="close-assignment"><div class="row-between"><h3>Mon affectation</h3><span id="close-mode-state" class="hint">À préciser</span></div>',
  '<form id="close-mode-form"><label>Quel type de vacation effectues-tu ?<select name="mode"><option value="">Choisir…</option>',
  '<option value="mobile">CDE disponible pour les visites</option><option value="posted">Je suis posté toute la vacation</option>',
@@ -163,6 +170,36 @@ function saveDraft(silent=false){
   if(!silent)$('close-status').textContent='Brouillons sauvegardés sur cet appareil.';
   renderVersions();
  }catch(e){$('close-status').textContent='Sauvegarde impossible : '+e.message}
+}
+async function importHistory(file){
+ const status=$('close-import-status'),input=$('close-import-file');
+ if(!file)return;
+ try{
+  const importer=window.MyTeamVacationImport;
+  if(!importer)throw Error('Le module d’import est indisponible. Actualise MyTEAM.');
+  if(file.size>700000)throw Error('Le fichier est trop volumineux.');
+  const payload=JSON.parse(await file.text());
+  const entries=importer.parse(payload),info=importer.preview(entries);
+  if(!info.newCount){status.textContent='Tous les événements de ce fichier figurent déjà dans ton journal. Aucun doublon ajouté.';return}
+  const label=info.days.map(x=>api.fmtDate(x)).join(', ');
+  if(!confirm('Importer '+info.newCount+' événement(s) pour '+label+' dans le journal privé ?\n'
+   +info.duplicates+' doublon(s) ignoré(s). Les données existantes ne seront pas supprimées.'))return;
+  const result=importer.apply(entries);
+  const matching=result.added.some(x=>x.date===currentDate);
+  status.textContent=result.added.length+' événement(s) ajouté(s) au journal. '
+   +result.duplicates.length+' doublon(s) ignoré(s). '
+   +(matching?'Tu peux maintenant recomposer les deux brouillons du '+api.fmtDate(currentDate)+'.':'Choisis la date du fichier pour afficher son bilan.');
+  window.MyTeamJournal?.render?.();
+  if(matching&&confirm('Recomposer maintenant les deux brouillons du '+api.fmtDate(currentDate)+
+     ' avec ces événements ? Tes textes actuels seront remplacés, mais les versions déjà validées seront conservées.')){
+   clearTimeout(autosave);
+   fields.backup.value=makeDraft(currentDate,currentShift,'backup',$('close-include-open').checked);
+   fields.personal.value=makeDraft(currentDate,currentShift,'personal',true);
+   saveDraft(true);renderVersions();summary();
+   status.textContent='Événements importés et textes des deux brouillons actualisés. Relis-les avant validation.';
+  }
+ }catch(err){status.textContent='Import impossible : '+String(err?.message||err)}
+ finally{input.value=''}
 }
 function updateMode(){
  const val=mform.elements.mode.value;
@@ -337,6 +374,7 @@ fields.date.addEventListener('change',changePeriod);
 fields.shift.addEventListener('change',changePeriod);
 $('close-back').onclick=()=>{saveDraft(true);api.activate('home')};
 $('close-refresh').onclick=()=>refreshDrafts(true);
+$('close-import-file').addEventListener('change',e=>{const file=e.target.files?.[0];if(file)importHistory(file)});
 $('close-include-open').addEventListener('change',()=>{if(confirm('Actualiser la transmission avec cette option ? Le brouillon actuel sera remplacé.')){fields.backup.value=makeDraft(currentDate,currentShift,'backup',$('close-include-open').checked);saveDraft(true)}});
 for(const type of draftKinds){
  $('close-save-'+type).onclick=()=>saveDraft();
