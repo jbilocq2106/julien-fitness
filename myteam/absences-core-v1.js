@@ -11,7 +11,7 @@ const norm=api.norm,valid=api.validDate,today=api.dateNow;
 const read=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[]}catch{return []}};
 const knownNames=()=>api.agents(true);
 const matchName=(s,allowPartial=false)=>{
- const n=norm(s);if(!n)return null;
+ const input=norm(s),n=input===norm('OUINNE Melyse')?norm('OUNINE Melyse'):input;if(!n)return null;
  const people=knownNames();
  const exact=people.filter(a=>norm(a.name)===n);
  if(exact.length===1)return exact[0];
