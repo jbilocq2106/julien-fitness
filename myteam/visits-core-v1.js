@@ -11,7 +11,8 @@ const datePlus=(date,n)=>{if(!valid(date))return '';const d=new Date(date+'T12:0
 const uid=()=> 'v-'+Date.now()+'-'+Math.random().toString(36).slice(2,9);
 const statuses={ok:'Consignes contrôlées sur place · OK',pending:'Consignes non validées',notasked:'Consignes non demandées',unknown:'Non renseignées',phone:'Validation déclarée par téléphone'};
 const shiftNames={morning:'Matin',afternoon:'Après-midi',night:'Nuit',other:'Autre'};
-function staff(){return api.agents().filter(x=>!api.isArchived(x.name))}
+function allStaff(){return api.agents().filter(x=>!api.isArchived(x.name))}
+function staff(date=today()){return allStaff().filter(x=>!window.MyTeamAbsences?.isAbsent?.(x.name,date))}
 function lastSigned(name,date=today(),ignore=''){
  const since=datePlus(date,-6);
  return visits().filter(v=>v.id!==ignore&&v.kind==='report'&&v.signed===true&&valid(v.date)&&v.date<=date&&v.date>=since&&Array.isArray(v.agents)&&v.agents.some(a=>same(a.name,name)))
@@ -55,9 +56,10 @@ function count(date,shift){
 }
 function saveVisit(row){
  if(!valid(row.date)||!shiftNames[row.shift]||!String(row.post||'').trim()||!['passage','report'].includes(row.kind)||!Array.isArray(row.agents)||!row.agents.length)throw Error('Date, vacation, poste ou agents manquants');
+ if(window.MyTeamVacation?.isPosted?.(row.date,row.shift))throw Error('Vacances de poste : tu es déclaré posté sur cette vacation. Modifie d’abord ton affectation avant d’enregistrer une visite.');
  const names=new Set();
  const people=row.agents.map(a=>{
-  const name=staff().find(x=>same(x.name,a.name))?.name;
+  const name=staff(row.date).find(x=>same(x.name,a.name))?.name;
   if(!name||names.has(norm(name)))throw Error('Agent inconnu ou en double : '+a.name);
   names.add(norm(name));
   if(!['ok','pending','notasked','unknown'].includes(a.status))throw Error('Statut des consignes invalide');
@@ -94,7 +96,7 @@ function pendingReminders(){
   date:s.due||datePlus(today(),1)}));
 }
 function summary(date=today()){
- return staff().map(a=>{
+ return staff(date).map(a=>{
   const s=agentState(a.name),signed=lastSigned(a.name,date);
   return {name:a.name,report:signed?{date:signed.date,post:signed.post}:null,
    passage:s.lastSeen?{date:s.lastSeen.date,post:s.lastSeen.post,kind:s.lastSeen.kind}:null,
@@ -102,5 +104,5 @@ function summary(date=today()){
  }).filter(x=>x.report||x.passage||x.due);
 }
 const legacy=()=>{const raw=read('myteam_post_visits_v1',{});return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}};
-window.MyTeamVisitsCore={KEY,FOLLOW,visits,followups,staff,lastSigned,agentState,pending,count,saveVisit,saveFollowup,history,pendingReminders,summary,statuses,shiftNames,datePlus,valid,today,legacy,norm,same};
+window.MyTeamVisitsCore={KEY,FOLLOW,visits,followups,staff,allStaff,lastSigned,agentState,pending,count,saveVisit,saveFollowup,history,pendingReminders,summary,statuses,shiftNames,datePlus,valid,today,legacy,norm,same};
 })();
