@@ -301,7 +301,7 @@ try{await load('./today-operations-v1.js?v=20261019-1')}catch(error){console.err
       try{await load('./quick-entry-v1.js?v=20261018-1')}catch(error){console.error('Saisie prédictive indisponible :',error)}
 
 try{await load('./workspaces-v1.js?v=20261105-subsections1')}catch(error){console.error('Regroupement des espaces MyTEAM indisponible :',error)}
-      try{await load('./priority-panato-pay-v1.js?v=20261023-1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
+      try{await load('./priority-panato-pay-v1.js?v=20261106-clean1')}catch(error){console.error('Dossier prioritaire PANATO non disponible :',error)}
       try{await load('./startup-reminders-v1.js?v=20261106-clean1')}catch(error){console.error('Rappels de démarrage indisponibles :',error)}
       try{await load('./extras-equity-v1.js?v=20261102-1')}catch(error){console.error('Suivi des extras indisponible :',error)}
 
