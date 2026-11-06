@@ -21,6 +21,26 @@ document.body.append(editor);
 function closeMenu(){overlay.hidden=true;current=null}
 function closeEditor(){editor.hidden=true;$('mt-edit-body').replaceChildren()}
 function choice(label,action,danger=false){return '<button type="button" data-long-action="'+esc(action)+'"'+(danger?' class="danger-option"':'')+'>'+esc(label)+'</button>'}
+function activeAbsenceBanner(name){
+ const abs=window.MyTeamAbsences;
+ const rows=abs?.findFor?.(name,today())||[];
+ if(!rows.length)return '';
+ const format=date=>api.validDate(date)?api.fmtDate(date):'';
+ const sections=rows.slice(0,4).map(r=>{
+  const type=String(abs.TYPES?.[r.type]||'Absence');
+  const dates=[
+   r.start?'Du '+format(r.start):'Début non communiqué',
+   r.end?'au '+format(r.end):'',
+   r.returnDate?'Retour prévu le '+format(r.returnDate):'',
+   !r.end&&!r.returnDate?'Date de retour non renseignée':''
+  ].filter(Boolean).join(' · ');
+  return '<div class="mt-agent-absence-line"><strong>'+esc(type)+'</strong><span>'+esc(dates)+'</span></div>';
+ }).join('');
+ return '<div class="mt-agent-absence-alert" role="status" aria-label="Agent actuellement absent">'+
+  '<div class="mt-agent-absence-heading">⛔ ABSENT ACTUELLEMENT</div>'+
+  sections+
+  '<button type="button" data-long-action="agent-absence-open" class="mt-agent-absence-open">Voir / modifier l’absence</button></div>';
+}
 function selectedAgentFrom(kind,value){
  if(kind==='agent')return value;
  if(kind==='reminder'){
@@ -34,6 +54,7 @@ function menus(kind,value){
  if(kind==='agent'){
   const archived=api.isArchived(value);
   return [
+   activeAbsenceBanner(value),
    choice('Ouvrir la fiche','open-agent'),
    choice('Modifier RX, permis et dates','quals'),
    choice('Ajouter une note datée','note'),
@@ -384,6 +405,11 @@ function act(action){
  if(!current)return;
  const {kind,value}=current;
  closeMenu();
+ if(action==='agent-absence-open'){
+  const record=window.MyTeamAbsences?.findFor?.(value,today())?.[0];
+  if(record)window.MyTeamAbsencesUI?.open?.(record);
+  return;
+ }
  if(action==='open-agent')return api.openAgent(value);
  if(action==='quals'){api.openAgent(value);$('qualification-form')?.scrollIntoView({behavior:'smooth',block:'center'});return}
  if(action==='note')return api.openComposer(value);
