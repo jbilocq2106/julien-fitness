@@ -12,22 +12,22 @@ const items=()=>{const rows=[];
  for(const s of core.pendingReminders())rows.push({...s,time:'09:00'});
  const journal=read('myteam_vacation_journal_v1',[]);
  if(Array.isArray(journal))journal.filter(x=>x?.hasReminder&&valid(x.due)&&x.done!==true).forEach(x=>rows.push({
-  id:x.id,source:'journal',title:'Journal · '+(x.reminderText||x.description||'Relance'),detail:x.description||'',date:x.due,time:x.dueTime||'09:00'}));
+  id:x.id,source:'journal',agent:x.agents||'',title:'Journal · '+(x.reminderText||x.description||'Relance'),detail:x.description||'',date:x.due,time:x.dueTime||'09:00'}));
  const notes=read('myteam_agent_casebook_v1',{});
  if(notes&&typeof notes==='object'&&!Array.isArray(notes))for(const [name,events] of Object.entries(notes)){
   if(!Array.isArray(events))continue;
   events.filter(e=>e?.done!==true&&['rappel','alarme'].includes(e.type)&&valid(e.due)).forEach(e=>rows.push({
-   id:e.id,source:'note',title:'Agent · '+name,detail:e.text||'',date:e.due,time:'09:00'}));
+   id:e.id,source:'note',agent:name,title:'Agent · '+name,detail:e.text||'',date:e.due,time:'09:00'}));
  }
  const general=read('myteam_general_notes_v2',[]);
  if(Array.isArray(general))general.filter(e=>e?.done!==true&&['rappel','alarme'].includes(e.type)&&valid(e.due)).forEach(e=>rows.push({
   id:e.id,source:'general',title:'Rappel général',detail:e.text||'',date:e.due,time:'09:00'}));
  const manual=read('myteam_manual_reminders_v1',[]);
  if(Array.isArray(manual))manual.filter(e=>e?.done!==true&&valid(e.date||e.due)).forEach((e,i)=>rows.push({
-  id:String(e.id??i),source:'manual',title:e.title||e.text||'Rappel',detail:e.description||'',date:e.date||e.due,time:e.time||'09:00'}));
+  id:String(e.id??i),source:'manual',agent:e.agent||'',title:e.title||e.text||'Rappel',detail:e.description||'',date:e.date||e.due,time:e.time||'09:00'}));
  const context=read('myteam_agent_context_reminders_v1',[]);
  if(Array.isArray(context))context.filter(e=>e&&e.status!=='done'&&valid(e.due||e.date)).forEach((e,i)=>rows.push({
-   id:String(e.id??i),source:'context',title:'Suivi · '+String(e.agent||'Agent'),
+   id:String(e.id??i),source:'context',agent:e.agent||'',title:'Suivi · '+String(e.agent||'Agent'),
    detail:String(e.text||''),date:e.due||e.date,time:e.time||'09:00'
  }));
  /* Dates planifiées depuis l'accueil : complètent l'échéance, sans la remplacer. */
@@ -45,12 +45,13 @@ const items=()=>{const rows=[];
     const agent=r.source==='note'?String(r.title||'').replace(/^Agent · /,''):'';
     return converted===source&&String(r.id)===String(id)&&(source!=='case'||agent===who);
    });
-   if(matched)rows.push({id:key,source:'planned',title:'Prévu · '+matched.title,detail:matched.detail||'',
+   if(matched)rows.push({id:key,source:'planned',agent:matched.agent||who||'',title:'Prévu · '+matched.title,detail:matched.detail||'',
     date:slot.date,time:slot.time});
   }
  }
  const seen=new Set();
- return rows.filter(x=>{const key=x.source+'|'+x.id;if(seen.has(key))return false;seen.add(key);return true})
+ return rows.filter(x=>!window.MyTeamAbsences?.shouldDeferReminder?.({agent:x.agent||''},api.dateNow()))
+  .filter(x=>{const key=x.source+'|'+x.id;if(seen.has(key))return false;seen.add(key);return true})
   .sort((a,b)=>a.date.localeCompare(b.date)||String(a.time||'').localeCompare(String(b.time||'')));
 };
 const card=document.createElement('div');
