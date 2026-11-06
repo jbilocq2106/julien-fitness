@@ -1,13 +1,18 @@
 /* MyTEAM v2 : version autonome, réseau prioritaire, sans import PARIF. */
-const CACHE='myteam-reboot-20261106-v4';
+const CACHE='myteam-reboot-20261106-v5';
 const ROOT='/julien-fitness/myteam/';
 const ASSETS=[
  './','./index.html',
- './reboot-v1.css?v=20261106-4',
+ './reboot-v1.css?v=20261106-5',
  './reboot-seed-v1.js?v=20261106-1',
- './reboot-v1.js?v=20261106-4',
+ './reboot-v1.js?v=20261106-5',
  './journal-v1.js?v=20261106-2',
- './reboot-edit-v1.js?v=20261106-3',
+ './visits-v1.css?v=20261106-1',
+ './visits-core-v1.js?v=20261106-1',
+ './visits-ui-v1.js?v=20261106-2',
+ './visits-planner-v1.js?v=20261106-1',
+ './visits-alerts-v1.js?v=20261106-1',
+ './reboot-edit-v1.js?v=20261106-4',
  './hours-reboot-v1.js?v=20261106-1',
  './salary-forecast-v3.js?v=20261027-1',
  './supervisors-rota-v1.js?v=20261029-4',
@@ -44,4 +49,13 @@ self.addEventListener('fetch',e=>{
   if(cached){e.waitUntil(get().catch(()=>{}));return cached}
   try{return await get()}catch{return Response.error()}
  })());
+});
+/* Notification affichée lorsque l'application est active : ouvrir MyTEAM au toucher. */
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async clients=>{
+    const existing=clients.find(client=>client.url.includes('/julien-fitness/myteam/'));
+    if(existing){await existing.focus();return;}
+    if(self.clients.openWindow)await self.clients.openWindow('./');
+  }));
 });
