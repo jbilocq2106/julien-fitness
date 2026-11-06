@@ -1,5 +1,5 @@
 /* MyTEAM v2 : version autonome, réseau prioritaire, sans import PARIF. */
-const CACHE='myteam-reboot-20261106-v14';
+const CACHE='myteam-reboot-20261106-v15';
 const ROOT='/julien-fitness/myteam/';
 const ASSETS=[
  './reboot-seed-v1.js?v=20261106-2',
@@ -8,9 +8,9 @@ const ASSETS=[
  './reboot-edit-v1.js?v=20261106-6',
  './visits-core-v1.js?v=20261106-3',
  './visits-ui-v1.js?v=20261106-6',
- './visits-planner-v1.js?v=20261106-4',
+ './visits-planner-v1.js?v=20261106-5',
  './visits-alerts-v1.js?v=20261106-4',
- './absences-core-v1.js?v=20261106-2',
+ './absences-core-v1.js?v=20261106-3',
  './absences-ui-v1.js?v=20261106-2',
  './vacation-pdf-v1.js?v=20261106-1',
  './vacation-close-v1.js?v=20261106-3',
