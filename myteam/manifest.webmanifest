@@ -1,8 +1,8 @@
 {
   "id": "/julien-fitness/myteam/",
-  "name": "MyTEAM • TEAM 4",
-  "short_name": "TEAM 4",
-  "description": "Gestion personnelle de l'équipe 4 : planning, agents, qualifications, prestations, heures et salaire.",
+  "name": "MyTEAM",
+  "short_name": "MyTEAM",
+  "description": "Suivi des agents et des rappels, roulement équipes et superviseurs, analyse des heures et salaire.",
   "start_url": "/julien-fitness/myteam/",
   "scope": "/julien-fitness/myteam/",
   "display": "standalone",
@@ -11,8 +11,8 @@
     "minimal-ui"
   ],
   "orientation": "portrait-primary",
-  "background_color": "#111928",
-  "theme_color": "#111928",
+  "background_color": "#111a2d",
+  "theme_color": "#111a2d",
   "prefer_related_applications": false,
   "icons": [
     {
