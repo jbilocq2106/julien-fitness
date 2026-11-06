@@ -29,14 +29,14 @@ const style=document.createElement('style');style.textContent=[
 ].join('');document.head.append(style);
 const tab=document.createElement('button');tab.type='button';tab.dataset.tab='context-reminders';tab.textContent='🔔 Rappels';nav.append(tab);
 const page=document.createElement('section');page.id='mt-context-reminders';page.className='hidden';
-page.innerHTML='<div class="card"><h2>🔔 Rappels sans échéance</h2><p class="muted">Rappels liés aux agents, sans date renseignée. Ils restent affichés tant qu’ils ne sont pas marqués faits.</p><div id="ctx-list"></div><details><summary>Ajouter un rappel sur cet appareil</summary><form id="ctx-form"><label>Agent<input name="agent" required maxlength="100" placeholder="Nom et prénom"></label><label>Action à rappeler<textarea name="text" required maxlength="500"></textarea></label><label>Quand le montrer<select name="condition"><option value="present">Agent sur le plan</option><option value="afternoon-night">Après-midi ou nuit</option><option value="visit">Au passage sur son poste</option></select></label><button type="submit">Enregistrer</button></form></details><p class="muted">Données conservées localement. La synchronisation automatique avec les messages ChatGPT reste à développer.</p></div>';
+page.innerHTML='<div class="card"><h2>🔔 Rappels sans échéance</h2><p class="muted">Rappels liés aux agents, sans date renseignée. Ils restent affichés tant qu’ils ne sont pas marqués faits.</p><div id="ctx-list"></div><details><summary>Ajouter un rappel sur cet appareil</summary><form id="ctx-form"><label>Agent<input name="agent" required maxlength="100" placeholder="Nom et prénom"></label><label>Action à rappeler<textarea name="text" required maxlength="500"></textarea></label><label>Quand le montrer<select name="condition"><option value="present">Agent concerné</option><option value="afternoon-night">Après-midi ou nuit (si connu)</option><option value="visit">Au passage sur son poste</option></select></label><button type="submit">Enregistrer</button></form></details><p class="muted">Données conservées localement. La synchronisation automatique avec les messages ChatGPT reste à développer.</p></div>';
 main.append(page);
 // Les échéances générales sont visibles d'abord, suivies des rappels agents sans date.
 const deadlines=document.getElementById('mt-reminders-panel');
 if(deadlines)page.prepend(deadlines);
 tab.addEventListener('click',()=>{nav.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===tab));main.querySelectorAll(':scope > section').forEach(x=>x.classList.toggle('hidden',x!==page));draw();window.scrollTo(0,0)});
 const tiles=document.createElement('div');tiles.id='mt-home-tiles';tiles.setAttribute('aria-label','Rubriques MyTEAM');
-[['today','☀️','Aujourd’hui'],['team','👥','Agents'],['leave','🏖️','Congés'],['planning','🗓️','Mon planning'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']].forEach(([id,icon,label])=>{
+[['today','☀️','Aujourd’hui'],['team','👥','Agents'],['leave','🏖️','Congés'],['context-reminders','🔔','Rappels']].forEach(([id,icon,label])=>{
  const b=document.createElement('button');b.type='button';b.dataset.ctxTab=id;
  const ico=document.createElement('span');ico.className='ctx-ico';ico.textContent=icon;
  const strong=document.createElement('strong');strong.textContent=label;b.append(ico,strong);
