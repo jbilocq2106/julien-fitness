@@ -307,7 +307,7 @@ try{await load('./workspaces-v1.js?v=20261105-subsections1')}catch(error){consol
 
 try{await load('./agent-annual-calendar-v1.js?v=20261105-subsections1')}catch(error){console.error('Agenda annuel des agents indisponible :',error)}
 
-try{await load('./private-day-import-v1.js?v=20261102-2')}catch(error){console.error('Import des notes privées indisponible :',error)}
+try{await load('./private-day-import-v1.js?v=20261106-clean1')}catch(error){console.error('Import des notes privées indisponible :',error)}
       try{await load('./context-reminders-v1.js?v=20261106-clean1')}catch(error){console.error('Rappels visuels indisponibles :',error)}
       try{await load('./private-chatgpt-link-v1.js?v=20261102-1')}catch(error){console.error('Liaison privée ChatGPT indisponible :',error)}
       try{await load('./back-to-home-v1.js?v=20261105-reminders1')}catch(error){console.error('Retour vers l’accueil MyTEAM indisponible :',error)}
