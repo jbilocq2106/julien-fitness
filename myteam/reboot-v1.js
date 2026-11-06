@@ -533,6 +533,6 @@ function init(){
  renderHome();renderAgents();renderPlanning();activate('home');
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
-window.MyTeamReboot={agents,agent,openAgent,openComposer,findNote,markDone,markExternalDone,archiveAgent,restoreAgent,deleteAgent,renameAgent,isArchived,archiveEntries,renderAgents,renderTimeline,renderHome,renderPlanning,activate,showSupervisors,validDate,dateNow,fmtDate,norm,same,profiles,casebook,read,exportAll,selected:()=>selectedAgent};
+window.MyTeamReboot={agents,agent,openAgent,openComposer,findNote,markDone,markExternalDone,archiveAgent,restoreAgent,deleteAgent,renameAgent,isArchived,archiveEntries,renderAgents,renderTimeline,renderHome,renderPlanning,activate,showSupervisors,validDate,dateNow,fmtDate,norm,same,cycle,profiles,casebook,read,exportAll,selected:()=>selectedAgent};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
