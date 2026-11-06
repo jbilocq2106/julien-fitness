@@ -79,7 +79,7 @@ function renderAlerts(){
  const data=core.pending();
  $('v-alerts').innerHTML=data.length?data.slice(0,35).map(s=>[
   '<div class="visit-alert"><div><strong>'+esc(s.name)+'</strong><small>'+esc(stateText(s.status))+
-  (core.valid(s.due)?' · À relancer '+core.valid(s.due)&&s.due?api.fmtDate(s.due):'':'')+'</small></div>',
+  (core.valid(s.due)?' · À relancer '+api.fmtDate(s.due):'')+'</small></div>',
   '<div class="visit-actions"><button type="button" data-v-call="'+esc(s.name)+'">Appeler / confirmer</button><button type="button" data-v-agent="'+esc(s.name)+'">Fiche</button></div></div>'
  ].join('')).join(''):'<p class="empty">Aucune relance enregistrée sur les agents actifs.</p>';
 }
@@ -235,7 +235,7 @@ form.elements.date.onchange=()=>{form.elements.followDue.value=core.datePlus(for
 form.addEventListener('submit',save);
 section.addEventListener('click',e=>{
  const call=e.target.closest('[data-v-call]');if(call){callAgent(call.dataset.vCall);return}
- const ag=e.target.closest('[data-v-agent]');if(ag){api.openAgent(ag.dataset.vAgent);return}
+ const ag=e.target.closest('[data-v-agent]');if(ag){api.openAgent(ag.dataset.vAgent);renderProfile();return}
  const edit=e.target.closest('[data-v-edit]');if(edit){const v=core.visits().find(x=>x.id===edit.dataset.vEdit);if(v)openForm(v.kind,[],v.id);return}
 });
 document.addEventListener('click',e=>{if(e.target.closest('[data-open-agent]'))setTimeout(renderProfile,0)});
