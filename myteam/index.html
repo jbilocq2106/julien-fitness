@@ -7,7 +7,7 @@
 <title>MyTEAM</title>
 <link rel="manifest" href="./manifest.webmanifest?v=20261106-reboot1">
 <link rel="icon" type="image/png" sizes="512x512" href="./myteam-512-hd.png?v=2">
-<link rel="stylesheet" href="./reboot-v1.css?v=20261106-3">
+<link rel="stylesheet" href="./reboot-v1.css?v=20261106-4">
 </head>
 <body>
 <header class="app-header">
@@ -144,6 +144,39 @@
   </div>
   <div class="card"><h3>Composition des équipes</h3><div id="teams-overview"></div><p class="hint">Les noms sont consultables et modifiables dans Agents.</p></div>
 </section>
+<section id="journal" class="screen hidden">
+  <div class="row-between"><h2>Journal de vacation</h2><button type="button" class="small-button primary" id="journal-new">+ Ajouter</button></div>
+  <p class="hint">Changements de planning, événements, appels et transmissions. Historique conservé par date. Les rappels restent ouverts jusqu'à confirmation.</p>
+  <div class="card">
+    <div class="row-between"><h3>Consulter mes journées</h3><button type="button" class="text-button" id="journal-show-all">Tout l'historique</button></div>
+    <label>Date de vacation<input type="date" id="journal-date"></label>
+    <label>Rechercher<input type="search" id="journal-search" placeholder="Agent, poste, événement, échéance…"></label>
+    <label>Catégorie<select id="journal-filter"><option value="all">Tous les événements</option><option value="planning">Changements de planning</option><option value="event">Événements de service</option><option value="call">Appels / mails</option><option value="extra">Extras / remplacements</option><option value="other">Autres</option><option value="pending">Rappels en attente</option></select></label>
+    <div id="journal-results" aria-live="polite"></div>
+  </div>
+  <form id="journal-form" class="card hidden" aria-label="Ajouter un événement de vacation">
+    <div class="row-between"><h3 id="journal-form-title">Nouvel événement</h3><button type="button" class="text-button" id="journal-cancel">Fermer</button></div>
+    <label>Catégorie<select name="category" required><option value="planning">Changement de planning</option><option value="event" selected>Événement de service</option><option value="call">Appel / mail</option><option value="extra">Extra / remplacement</option><option value="other">Autre information</option></select></label>
+    <div class="form-grid">
+      <label>Date de l'événement<input name="date" type="date" required></label>
+      <label>Heure (facultative)<input name="time" type="time"></label>
+      <label>Poste (facultatif)<input name="post" placeholder="E84, E14…" maxlength="30"></label>
+      <label>Agent(s) (facultatif)<input name="agents" placeholder="Nom ou plusieurs noms" maxlength="250"></label>
+    </div>
+    <label id="journal-effective-label">Date d'application du changement (si différente)<input name="effectiveDate" type="date"></label>
+    <label>Ce qui s'est passé / action effectuée<textarea name="description" rows="4" required maxlength="3000" placeholder="Ex. Modification de vacation, agent concerné, décision, interlocuteur…"></textarea></label>
+    <label class="journal-check"><input name="hasReminder" type="checkbox"> Prévoir un rappel à une date précise</label>
+    <div id="journal-reminder-fields" class="hidden">
+      <div class="form-grid">
+        <label>Date du rappel<input name="due" type="date"></label>
+        <label>Heure du rappel (facultative)<input name="dueTime" type="time"></label>
+      </div>
+      <label>Action à rappeler<input name="reminderText" maxlength="220" placeholder="Ex. Appeler le planning pour vérifier…"></label>
+    </div>
+    <button type="submit" class="primary">Enregistrer dans l'historique</button>
+    <p id="journal-form-status" class="hint" role="status"></p>
+  </form>
+</section>
 <section id="hours" class="screen hidden card"><h2>Mes heures</h2><p class="hint">Appui long pour corriger ou ajouter des heures prestées.</p></section>
 <section id="salary" class="screen hidden card"><h2>Salaire</h2><p class="hint">Appui long pour modifier les paramètres ou renseigner la paie réelle.</p></section>
 </main>
@@ -151,6 +184,7 @@
   <button type="button" data-tab="home" class="active"><span class="nav-symbol">⌂</span><span>Accueil</span></button>
   <button type="button" data-tab="team"><span class="nav-symbol">♙</span><span>Agents</span></button>
   <button type="button" data-tab="planning"><span class="nav-symbol">▦</span><span>Planning</span></button>
+  <button type="button" data-tab="journal"><span class="nav-symbol">≡</span><span>Journal</span></button>
   <button type="button" data-tab="hours"><span class="nav-symbol">◷</span><span>Heures</span></button>
   <button type="button" data-tab="salary"><span class="nav-symbol">€</span><span>Salaire</span></button>
 </nav>
@@ -158,7 +192,8 @@
 <script src="./hours-reboot-v1.js?v=20261106-1"></script>
 <script src="./salary-forecast-v3.js?v=20261027-1"></script>
 <script src="./supervisors-rota-v1.js?v=20261029-4"></script>
-<script src="./reboot-v1.js?v=20261106-3"></script>
-<script src="./reboot-edit-v1.js?v=20261106-1"></script>
+<script src="./reboot-v1.js?v=20261106-4"></script>
+<script src="./journal-v1.js?v=20261106-1"></script>
+<script src="./reboot-edit-v1.js?v=20261106-2"></script>
 </body>
 </html>
