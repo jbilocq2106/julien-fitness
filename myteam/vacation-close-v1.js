@@ -360,6 +360,8 @@ for(const type of draftKinds)fields[type].addEventListener('input',()=>{
 });
 window.addEventListener('myteam-vacation-updated',()=>{renderHome();summary()});
 window.addEventListener('focus',renderHome);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!section.classList.contains('hidden')){clearTimeout(autosave);saveDraft(true)}});
+window.addEventListener('pagehide',()=>{if(!section.classList.contains('hidden')){clearTimeout(autosave);saveDraft(true)}});
 window.MyTeamVacation={MODE,DOC,modeOf,isPosted,storeMode,stored,allDocs,makeDraft,facts,missingClosures,open,renderHome,saveDraft,load,exportVersion};
 renderHome();
 })();
