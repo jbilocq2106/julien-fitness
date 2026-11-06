@@ -172,9 +172,15 @@ function reminders(){
  const context=read('myteam_agent_context_reminders_v1',[]);
  if(Array.isArray(context))context.filter(r=>object(r)&&r.status!=='done').forEach((r,i)=>rows.push({id:String(r.id??i),agent:r.agent||'',title:'Rappel · '+String(r.agent||'Agent'),detail:r.text||'',date:r.due||'',source:'context'}));
  const visiting=window.MyTeamVisitsCore?.pendingReminders?.()||[];rows.push(...visiting);
- const dedup=new Set();
+ const dedup=new Set(),savedPlans=read('myteam_reminder_plans_v1',{});
+ const plans=object(savedPlans)?savedPlans:{};
  return rows.filter(r=>{const k=[r.source,r.id,r.agent].join('|');if(dedup.has(k))return false;dedup.add(k);return true})
-   .sort((a,b)=>(validDate(a.date)?a.date:'9999-12-31').localeCompare(validDate(b.date)?b.date:'9999-12-31')||a.title.localeCompare(b.title,'fr'));
+   .map(r=>({...r,planned:plans[JSON.stringify([r.source,String(r.id),r.agent||''])]||null}))
+   .sort((a,b)=>{
+    const ka=validDate(a.planned?.date)?a.planned.date:validDate(a.date)?a.date:'9999-12-31';
+    const kb=validDate(b.planned?.date)?b.planned.date:validDate(b.date)?b.date:'9999-12-31';
+    return ka.localeCompare(kb)||String(a.planned?.time||'').localeCompare(String(b.planned?.time||''))||a.title.localeCompare(b.title,'fr');
+   });
 }
 function renderHome(){
  $('today-label').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
@@ -183,7 +189,7 @@ function renderHome(){
  $('show-all-reminders').hidden=all.length<=8;
  $('show-all-reminders').textContent=showAllReminders?'Réduire la liste':'Afficher les '+all.length+' rappels';
  $('home-reminders').innerHTML=rows.length?rows.map(r=>
-  '<div class="reminder-card" data-long-reminder-source="'+esc(r.source)+'" data-long-reminder-id="'+esc(r.id)+'" data-long-reminder-agent="'+esc(r.agent||'')+'"><div class="reminder-info"><div class="reminder-date">'+(validDate(r.date)?esc(fmtDate(r.date)):'Sans échéance')+'</div>'+
+  '<div class="reminder-card" data-long-reminder-source="'+esc(r.source)+'" data-long-reminder-id="'+esc(r.id)+'" data-long-reminder-agent="'+esc(r.agent||'')+'"><div class="reminder-info"><div class="reminder-date">'+(validDate(r.planned?.date)?'<strong>Prévu '+esc(fmtDate(r.planned.date))+' · '+esc(r.planned.time||'')+'</strong> · ':'')+(validDate(r.date)?'Échéance '+esc(fmtDate(r.date)):'Sans échéance')+'</div>'+
   '<strong>'+esc(r.title)+'</strong><p>'+esc(crop(r.detail,240))+'</p><span class="status-open">À faire</span></div>'+
   (r.agent&&agent(r.agent)?'<button type="button" data-open-agent="'+esc(agent(r.agent).name)+'" aria-label="Ouvrir la fiche">Ouvrir</button>':'')+
   (r.source==='general'?'<button type="button" data-mark-done="'+esc(r.id)+'">Fait</button>':'')+
