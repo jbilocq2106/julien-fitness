@@ -12,7 +12,7 @@ const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLo
 const human=s=>iso(s)?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):s;
 const nowDay=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const panel=document.createElement('section');panel.id='mt-chat-intake';panel.className='card';
-panel.innerHTML='<h2>Informations dictées dans ChatGPT</h2><p class="ci-hint">Classe les changements de planning à la date où tu les as effectués ; conserve séparément leur date d’application. Importation privée sur cet appareil : aucun agent n’est ajouté au dépôt GitHub.</p>'+
+panel.innerHTML='<h2>Informations dictées dans ChatGPT</h2><p class="ci-hint">Classe les informations à la date concernée. Importation privée sur cet appareil : aucun agent n’est ajouté au dépôt GitHub.</p>'+
 '<details id="ci-import-panel"><summary>Importer une journée classée depuis ChatGPT</summary><p class="ci-hint">Sélectionne le fichier JSON que je t’ai préparé dans la conversation, ou colle son texte. L’import ne valide jamais la journée et ne termine pas les rappels en attente.</p>'+
 '<label>Importer le fichier JSON<input id="ci-file" type="file" accept=".json,application/json"></label>'+
 '<label>Ou coller le JSON<textarea id="ci-paste" rows="3" placeholder="Colle le fichier JSON ici"></textarea></label>'+
@@ -20,7 +20,7 @@ panel.innerHTML='<h2>Informations dictées dans ChatGPT</h2><p class="ci-hint">C
 '<p role="status" id="ci-message" class="ci-hint"></p>'+
 '<h3>Interventions classées du jour</h3><div id="ci-events"></div>'+
 '<details><summary>Ajouter une intervention manuellement</summary>'+
-'<label>Catégorie<select id="ci-kind"><option>Modification planning</option><option>Rappel formation</option><option>Appel / mail</option><option>Information</option><option>Autre</option></select></label>'+
+'<label>Catégorie<select id="ci-kind"><option>Information</option><option>Rappel formation</option><option>Appel / mail</option><option>Information</option><option>Autre</option></select></label>'+
 '<label>Date d’application (si différente)<input id="ci-effective" type="date"></label>'+
 '<label>Horaire concerné<input id="ci-slot" placeholder="Ex. 05:30-14:30"></label>'+
 '<label>Objet<input id="ci-title" maxlength="200"></label>'+
