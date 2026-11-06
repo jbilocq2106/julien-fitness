@@ -171,14 +171,14 @@ function renderHome(){
  $('show-all-reminders').hidden=all.length<=8;
  $('show-all-reminders').textContent=showAllReminders?'Réduire la liste':'Afficher les '+all.length+' rappels';
  $('home-reminders').innerHTML=rows.length?rows.map(r=>
-  '<div class="reminder-card"><div class="reminder-info"><div class="reminder-date">'+(validDate(r.date)?esc(fmtDate(r.date)):'Sans échéance')+'</div>'+
+  '<div class="reminder-card" data-long-reminder-source="'+esc(r.source)+'" data-long-reminder-id="'+esc(r.id)+'" data-long-reminder-agent="'+esc(r.agent||'')+'"><div class="reminder-info"><div class="reminder-date">'+(validDate(r.date)?esc(fmtDate(r.date)):'Sans échéance')+'</div>'+
   '<strong>'+esc(r.title)+'</strong><p>'+esc(crop(r.detail,240))+'</p><span class="status-open">À faire</span></div>'+
   (r.agent&&agent(r.agent)?'<button type="button" data-open-agent="'+esc(agent(r.agent).name)+'" aria-label="Ouvrir la fiche">Ouvrir</button>':'')+
   (r.source==='general'?'<button type="button" data-mark-done="'+esc(r.id)+'">Fait</button>':'')+
   (r.source==='manual'||r.source==='context'?'<button type="button" data-mark-external="'+esc(r.source)+'" data-mark-id="'+esc(r.id)+'">Fait</button>':'')+
   '</div>').join(''):'<div class="empty">Aucun rappel ouvert enregistré sur cet appareil.</div>';
  const g=general().slice().sort(noteSort).slice(0,5);
- $('general-notes').innerHTML=g.length?g.map(r=>'<div class="general-item"><small>'+esc(fmtDate(r.date))+' · '+esc(meta(r.type))+'</small><p>'+esc(crop(r.text,220))+'</p><button type="button" class="text-button" data-edit-note="'+esc(r.id)+'">Corriger</button></div>').join(''):'<p class="empty">Aucune note générale pour l’instant.</p>';
+ $('general-notes').innerHTML=g.length?g.map(r=>'<div class="general-item" data-long-note="'+esc(r.id)+'"><small>'+esc(fmtDate(r.date))+' · '+esc(meta(r.type))+'</small><p>'+esc(crop(r.text,220))+'</p><button type="button" class="text-button" data-edit-note="'+esc(r.id)+'">Corriger</button></div>').join(''):'<p class="empty">Aucune note générale pour l’instant.</p>';
  renderSearch();
 }
 function renderSearch(){
@@ -186,7 +186,7 @@ function renderSearch(){
  if(!q||q.length<2){host.innerHTML=q?'<p class="hint">Saisir au moins deux caractères.</p>':'';return}
  const matches=allEvents().filter(r=>norm([r.agent,r.text,r.date,r.source,meta(r.type)].join(' ')).includes(q)).slice(0,40);
  host.innerHTML=matches.length?matches.map(r=>
-  '<div class="search-row"><small>'+esc(r.agent||'Général')+' · '+esc(fmtDate(r.date))+' · '+esc(r.source||'Historique')+'</small>'+
+  '<div class="search-row" data-long-search="'+esc(r.id||'')+'" data-long-search-agent="'+esc(r.agent||'')+'"><small>'+esc(r.agent||'Général')+' · '+esc(fmtDate(r.date))+' · '+esc(r.source||'Historique')+'</small>'+
   '<p>'+esc(crop(r.text,220))+'</p>'+
   (r.agent&&agent(r.agent)?'<button type="button" data-open-agent="'+esc(agent(r.agent).name)+'">Ouvrir la fiche</button>':'')+'</div>').join(''):
   '<p class="empty">Aucun résultat dans les notes accessibles sur cet appareil.</p>';
@@ -230,7 +230,7 @@ function renderTimeline(){
  if(!selectedAgent)return;
  const q=norm($('agent-note-search').value),type=$('agent-note-filter').value;
  const all=ownNotes(selectedAgent).filter(r=>(type==='all'||type==='open'&&canDone(r)&&r.done!==true||r.type===type)&&(!q||norm([r.text,r.date,r.due,meta(r.type)].join(' ')).includes(q)));
- $('agent-timeline').innerHTML=all.length?all.map(r=>'<div class="timeline-row"><div class="timeline-head"><span class="timeline-label">'+esc(meta(r.type))+'</span><span class="timeline-date">'+esc(fmtDate(r.date))+'</span></div>'+
+ $('agent-timeline').innerHTML=all.length?all.map(r=>'<div class="timeline-row" data-long-note="'+esc(r.id)+'"><div class="timeline-head"><span class="timeline-label">'+esc(meta(r.type))+'</span><span class="timeline-date">'+esc(fmtDate(r.date))+'</span></div>'+
   '<p class="timeline-text">'+esc(r.text||'')+'</p>'+
   (validDate(r.due)?'<small>Échéance : '+esc(fmtDate(r.due))+'</small>':'')+
   (canDone(r)?'<p class="'+(r.done?'status-done':'status-open')+'">'+(r.done?'Fait (confirmé)':'À faire')+'</p>':'')+
