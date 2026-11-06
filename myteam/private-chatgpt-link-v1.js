@@ -76,7 +76,7 @@ function validate(body){
   seen.add(item.id);
   if(typeof item.agent!=='string'||!item.agent.trim()||item.agent.length>100)throw Error('Nom d’agent incorrect.');
   if(typeof item.text!=='string'||!item.text.trim()||item.text.length>500)throw Error('Texte de rappel incorrect.');
-  if(!['present','afternoon-night','visit'].includes(item.condition))throw Error('Condition de rappel incorrecte.');
+  if(!['always','present','afternoon-night','visit'].includes(item.condition))throw Error('Condition de rappel incorrecte.');
   const due=item.due===undefined?'':item.due;
   if(due&&(typeof due!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(due)||Number.isNaN(new Date(due+'T12:00:00').getTime())||new Date(due+'T12:00:00').toISOString().slice(0,10)!==due))throw Error('Échéance de rappel invalide.');
   return {id:item.id,agent:item.agent.trim(),text:item.text.trim(),condition:item.condition,due,status:'open'};
@@ -103,7 +103,7 @@ function modal(items,error){
   const row=document.createElement('div');row.className='mt-pi-item';
   const name=document.createElement('strong');name.textContent=item.agent;
   const detail=document.createElement('p');detail.textContent=item.text;
-  const condition=document.createElement('small');condition.textContent=(item.due?'Échéance '+item.due+' · ':'')+(item.condition==='afternoon-night'?'Afficher en après-midi ou nuit':item.condition==='visit'?'À vérifier lors de la visite du poste':'Afficher si l’agent figure au plan');
+  const condition=document.createElement('small');condition.textContent=(item.due?'Échéance '+item.due+' · ':'')+(item.condition==='afternoon-night'?'Afficher en après-midi ou nuit':item.condition==='visit'?'À vérifier lors de la visite du poste':item.condition==='always'?'Rappel permanent jusqu’à confirmation':'Afficher si l’agent figure au plan');
   row.append(name,detail,condition);dialog.append(row);
  });
  const status=document.createElement('p');status.setAttribute('role','status');dialog.append(status);
@@ -115,14 +115,16 @@ function modal(items,error){
     const old=JSON.parse(localStorage.getItem(STORE)||'[]');
     if(!Array.isArray(old))throw Error('Données précédentes non reconnues.');
     const ids=new Set(old.map(r=>r?.id));
+    const key=r=>[r?.agent,r?.text].map(x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim()).join('|');
+    const known=new Set(old.map(key));
     const now=new Date().toISOString();
-    const fresh=items.filter(r=>!ids.has(r.id)).map(r=>({...r,createdAt:now,source:'Lien privé ChatGPT'}));
+    const fresh=items.filter(r=>{const k=key(r);if(ids.has(r.id)||known.has(k))return false;known.add(k);return true}).map(r=>({...r,createdAt:now,source:'Lien privé ChatGPT'}));
     if(fresh.length)localStorage.setItem(STORE,JSON.stringify([...old,...fresh]));
     window.MyTeamContextReminders?.refresh();
     window.MyTeamReboot?.renderHome?.();
     window.dispatchEvent(new Event('myteam-private-imported'));
     title.textContent='Rappels enregistrés';
-    info.textContent=fresh.length+' nouveau(x) rappel(s). '+(items.length-fresh.length)+' rappel(s) déjà présents, sans doublon.';
+    info.textContent=fresh.length+' nouveau(x) rappel(s). '+(items.length-fresh.length)+' rappel(s) ignoré(s) car déjà présent(s). Aucun rappel terminé n’a été réactivé.';
     Array.from(dialog.querySelectorAll('.mt-pi-item')).forEach(x=>x.remove());
     apply.remove();cancel.textContent='Voir mes rappels';
     cancel.onclick=()=>{overlay.remove();window.MyTeamReboot?.activate?.('home')};
