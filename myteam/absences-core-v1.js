@@ -6,7 +6,7 @@
 const KEY='myteam_agent_absences_v1',api=window.MyTeamReboot;
 if(!api)return;
 const TYPES={sick:'Maladie',leave:'Congé',parental:'Congé parental',cure:'Cure'};
-const STATUSES={confirmed:'Validé / confirmé',requested:'Demandé',accepted:'Accepté (pas encore validé)',refused:'Refusé'};
+const STATUSES={confirmed:'Validé / confirmé',requested:'Demandé',accepted:'Accepté dans MyGesper',refused:'Refusé'};
 const norm=api.norm,valid=api.validDate,today=api.dateNow;
 const read=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[]}catch{return []}};
 const knownNames=()=>api.agents(true);
@@ -21,7 +21,7 @@ const matchName=(s,allowPartial=false)=>{
 };
 const uid=()=> 'abs-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
 const active=(record,date=today())=>{
- if(!valid(date)||record.status!=='confirmed'||!TYPES[record.type])return false;
+ if(!valid(date)||!['confirmed','accepted'].includes(record.status)||!TYPES[record.type])return false;
  const start=valid(record.start)?record.start:valid(record.observedAt)?record.observedAt:'';
  const end=valid(record.end)?record.end:'';
  if(!start||date<start)return false;
