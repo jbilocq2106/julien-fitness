@@ -190,7 +190,9 @@ function nextShift(kind,from=new Date()){
  const anchor=Date.UTC(2026,9,25),y=from.getFullYear(),m=from.getMonth(),day=from.getDate();
  for(let delta=0;delta<24;delta++){
   const date=new Date(y,m,day+delta),diff=Math.round((Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())-anchor)/86400000);
-  const phase=((diff%8)+8)%8,slot=phase<2?0:phase<4?1:phase<6?2:3;
+  const phase=((diff%8)+8)%8,override=read('myteam_team_cycle_overrides_v1',{})||{};
+  const label=override[[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')];
+  const slot=['m','a','n','r'].includes(label)?{m:0,a:1,n:2,r:3}[label]:phase<2?0:phase<4?1:phase<6?2:3;
   if(slot!==wanted.code)continue;
   const [hh,mm]=wanted.time.split(':').map(Number);
   const candidate=new Date(date.getFullYear(),date.getMonth(),date.getDate(),hh,mm,0,0);
@@ -216,6 +218,7 @@ function setReminderPlan(raw,slot){
   localStorage.setItem(REMINDER_PLAN_KEY,JSON.stringify(plans));
   api.renderHome();
   window.MyTeamAlertScheduler?.render?.();
+  window.dispatchEvent(new Event('myteam-reminder-planned'));
  }catch{alert('Impossible de conserver la date prévue sur ce téléphone.');return}
  const info=slot?'Date prévue : '+api.fmtDate(slot.date)+' à '+slot.time+'. Le rappel reste à faire.':'Date prévue supprimée. Le rappel reste à faire.';
  const visible=document.createElement('div');visible.setAttribute('role','status');visible.className='mt-reminder-confirmation';visible.textContent=info;
