@@ -77,7 +77,9 @@ function validate(body){
   if(typeof item.agent!=='string'||!item.agent.trim()||item.agent.length>100)throw Error('Nom d’agent incorrect.');
   if(typeof item.text!=='string'||!item.text.trim()||item.text.length>500)throw Error('Texte de rappel incorrect.');
   if(!['present','afternoon-night','visit'].includes(item.condition))throw Error('Condition de rappel incorrecte.');
-  return {id:item.id,agent:item.agent.trim(),text:item.text.trim(),condition:item.condition,status:'open'};
+  const due=item.due===undefined?'':item.due;
+  if(due&&(typeof due!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(due)||Number.isNaN(new Date(due+'T12:00:00').getTime())||new Date(due+'T12:00:00').toISOString().slice(0,10)!==due))throw Error('Échéance de rappel invalide.');
+  return {id:item.id,agent:item.agent.trim(),text:item.text.trim(),condition:item.condition,due,status:'open'};
  });
 }
 async function openCapsule(token){
@@ -101,7 +103,7 @@ function modal(items,error){
   const row=document.createElement('div');row.className='mt-pi-item';
   const name=document.createElement('strong');name.textContent=item.agent;
   const detail=document.createElement('p');detail.textContent=item.text;
-  const condition=document.createElement('small');condition.textContent=item.condition==='afternoon-night'?'Afficher en après-midi ou nuit':item.condition==='visit'?'À vérifier lors de la visite du poste':'Afficher si l’agent figure au plan';
+  const condition=document.createElement('small');condition.textContent=(item.due?'Échéance '+item.due+' · ':'')+(item.condition==='afternoon-night'?'Afficher en après-midi ou nuit':item.condition==='visit'?'À vérifier lors de la visite du poste':'Afficher si l’agent figure au plan');
   row.append(name,detail,condition);dialog.append(row);
  });
  const status=document.createElement('p');status.setAttribute('role','status');dialog.append(status);
