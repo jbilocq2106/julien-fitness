@@ -24,7 +24,7 @@ function eventsFor(name){
   if(p)items.push({source:'visit',date:v.date,time:v.time||'',createdAt:v.createdAt||'',post:v.post,kind:v.kind,signed:v.signed,status:p.status||'unknown',note:p.note||'',visit:v});
  }
  for(const f of followups())if(same(f.agent,name))items.push({source:'followup',...f});
- return items.sort((a,b)=>String((a.date||'')+'T'+(a.time||'00:00')+'|'+(a.createdAt||'')).localeCompare(String((b.date||'')+'T'+(b.time||'00:00')+'|'+(b.createdAt||''))));
+ return items.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||''))||String(a.time||'').localeCompare(String(b.time||'')));
 }
 function agentState(name){
  let status='unknown',due='',lastSeen=null,lastSignedReport=null,latestReport=null,latestConfirmation=null,sourceVisitId='';
