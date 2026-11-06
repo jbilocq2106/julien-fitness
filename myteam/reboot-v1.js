@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 const PROFILE='myteam_agent_profiles_v1',DELETED='myteam_deleted_agents_v1';
-const CASES='myteam_agent_casebook_v1',GENERAL='myteam_general_notes_v2',ARCHIVE='myteam_agent_archives_v2',OVERRIDES='myteam_team_cycle_overrides_v1';
+const CASES='myteam_agent_casebook_v1',GENERAL='myteam_general_notes_v2',ARCHIVE='myteam_agent_archives_v2',OVERRIDES='myteam_team_cycle_overrides_v1',JOURNAL='myteam_vacation_journal_v1';
 const $=id=>document.getElementById(id);
 const read=(key,fallback)=>{try{const x=JSON.parse(localStorage.getItem(key)||'null');return x===null?fallback:x}catch{return fallback}};
 const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
@@ -15,6 +15,7 @@ const crop=(s,n)=>String(s||'').length>n?String(s).slice(0,n-1)+'…':String(s||
 const profiles=()=>{const p=read(PROFILE,{});return object(p)?p:{}};
 const casebook=()=>{const c=read(CASES,{});return object(c)?c:{}};
 const general=()=>{const a=read(GENERAL,[]);return Array.isArray(a)?a:[]};
+const journal=()=>{const a=read(JOURNAL,[]);return Array.isArray(a)?a:[]};
 const seed=object(window.MyTeamRosterSeed)?window.MyTeamRosterSeed:{};
 const saved=()=>new Set((Array.isArray(read(DELETED,[]))?read(DELETED,[]):[]).map(norm));
 const archiveEntries=()=>{const r=read(ARCHIVE,{});return object(r)?r:{}};
@@ -131,6 +132,7 @@ function legacy(name){
  const fields=[['Remarques anciennes',row?.notes],['Rappels historiques',row?.reminderNotes],['Historique RX',row?.rxLog],['Retards',row?.lateLog],['Absences administratives',row?.sickLog]];
  const rows=fields.filter(([,value])=>String(value||'').trim()).map(([title,value])=>'<div class="legacy-entry"><strong>'+esc(title)+'</strong><div>'+esc(value)+'</div></div>');
  if(Array.isArray(row?.otherCertifications)&&row.otherCertifications.length)rows.push('<div class="legacy-entry"><strong>Autres certifications</strong><div>'+row.otherCertifications.map(x=>esc(x.label||'Certification')+(x.expiry?' · '+esc(fmtDate(x.expiry)):'')).join('<br>')+'</div></div>');
+ journal().filter(x=>String(x.agents||'').split(/[;,]/).some(v=>same(v.trim(),name))).forEach(x=>rows.push('<div class="legacy-entry"><strong>Journal de vacation · '+esc(fmtDate(x.date))+'</strong><div>'+esc(x.description)+(x.post?' · '+esc(x.post):'')+'</div></div>'));
  archived().filter(x=>x.agent&&same(x.agent,name)).forEach(x=>rows.push('<div class="legacy-entry"><strong>'+esc(x.source)+' · '+esc(fmtDate(x.date))+'</strong><div>'+esc(x.text)+'</div></div>'));
  return rows.join('')||'<p class="hint">Aucune ancienne information disponible pour cet agent.</p>';
 }
@@ -141,6 +143,7 @@ function allEvents(){
   notes.forEach(x=>{if(object(x)&&x.text)out.push({...x,agent:name,source:'Suivi personnel'})});
  }
  general().forEach(x=>{if(object(x)&&x.text)out.push({...x,agent:'',source:'Note générale'})});
+ journal().forEach(x=>{if(object(x)&&x.description)out.push({id:x.id,date:x.date,agent:x.agents||'',text:x.description,post:x.post,source:'Journal de vacation',journal:true})});
  archived().forEach(x=>out.push(x));
  for(const [name,p] of Object.entries(profiles())){
   for(const [label,key] of [['Remarques','notes'],['Rappels','reminderNotes'],['RX','rxLog'],['Retards','lateLog'],['Absences administratives','sickLog']]){
@@ -158,6 +161,7 @@ function reminders(){
  general().filter(r=>object(r)&&canDone(r)&&r.done!==true).forEach(r=>rows.push({id:r.id,agent:'',title:'Rappel général',detail:r.text,date:r.due||r.date||'',source:'general'}));
  const manual=read('myteam_manual_reminders_v1',[]);
  if(Array.isArray(manual))manual.filter(r=>object(r)&&r.done!==true).forEach((r,i)=>rows.push({id:String(r.id??i),agent:r.agent||'',title:r.title||'Rappel enregistré',detail:r.text||r.description||'',date:r.date||r.due||'',source:'manual'}));
+ journal().filter(r=>object(r)&&r.hasReminder&&validDate(r.due)&&r.done!==true).forEach(r=>rows.push({id:r.id,agent:r.agents||'',title:'Journal · '+(r.category==='planning'?'Changement de planning':'Événement'),detail:r.reminderText||r.description,date:r.due,source:'journal'}));
  const context=read('myteam_agent_context_reminders_v1',[]);
  if(Array.isArray(context))context.filter(r=>object(r)&&r.status!=='done').forEach((r,i)=>rows.push({id:String(r.id??i),agent:r.agent||'',title:'Rappel · '+String(r.agent||'Agent'),detail:r.text||'',date:r.due||'',source:'context'}));
  const dedup=new Set();
@@ -176,6 +180,7 @@ function renderHome(){
   (r.agent&&agent(r.agent)?'<button type="button" data-open-agent="'+esc(agent(r.agent).name)+'" aria-label="Ouvrir la fiche">Ouvrir</button>':'')+
   (r.source==='general'?'<button type="button" data-mark-done="'+esc(r.id)+'">Fait</button>':'')+
   (r.source==='manual'||r.source==='context'?'<button type="button" data-mark-external="'+esc(r.source)+'" data-mark-id="'+esc(r.id)+'">Fait</button>':'')+
+  (r.source==='journal'?'<button type="button" data-open-journal="'+esc(r.id)+'">Voir</button>':'')+
   '</div>').join(''):'<div class="empty">Aucun rappel ouvert enregistré sur cet appareil.</div>';
  const g=general().slice().sort(noteSort).slice(0,5);
  $('general-notes').innerHTML=g.length?g.map(r=>'<div class="general-item" data-long-note="'+esc(r.id)+'"><small>'+esc(fmtDate(r.date))+' · '+esc(meta(r.type))+'</small><p>'+esc(crop(r.text,220))+'</p><button type="button" class="text-button" data-edit-note="'+esc(r.id)+'">Corriger</button></div>').join(''):'<p class="empty">Aucune note générale pour l’instant.</p>';
@@ -365,13 +370,14 @@ function markExternalDone(source,id){
 }
 function activate(id){
  const target=id==='team'?'team':id;
- if(!['home','team','planning','hours','salary'].includes(target))return;
+ if(!['home','team','planning','hours','salary','journal'].includes(target))return;
  activeTab=target;
  document.querySelectorAll('main > section').forEach(s=>s.classList.toggle('hidden',s.id!==target));
  document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===target));
  if(target==='home')renderHome();
  if(target==='team')renderAgents();
  if(target==='planning')renderPlanning();
+ if(target==='journal')window.MyTeamJournal?.render?.();
  if(target==='hours')window.MyTeamRenderHours?.();
  if(target==='salary')window.MyTeamRenderSalary?.();
  window.scrollTo(0,0);
@@ -465,6 +471,7 @@ function init(){
  document.addEventListener('click',e=>{
   const tab=e.target.closest('button[data-tab]');
   if(tab&&!tab.closest('nav.tabs')){activate(tab.dataset.tab);return}
+  const journalLink=e.target.closest('[data-open-journal]');if(journalLink){window.MyTeamJournal?.openJournal?.(journalLink.dataset.openJournal);return}
   const open=e.target.closest('[data-open-agent]');
   if(open){openAgent(open.dataset.openAgent);return}
   const edit=e.target.closest('[data-edit-note]');
@@ -504,6 +511,7 @@ function init(){
  $('open-supervisors').addEventListener('click',showSupervisors);
  window.addEventListener('myteam-supervisors-updated',()=>{if(activeTab==='planning')renderPlanning()});
  window.addEventListener('focus',()=>{renderHome();renderAgents()});
+ window.addEventListener('myteam-journal-updated',()=>{renderHome();if(selectedAgent){$('agent-legacy-content').innerHTML=legacy(selectedAgent)}});
  renderHome();renderAgents();renderPlanning();activate('home');
  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
