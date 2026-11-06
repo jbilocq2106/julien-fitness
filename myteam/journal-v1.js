@@ -27,7 +27,37 @@ function save(rows){
  return true;
 }
 const byDate=(a,b)=>String(b.date).localeCompare(String(a.date))||String(b.time||'').localeCompare(String(a.time||'') )||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
+function historicalEntries(){
+ const out=[];
+ const fromBoard=(key,source)=>{
+  let data={};try{data=JSON.parse(localStorage.getItem(key)||'{}')}catch{return}
+  if(!data||typeof data!=='object'||Array.isArray(data))return;
+  for(const [day,events] of Object.entries(data)){
+   if(!Array.isArray(events))continue;
+   for(const [i,x] of events.entries()){
+    if(!x||typeof x!=='object')continue;
+    const description=[x.title,x.description,x.text].filter(Boolean).join(' · ').trim();
+    if(!description)continue;
+    out.push({id:'old-'+key+'-'+day+'-'+i,legacy:true,source,date:dateValid(day)?day:x.date||'',
+     category:/planning/i.test(String(x.category||x.type||''))?'planning':'event',post:x.post||'',
+     agents:x.agent||x.agents||'',description});
+   }
+  }
+ };
+ fromBoard('myteam-board-events-v1','Historique antérieur');
+ fromBoard('myteam-board-actions-v1','Anciennes actions');
+ const old=(()=>{try{return JSON.parse(localStorage.getItem('myteam_main_courante_v1')||'[]')}catch{return []}})();
+ if(Array.isArray(old))old.forEach((x,i)=>{
+  if(!x||typeof x!=='object')return;
+  const description=[x.title,x.description,x.text].filter(Boolean).join(' · ').trim();
+  if(description)out.push({id:'old-main-'+i,legacy:true,source:'Historique antérieur',date:x.date||'',
+   category:/planning/i.test(String(x.category||x.type||''))?'planning':'event',
+   post:x.post||'',agents:x.agent||x.agents||'',description});
+ });
+ return out;
+}
 function entryHTML(row){
+ if(row.legacy)return '<article class="journal-entry"><small>Archive en lecture seule · '+esc(row.source||'Ancien suivi')+' · '+esc(label(row.date))+'</small><p>'+esc(row.description||'')+'</p>'+(row.post?'<small>Poste '+esc(row.post)+'</small>':'')+(row.agents?'<small> · '+esc(row.agents)+'</small>':'')+'</article>';
  const remind=row.hasReminder&&dateValid(row.due);
  const state=remind?(row.done?'Terminé':'À faire'):'';
  const agents=String(row.agents||'').trim();
@@ -49,7 +79,7 @@ function entryHTML(row){
  '</div></article>';
 }
 function render(){
- const rows=read();
+ const rows=[...read(),...historicalEntries()];
  const q=norm(refs.search.value.trim()),kind=refs.filter.value,day=refs.date.value;
  const filtered=rows.filter(r=>{
   if(!showAll&&day!==r.date)return false;
