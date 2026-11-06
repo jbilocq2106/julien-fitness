@@ -40,7 +40,7 @@
   const parifTopTab=topNav.querySelector('button[data-tab="parif"]');
   if(parifTopTab)topNav.prepend(parifTopTab);
   let current='today',formOpen=false;
-  const navItems=[['daily-journal','📖','Main courante'],['equipes','👥','Équipes'],['parif','📷','Plan PARIF'],['context-reminders','🔔','Rappels']];
+  const navItems=[['daily-journal','📖','Main courante'],['equipes','👥','Équipes'],['context-reminders','🔔','Rappels']];
   // Nouvelle organisation demandée : réinitialise une fois l'ancien ordre visuel, sans effacer aucune donnée de travail.
   const NAV_ORDER_KEY='myteam_mobile_nav_order_v6';
   const navDefinitions=[...navItems,['more','☰','Plus']];
@@ -69,7 +69,7 @@
     const available=Array.from(topNav.querySelectorAll('button[data-tab]'))
       .filter(b=>!primary.has(b.dataset.tab)&&b.dataset.deskSecondary!=='true'&&b.dataset.tab!=='planning'&&b.dataset.tab!=='today');
     const groups=[
-      ['Bureau et plannings', ['mt-bureau','planning-followup-simple','supervisors','prestation','composition','leave','agent-annual']],
+      ['Autres suivis', ['composition','leave','agent-annual']],
       ['Actions et encadrement', ['team','visits','consignes','cde-memo','mt-management-workspace']],
       ['Mes outils personnels', ['hours','salary']],
       ['Historique et sécurité', ['history','secure-backup']]
