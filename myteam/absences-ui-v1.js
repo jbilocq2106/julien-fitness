@@ -6,6 +6,21 @@ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,
 const page=$('absences');if(!page)return;
 let editing='',showAll=false;
 const form=$('absence-form');
+const agentPanel=$('agent-panel'),agentBox=document.createElement('div');
+agentBox.id='absence-agent-panel';agentBox.className='visit-profile';
+if(agentPanel)agentPanel.insertBefore(agentBox,agentPanel.querySelector('#agent-timeline'));
+function renderAgent(){
+ const name=api.selected();
+ if(!name){agentBox.innerHTML='';return}
+ const rows=core.read().filter(x=>api.same(x.agent,name));
+ const current=rows.filter(x=>core.active(x,api.dateNow()));
+ agentBox.innerHTML='<div class="row-between"><h4>Absences</h4><button type="button" class="small-button" id="absence-agent-add">+ Absence</button></div>'+
+  (current.length?'<p class="absence-warning">Absent actuellement : les contrôles et rappels sont suspendus.</p>':'')+
+  (rows.length?rows.slice().reverse().map(x=>'<div class="visit-profile-row"><small>'+esc(core.TYPES[x.type]||x.type)+' · '+esc(presentStatus(x))+'</small><p>'+
+   (x.start?'Du '+api.fmtDate(x.start):'Début non communiqué')+(x.end?' au '+api.fmtDate(x.end):'')+
+   (x.returnDate?' · Retour '+api.fmtDate(x.returnDate):'')+'</p></div>').join(''):'<p class="hint">Aucune absence enregistrée.</p>');
+ agentBox.querySelector('#absence-agent-add')?.addEventListener('click',()=>{open();form.elements.agent.value=name});
+}
 function selection(){
  const opt=$('absence-agents');
  if(!opt)return;
@@ -96,7 +111,7 @@ function onImport(file){
 }
 function showAudit(){
  const date=$('absence-audit-date').value||api.dateNow(),txt=$('absence-audit-text').value;
- if(!core.validDate&&false)return;
+
  if(!api.validDate(date))return $('absence-audit-result').textContent='Date invalide.';
  const results=core.auditAssignments(txt,date),source=$('absence-audit-source').value;
  const items=results.inconsistencies.map(x=>'<div class="absence-conflict"><strong>'+esc(x.post)+' — Agent absent affecté sur '+esc(source)+'</strong>'+
@@ -120,7 +135,7 @@ $('absence-results').addEventListener('click',e=>{
 });
 $('absence-import-file').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)onImport(f)});
 $('absence-audit-date').value=api.dateNow();
-window.MyTeamAbsencesUI={render,open,showAudit};
-window.addEventListener('myteam-absences-updated',()=>{render();api.renderHome();window.MyTeamVisits?.refresh?.()});
+window.MyTeamAbsencesUI={render,renderAgent,open,showAudit};
+window.addEventListener('myteam-absences-updated',()=>{render();renderAgent();api.renderHome();window.MyTeamVisits?.refresh?.()});
 render();
 })();
