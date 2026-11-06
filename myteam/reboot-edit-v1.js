@@ -8,7 +8,7 @@ const read=(key,def)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null')
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=api.dateNow;
-const TARGET='[data-long-agent],[data-long-note],[data-long-journal],[data-long-reminder-source],[data-long-cycle],[data-long-supervisors],[data-long-team],[data-long-search],#hours h2,#salary h2,#hours .card,#salary .card';
+const TARGET='[data-long-agent],[data-long-note],[data-long-journal],[data-long-reminder-source],[data-long-cycle],[data-long-supervisors],[data-long-team],[data-long-search],#hours h2,#salary h2,#hours .card,#salary .card,[data-v-long]';
 let current=null,backupPrepared=false,hold=null,suppressUntil=0;
 const overlay=document.createElement('div');
 overlay.id='mt-long-overlay';overlay.className='mt-long-overlay';overlay.hidden=true;
@@ -57,6 +57,7 @@ function menus(kind,value){
  if(kind==='team')return [choice('Consulter les agents de cette équipe','team-open')];
  if(kind==='hours')return [choice('Saisir ou corriger une vacation','hours-edit')];
  if(kind==='salary')return [choice('Modifier les paramètres de salaire','salary-edit')];
+ if(kind==='visit')return [choice('Corriger ce passage / rapport','visit-edit')];
  if(kind==='search')return [choice('Ouvrir la fiche / l’événement','search-open')];
  return [];
 }
@@ -67,7 +68,7 @@ function openMenu(kind,value){
  $('mt-long-title').textContent={
   agent:'Agent · '+value,note:'Historique personnel',journal:'Journal de vacation',reminder:'Rappel daté',
   cycle:'Vacations du '+api.fmtDate(value),supervisors:'Superviseurs',team:'Équipe '+value,
-  hours:'Mes heures',salary:'Salaire',search:'Historique'
+  hours:'Mes heures',salary:'Salaire',search:'Historique',visit:'Rapport ou passage'
  }[kind]||'Modifier';
  $('mt-long-items').innerHTML=m.join('');
  overlay.hidden=false;
@@ -85,6 +86,7 @@ function resolveTarget(target){
  if(t.hasAttribute('data-long-supervisors'))return {kind:'supervisors',value:''};
  if(t.hasAttribute('data-long-team'))return {kind:'team',value:t.dataset.longTeam};
  if(t.hasAttribute('data-long-search'))return {kind:'search',value:[t.dataset.longSearch,t.dataset.longSearchAgent].join('||')};
+ if(t.hasAttribute('data-v-long'))return {kind:'visit',value:t.dataset.vLong};
  if(t.closest('#hours'))return {kind:'hours',value:''};
  if(t.closest('#salary'))return {kind:'salary',value:''};
  return null;
@@ -310,6 +312,7 @@ function act(action){
  if(action==='team-open'){api.activate('team');$('agent-filter').value=value;api.renderAgents();return}
  if(action==='hours-edit')return editHours();
  if(action==='salary-edit')return editSalary();
+ if(action==='visit-edit'){const v=window.MyTeamVisitsCore?.visits?.().find(x=>x.id===value);if(v)window.MyTeamVisits?.openForm?.(v.kind,[],v.id);return}
  if(action==='search-open'){
   const [id,name]=value.split('||');
   if(name&&api.agent(name,true))api.openAgent(name);
