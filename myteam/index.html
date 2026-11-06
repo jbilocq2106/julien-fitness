@@ -7,7 +7,7 @@
 <title>MyTEAM</title>
 <link rel="manifest" href="./manifest.webmanifest?v=20261106-reboot1">
 <link rel="icon" type="image/png" sizes="512x512" href="./myteam-512-hd.png?v=2">
-<link rel="stylesheet" href="./reboot-v1.css?v=20261106-2">
+<link rel="stylesheet" href="./reboot-v1.css?v=20261106-3">
 </head>
 <body>
 <header class="app-header">
@@ -47,10 +47,13 @@
 </section>
 <section id="team" class="screen hidden">
   <h2>Suivi des agents</h2>
+  <p class="hint">Appui court pour consulter · appui long (~0,7 s) pour modifier.</p>
   <p class="hint">Tous les agents, toutes les équipes. Chaque note est conservée par date.</p>
   <div class="card" id="agent-tools">
     <label for="agent-search">Rechercher un agent</label>
     <input type="search" id="agent-search" placeholder="Nom, prénom, matricule…" autocomplete="off">
+    <label for="agent-status-filter">Statut</label>
+    <select id="agent-status-filter"><option value="active">Agents actifs</option><option value="archived">Anciens agents (archivés)</option><option value="all">Tous les agents</option></select>
     <label for="agent-filter">Équipe</label>
     <select id="agent-filter">
       <option value="all">Toutes les équipes</option>
@@ -60,12 +63,14 @@
     </select>
     <div class="row-between"><small id="agents-count" aria-live="polite"></small><button type="button" class="small-button" data-action="new-note">+ Note</button></div>
     <div id="agent-results"></div>
+    <p class="hint">Appuie longuement sur un nom pour le changer d’équipe, archiver, réactiver ou supprimer sa fiche.</p>
   </div>
   <section class="card hidden" id="agent-panel" aria-labelledby="agent-title">
     <button type="button" class="text-button" id="agent-back">← Tous les agents</button>
-    <h3 id="agent-title"></h3>
+    <div class="row-between"><h3 id="agent-title"></h3><button type="button" id="agent-manage" class="small-button">Gérer la fiche</button></div>
+    <p class="hint" id="agent-archive-status"></p>
     <p id="agent-subtitle" class="hint"></p>
-    <div class="row-between"><h4>Qualifications et coordonnées</h4><button type="button" class="small-button" data-action="new-note">+ Note</button></div>
+    <div class="row-between"><h4>Qualifications RX et permis piste</h4><button type="button" class="small-button" data-action="new-note">+ Note</button></div>
     <form id="qualification-form">
       <div class="form-grid">
         <label>Matricule<input name="workerNumber" inputmode="numeric" maxlength="20" autocomplete="off"></label>
@@ -105,14 +110,21 @@
     <summary>Ajouter un nouvel agent</summary>
     <form id="add-agent-form">
       <label>Nom et prénom<input name="name" maxlength="100" required></label>
-      <label>Équipe<select name="team"><option value="0">À classer</option><option value="1">Équipe 1</option><option value="2">Équipe 2</option><option value="3">Équipe 3</option><option value="4">Équipe 4</option></select></label>
+      <label>Équipe<select name="team"><option value="0">À classer</option><option value="1">Équipe 1</option><option value="2">Équipe 2</option><option value="3">Équipe 3</option><option value="4" selected>Équipe 4</option></select></label>
+      <label>Matricule (facultatif)<input name="workerNumber" inputmode="numeric" maxlength="20"></label>
+      <div class="form-grid">
+      <label>Qualification RX<select name="rxCertified"><option value="">À vérifier</option><option value="true">Oui</option><option value="false">Non</option></select></label>
+      <label>Permis piste<select name="pistePermit"><option value="">À vérifier</option><option value="true">Oui</option><option value="false">Non</option></select></label>
+      <label>Fin validité RX<input name="rxExpiry" type="date"></label>
+      <label>Fin permis piste<input name="permitExpiry" type="date"></label>
+      </div>
       <button type="submit">Créer la fiche</button><p id="add-agent-status" class="hint" role="status"></p>
     </form>
   </details>
 </section>
 <section id="planning" class="screen hidden">
   <h2>Planning équipe & superviseurs</h2>
-  <p class="hint">Calendrier prévisionnel, sans import de plan PARIF ni modification d'affectations.</p>
+  <p class="hint">Appui long sur un jour pour ajuster sa vacation théorique, ou sur les superviseurs pour modifier leur rotation. Aucun changement du planning officiel.</p>
   <div class="card">
     <div class="row-between"><h3>Roulement équipe 4</h3><span class="tiny-tag">2–2–2–2</span></div>
     <div class="month-nav">
@@ -132,8 +144,8 @@
   </div>
   <div class="card"><h3>Composition des équipes</h3><div id="teams-overview"></div><p class="hint">Les noms sont consultables et modifiables dans Agents.</p></div>
 </section>
-<section id="hours" class="screen hidden card"><h2>Mes heures</h2></section>
-<section id="salary" class="screen hidden card"><h2>Salaire</h2></section>
+<section id="hours" class="screen hidden card"><h2>Mes heures</h2><p class="hint">Appui long pour corriger ou ajouter des heures prestées.</p></section>
+<section id="salary" class="screen hidden card"><h2>Salaire</h2><p class="hint">Appui long pour modifier les paramètres ou renseigner la paie réelle.</p></section>
 </main>
 <nav class="tabs bottom-nav" aria-label="Navigation MyTEAM">
   <button type="button" data-tab="home" class="active"><span class="nav-symbol">⌂</span><span>Accueil</span></button>
@@ -146,6 +158,7 @@
 <script src="./hours-reboot-v1.js?v=20261106-1"></script>
 <script src="./salary-forecast-v3.js?v=20261027-1"></script>
 <script src="./supervisors-rota-v1.js?v=20261029-4"></script>
-<script src="./reboot-v1.js?v=20261106-2"></script>
+<script src="./reboot-v1.js?v=20261106-3"></script>
+<script src="./reboot-edit-v1.js?v=20261106-1"></script>
 </body>
 </html>
