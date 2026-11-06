@@ -30,6 +30,25 @@ const items=()=>{const rows=[];
    id:String(e.id??i),source:'context',title:'Suivi · '+String(e.agent||'Agent'),
    detail:String(e.text||''),date:e.due||e.date,time:e.time||'09:00'
  }));
+ /* Dates planifiées depuis l'accueil : complètent l'échéance, sans la remplacer. */
+ const plans=read('myteam_reminder_plans_v1',{});
+ if(plans&&typeof plans==='object'&&!Array.isArray(plans)){
+  const current=rows.slice();
+  for(const [key,slot] of Object.entries(plans)){
+   if(!valid(slot?.date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(slot?.time||''))continue;
+   let descriptor;
+   try{descriptor=JSON.parse(key)}catch{continue}
+   if(!Array.isArray(descriptor)||descriptor.length!==3)continue;
+   const [source,id,who]=descriptor;
+   const matched=current.find(r=>{
+    const converted=r.source==='note'?'case':r.source;
+    const agent=r.source==='note'?String(r.title||'').replace(/^Agent · /,''):'';
+    return converted===source&&String(r.id)===String(id)&&(source!=='case'||agent===who);
+   });
+   if(matched)rows.push({id:key,source:'planned',title:'Prévu · '+matched.title,detail:matched.detail||'',
+    date:slot.date,time:slot.time});
+  }
+ }
  const seen=new Set();
  return rows.filter(x=>{const key=x.source+'|'+x.id;if(seen.has(key))return false;seen.add(key);return true})
   .sort((a,b)=>a.date.localeCompare(b.date)||String(a.time||'').localeCompare(String(b.time||'')));
@@ -121,6 +140,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){render();
 window.addEventListener('focus',()=>{render();notifyDue()});
 window.addEventListener('myteam-visits-updated',()=>{render();notifyDue()});
 window.addEventListener('myteam-journal-updated',()=>{render();notifyDue()});
+window.addEventListener('myteam-reminder-planned',()=>{render();notifyDue()});
 setInterval(()=>{if(!document.hidden){render();notifyDue()}},60000);
 window.MyTeamAlertScheduler={items,render,calendarUrl,ics,notifyDue};
 render();notifyDue();
