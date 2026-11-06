@@ -5,7 +5,7 @@
  */
 (()=>{
   'use strict';
-  const bureau=document.getElementById('mt-bureau');
+  const bureau=document.getElementById('team');
   const todayPanel=document.getElementById('today');
   if(!bureau||!todayPanel||document.getElementById('mt-panato-pay-case'))return;
 
