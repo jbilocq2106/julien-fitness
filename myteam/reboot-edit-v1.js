@@ -206,6 +206,10 @@ function nextShift(kind,from=new Date()){
 function setReminderPlan(raw,slot){
  const [source,id,...agentParts]=raw.split('||'),who=agentParts.join('||');
  if(!source||!id)return;
+ if(slot&&who&&window.MyTeamAbsences?.isAbsent?.(who,slot.date)){
+  const ret=window.MyTeamAbsences?.expectedReturn?.(who,slot.date);
+  alert('Agent absent à cette date'+(ret?' (retour prévu le '+api.fmtDate(ret)+')':'')+'. Choisis une date après son retour.');return;
+ }
  const all=read(REMINDER_PLAN_KEY,{});
  const plans=all&&typeof all==='object'&&!Array.isArray(all)?all:{};
  const key=planIndex(source,id,who),previous=plans[key];
@@ -245,7 +249,15 @@ function chooseReminderDate(raw){
 }
 function reminderAction(action,raw){
  if(action==='reminder-next-morning'||action==='reminder-next-afternoon'||action==='reminder-next-night'){
-  const kind=action.slice('reminder-next-'.length),slot=nextShift(kind);
+  const kind=action.slice('reminder-next-'.length);
+  let slot=nextShift(kind);
+  const [src,rid,...parts]=raw.split('||'),who=parts.join('||');
+  if(slot&&who&&window.MyTeamAbsences?.isAbsent?.(who,slot.date)){
+   const ret=window.MyTeamAbsences?.expectedReturn?.(who,slot.date);
+   if(!ret){alert('Agent absent : date de retour non renseignée. Planifie le rappel seulement après sa confirmation.');return}
+   const when=new Date(ret+'T00:00:00');when.setMinutes(when.getMinutes()-1);
+   slot=nextShift(kind,when);
+  }
   if(slot)setReminderPlan(raw,slot);else alert('Aucune vacation correspondante trouvée dans le cycle.');
   return;
  }
