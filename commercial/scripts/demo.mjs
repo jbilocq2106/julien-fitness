@@ -1,0 +1,13 @@
+import {cp,mkdir,readFile,writeFile,rm} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const dir=root+'dist/demo';
+await rm(dir,{recursive:true,force:true});await mkdir(dir,{recursive:true});await cp(root+'src',dir,{recursive:true});
+await rm(dir+'/vente.html');
+await writeFile(dir+'/config.js',"export const EDITION = 'pro';\n");
+let app=await readFile(dir+'/app.js','utf8');app=app.replace("'Édition Pro · distribution numérique'","'Démo privée · Toutes les fonctions · Aucun achat'");await writeFile(dir+'/app.js',app);
+let model=await readFile(dir+'/model.js','utf8');model=model.replace("'mytraining_pro_v1'","'mytraining_pro_demo_v1'");await writeFile(dir+'/model.js',model);
+let html=await readFile(dir+'/index.html','utf8');html=html.replace('<title>MyTraining Pro — Votre entraînement, votre rythme</title>','<title>MyTraining Pro — Démo privée</title>').replace('<a href="vente.html">Les éditions ↗</a>','<a href="essai.html">Guide d’essai ↗</a>').replace('Sans publicité · Sans traçage · Fonctionne hors ligne après installation','Démo privée · Sans publicité · Sans achat').replace('VOTRE ESPACE D’ENTRAÎNEMENT','VOTRE DÉMO PRIVÉE').replace('Des objectifs clairs. Une progression qui vous ressemble.','Essayez librement avec un pseudo et des données fictives. Aucun achat, aucun abonnement.');await writeFile(dir+'/index.html',html);
+let sw=await readFile(dir+'/sw.js','utf8');sw=sw.replace('mytraining-pro-source-v1','mytraining-pro-demo-v2').replace('./vente.html','./essai.html');await writeFile(dir+'/sw.js',sw);
+await cp(root+'demo/essai.html',dir+'/essai.html');await cp(root+'demo/confidentialite.html',dir+'/legal.html');
+console.log('Démo sans paiement générée dans '+dir);

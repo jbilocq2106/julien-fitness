@@ -1,6 +1,6 @@
 # MyTraining Pro — préversion commerciale isolée
 
-Branche de travail exclusivement. Ne pas fusionner vers main : un déploiement existant pourrait publier le dossier commercial. Aucun déploiement, aucune boutique, aucun paiement activé.
+Branche de travail exclusivement. Ne pas fusionner vers main : un déploiement existant pourrait publier le dossier commercial. Aucun déploiement commercial, aucune boutique, aucun paiement activé. Une [démo privée sans achat](docs/DEMO.md) permet les essais.
 
 ## Exécuter
 
@@ -30,3 +30,7 @@ Gratuit : 1 programme. Pro : 30 programmes. Les sauvegardes et exports restent d
 - [Vérification et lancement](docs/RELEASE.md)
 
 Les étapes qui dépendent de l'identité du vendeur, de ses comptes et de ses décisions restent bloquées. La préversion n'est pas déclarée prête à vendre.
+
+## Démo privée
+
+`npm run demo` génère `dist/demo`, sans page de vente et avec un stockage local distinct. Le [guide de démo](docs/DEMO.md) fournit le lien privé et les vérifications effectuées.

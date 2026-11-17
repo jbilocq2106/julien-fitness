@@ -1,6 +1,6 @@
 # Compte rendu de validation et passage en production
 
-Préversion 0.1, 17 novembre 2026. Aucun déploiement ou paiement effectué.
+Préversion 0.1, 17 novembre 2026. Aucun déploiement commercial ou paiement effectué. Une démo privée indépendante est disponible ; voir [DEMO.md](DEMO.md).
 
 ## Vérifications reproductibles
 
@@ -12,7 +12,7 @@ Préversion 0.1, 17 novembre 2026. Aucun déploiement ou paiement effectué.
 
 Ces contrôles doivent être faits sur le futur hébergement et les appareils cibles ; les tests de modèle ne les remplacent pas.
 
-- Android Chrome sur Samsung et iOS Safari : largeur 360/390 px, zoom, clavier, contraste et lecture écran, navigation clavier ; aucune vérification visuelle native effectuée dans ce chantier.
+- Android Chrome sur Samsung et iOS Safari : largeur 360/390 px, zoom, clavier, contraste et lecture écran, navigation clavier ; une vérification visuelle et des parcours ont été effectués sur Chrome ordinateur ; la validation sur appareils mobiles reste à faire.
 - Créer un profil, modifier un programme, démarrer une séance, modifier une série validée, recharger, terminer partiellement, supprimer une séance.
 - Sauvegarder/restaurer, annuler restauration, effacer, tester refus du stockage/quota. Vérifier absence d'effet sur MyTraining personnel.
 - Installation PWA : déclinaisons PNG d'icône si requises, hors ligne après premier chargement, mise à jour de version sans perte de données.
