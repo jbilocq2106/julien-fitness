@@ -1,0 +1,8 @@
+MyTraining Pro — préversion 0.1
+Copyright 2026. Tous droits réservés aux titulaires légitimes.
+
+Aucune licence open source générale n'est accordée par cette préversion.
+La consultation du dépôt ne constitue pas une autorisation de redistribution commerciale.
+Les conditions finales de licence client doivent être validées par le titulaire des droits avant vente.
+L'application contient uniquement du code, du texte et un pictogramme vectoriel créés pour cette version ; elle ne reprend pas les photos de la version personnelle.
+Cette notice ne certifie pas la titularité des contributions historiques du dépôt.
