@@ -10,19 +10,19 @@
       "day_hint": "Flexible",
       "exercises": [
         {
-          "name": "Chest Press machine",
+          "name": "Pec Fly à la machine",
           "sets": [
             {
               "reps": "12",
-              "weight": 39
+              "weight": 0
             },
             {
               "reps": "12",
-              "weight": 45
+              "weight": 0
             },
             {
               "reps": "10–12",
-              "weight": 45
+              "weight": 0
             }
           ],
           "rest": 90,
@@ -353,19 +353,19 @@
           "coachOrder": 1
         },
         {
-          "name": "Chest Press machine",
+          "name": "Pec Fly à la machine",
           "sets": [
             {
               "reps": "12",
-              "weight": 39
+              "weight": 0
             },
             {
               "reps": "12",
-              "weight": 45
+              "weight": 0
             },
             {
               "reps": "10–12",
-              "weight": 45
+              "weight": 0
             }
           ],
           "rest": 90,
@@ -523,19 +523,19 @@
           "coachOrder": 1
         },
         {
-          "name": "Chest Press machine",
+          "name": "Pec Fly à la machine",
           "sets": [
             {
               "reps": "12",
-              "weight": 39
+              "weight": 0
             },
             {
               "reps": "12",
-              "weight": 45
+              "weight": 0
             },
             {
               "reps": "10–12",
-              "weight": 45
+              "weight": 0
             }
           ],
           "rest": 90,
