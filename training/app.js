@@ -18,6 +18,7 @@ async function loadProgram(){
   try{state.program=await fetch('program.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json());}
   catch(e){ if(!old){document.getElementById('nextSessionName').textContent='Programme indisponible';return;} state.program=old; }
   applyProgressionOverrides();
+  syncActiveS3Dropsets();
   migrateV4SequenceOnce();
   renderProgram();renderHome();handleShortcutLaunch();
 }
@@ -26,6 +27,32 @@ function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.
 document.querySelectorAll('.bottom-nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
 
 function getSession(id){return state.program?.sessions?.find(s=>s.id===id)||state.program?.sessions?.[0]}
+function makeDropSets(e, activeMainSets=null){
+  const source=activeMainSets||e.sets||[];
+  const main=source[Math.max(0,(e.sets?.length||1)-1)];
+  const base=num(main?.weight)||num(main?.targetWeight)||0;
+  return (e.dropSet||[]).map((d,i)=>{
+    const ratio=Number(d.ratio)||0.75;
+    const target=base>0?Math.round(base*ratio*2)/2:null;
+    return {i:(e.sets?.length||0)+i+1,targetReps:d.reps||'8–10',
+      targetWeight:target,weight:target??'',reps:'',rir:'',done:false,
+      dropSet:true,dropRatio:ratio};
+  });
+}
+function syncActiveS3Dropsets(){
+  const w=state.activeWorkout, s=state.program?.sessions?.find(x=>x.id==='S3');
+  if(!w||w.id!=='S3'||!s)return;
+  let changed=false;
+  w.exercises.forEach(e=>{
+    const ref=s.exercises.find(x=>x.name===e.name&&x.dropSet?.length);
+    if(!ref||e.sets?.some(x=>x.dropSet)||!Array.isArray(e.sets))return;
+    const mainCount=ref.sets.length;
+    e.sets.splice(Math.min(mainCount,e.sets.length),0,...makeDropSets(ref,e.sets));
+    e.sets.forEach((set,i)=>{set.i=i+1});
+    changed=true;
+  });
+  if(changed){save();renderWorkout();}
+}
 function renderHome(){
   if(!state.program)return;
   const s=getSession(state.nextSessionId);
@@ -273,7 +300,7 @@ function recalculateProgressionFromWorkout(w){
 
   w.exercises.forEach(e=>{
     if(isCardioName(e.name))return;
-    const done=e.sets.filter(s=>s.done && num(s.weight)>0 && num(s.reps)>0);
+    const done=e.sets.filter(s=>!s.dropSet && s.done && num(s.weight)>0 && num(s.reps)>0);
     if(!done.length)return;
 
     const maxWeight=Math.max(...done.map(s=>num(s.weight)));
@@ -425,7 +452,7 @@ function renderProgram(){
     </div>
     ${s.exercises.map(e=>{
       const g=exerciseGuide(e.name);
-      const target=e.sets?.map(x=>x.weight?`${x.weight}×${x.reps}`:x.reps).join(' / ')||'';
+      const target=(e.sets?.map(x=>x.weight?`${x.weight}×${x.reps}`:x.reps).join(' / ')||'')+(e.dropSet?.length?' / DS ×'+e.dropSet.length+' sans repos':'');
       return `<div class="exercise-row program-exercise-row">
         <div class="video-mini">▶</div>
         <div class="program-exercise-main"><span>${esc(e.name)}</span><small>${esc(g.muscles)}</small><small class="target-line">${esc(target)}</small></div>
@@ -442,7 +469,7 @@ function renderProgram(){
     exercises:s.exercises.map(e=>({
       name:e.name,note:e.note||'',rest:e.rest,superset:e.superset||null,autoTarget:e.autoTarget||null,
       cardio:isCardioName(e.name)?parseCardioDefaults(e):null,
-      sets:e.sets.map((x,i)=>({i:i+1,targetReps:x.reps,targetWeight:x.weight,weight:x.weight??'',reps:'',rir:'',done:false}))
+      sets:e.sets.map((x,i)=>({i:i+1,targetReps:x.reps,targetWeight:x.weight,weight:x.weight??'',reps:'',rir:'',done:false})).concat(makeDropSets(e))
     }))
   };
   save();renderWorkout();showView('workoutView');startWorkoutClock();
@@ -494,6 +521,7 @@ function renderWorkout(){
       </div>
 
       ${e.superset?`<div class="superset-note">${w.supersetEnabled?.[e.superset]?'Superset actif : le repos démarre après le 2e exercice.':'Superset proposé, mais facultatif.'}</div>`:''}
+      ${e.sets.some(s=>s.dropSet)?"<div class=\"exercise-note\">DROPSET : réduire la charge d’environ 25 %, puis 45 % par rapport à la dernière série, enchaîner sans pause. Ajuster selon les paliers de la machine.</div>":''}
       ${exerciseInfoCard(e)}
 
       ${cardio?`
@@ -509,8 +537,8 @@ function renderWorkout(){
         <div class="set-head ${showRir?'v4-set-head':'rir-hidden-head'}">
           <span>Série</span><span>kg</span><span>reps</span>${showRir?'<span>RIR</span>':''}<span></span>
         </div>
-        ${e.sets.map((s,si)=>`<div class="set-row ${showRir?'v4-set-row':'rir-hidden-row'} ${s.done?'completed':''}" data-e="${ei}" data-s="${si}">
-          <div class="set-num">${s.i}</div>
+        ${e.sets.map((s,si)=>`<div class="set-row ${showRir?'v4-set-row':'rir-hidden-row'} ${s.done?'completed':''} ${s.dropSet?'drop-set-row':''}" data-e="${ei}" data-s="${si}">
+          <div class="set-num">${s.dropSet?'DS'+e.sets.slice(0,si+1).filter(x=>x.dropSet).length:s.i}</div>
           <input inputmode="decimal" placeholder="${s.targetWeight??'kg'}" value="${s.weight}" data-field="weight" aria-label="Poids série ${s.i}">
           <input inputmode="numeric" placeholder="${esc(s.targetReps)}" value="${s.reps}" data-field="reps" aria-label="Répétitions série ${s.i}">
           ${showRir?`<input inputmode="decimal" placeholder="2" value="${s.rir??''}" data-field="rir" aria-label="RIR série ${s.i}">`:''}
@@ -527,8 +555,18 @@ function renderWorkout(){
   });
   document.querySelectorAll('.set-row .done').forEach(btn=>btn.onclick=(ev)=>{
     const row=ev.target.closest('.set-row'),ei=+row.dataset.e,e=state.activeWorkout.exercises[ei],s=e.sets[+row.dataset.s];
-    s.done=!s.done;save();renderWorkout();
-    if(s.done&&e.rest&&shouldStartRestAfter(ei))startTimer(e.rest);
+    s.done=!s.done;
+    if(s.done&&!s.dropSet&&e.sets[+row.dataset.s+1]?.dropSet){
+      const base=num(s.weight);
+      e.sets.filter(x=>x.dropSet).forEach(drop=>{
+        const target=base>0?Math.round(base*drop.dropRatio*2)/2:0;
+        if(target&&!drop.done&&(drop.weight===''||!num(drop.weight)||num(drop.weight)===num(drop.targetWeight))){
+          drop.targetWeight=target;drop.weight=target;
+        }
+      });
+    }
+    save();renderWorkout();
+    if(s.done&&e.rest&&shouldStartRestAfter(ei)&&!e.sets[+row.dataset.s+1]?.dropSet)startTimer(e.rest);
   });
   document.querySelectorAll('[data-cardio]').forEach(inp=>inp.onchange=(ev)=>{
     const box=ev.target.closest('.cardio-grid'),e=state.activeWorkout.exercises[+box.dataset.e];
@@ -585,7 +623,7 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
     }
     e.sets.filter(s=>s.done&&(num(s.reps)>0||num(s.durationSeconds)>0)).forEach((s,i)=>state.history.unshift({
       title,start_time:start.toISOString(),end_time:end.toISOString(),description:'My Training',
-      exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:num(s.durationSeconds)>0?'timed':'normal',
+      exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:num(s.durationSeconds)>0?'timed':(s.dropSet?'drop':'normal'),
       weight_kg:num(s.durationSeconds)>0?0:num(s.weight),reps:num(s.durationSeconds)>0?0:num(s.reps),distance_km:'',duration_seconds:num(s.durationSeconds)>0?Math.round(num(s.durationSeconds)):'',speed_kmh:'',incline_percent:'',
       rpe:'',rir:String(s.rir??''),exercise_order:exerciseIndex+1
     }));
