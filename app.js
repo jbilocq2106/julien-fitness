@@ -452,6 +452,18 @@ function shouldStartRestAfter(exerciseIndex){
   return exerciseIndex===Math.max(...members);
 }
 
+function dropsetWeight(base,percent){return Math.round(base*(1-percent)/0.5)*0.5}
+function dropsetBase(e){
+  const weights=(e.sets||[]).map(s=>num(s.weight)).filter(v=>v>0);
+  return weights.length?Math.max(...weights):0;
+}
+function updateDropsetPreview(exerciseIndex){
+  const e=state.activeWorkout?.exercises?.[exerciseIndex];
+  const el=document.querySelector('[data-dropset-preview="'+exerciseIndex+'"]');
+  if(!e||!el)return;
+  const base=dropsetBase(e);
+  el.textContent=base?'Base '+base+' kg → −25 % : '+dropsetWeight(base,.25)+' kg · −40 % : '+dropsetWeight(base,.40)+' kg':'Renseigne une charge pour calculer les dropsets';
+}
 function renderWorkout(){
   const w=state.activeWorkout;if(!w)return;
   document.getElementById('workoutTitle').textContent=w.name;
@@ -478,6 +490,8 @@ function renderWorkout(){
 
       ${e.superset?`<div class="superset-note">${w.supersetEnabled?.[e.superset]?'Superset actif : le repos démarre après le 2e exercice.':'Superset proposé, mais facultatif.'}</div>`:''}
       ${exerciseInfoCard(e)}
+      ${!cardio?`<div class="dropset-preview" data-dropset-preview="${ei}" style="margin:8px 0;padding:10px;border-radius:9px;background:rgba(120,120,120,.12);font-size:.9rem">${dropsetBase(e)?`Base ${dropsetBase(e)} kg → −25 % : ${dropsetWeight(dropsetBase(e),.25)} kg · −40 % : ${dropsetWeight(dropsetBase(e),.40)} kg`:'Renseigne une charge pour calculer les dropsets'}</div>`:''}
+
 
       ${cardio?`
         <div class="cardio-grid" data-e="${ei}">
@@ -506,6 +520,13 @@ function renderWorkout(){
     const row=ev.target.closest('.set-row');
     state.activeWorkout.exercises[+row.dataset.e].sets[+row.dataset.s][ev.target.dataset.field]=ev.target.value;
     save();
+    if(ev.target.dataset.field==='weight')updateDropsetPreview(+row.dataset.e);
+  });
+  document.querySelectorAll('.set-row input[data-field="weight"]').forEach(inp=>inp.oninput=(ev)=>{
+    const row=ev.target.closest('.set-row');
+    state.activeWorkout.exercises[+row.dataset.e].sets[+row.dataset.s].weight=ev.target.value;
+    save();
+    updateDropsetPreview(+row.dataset.e);
   });
   document.querySelectorAll('.set-row .done').forEach(btn=>btn.onclick=(ev)=>{
     const row=ev.target.closest('.set-row'),ei=+row.dataset.e,e=state.activeWorkout.exercises[ei],s=e.sets[+row.dataset.s];
