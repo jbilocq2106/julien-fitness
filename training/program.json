@@ -1,5 +1,5 @@
 {
-  "version": 17,
+  "version": 18,
   "updated": "2026-11-20",
   "weekly_note": "3 séances ~90 min avec tapis 30–45 min, plus Full Body intensif hebdomadaire selon récupération. S1 déjà réalisée le 02/11 (historique conservé) ; commencer S2 le 03/11. Charges indicatives ; éviter extension au-dessus de la tête et soulevé de terre.",
   "sessions": [
@@ -369,17 +369,7 @@
             }
           ],
           "rest": 90,
-          "coachOrder": 2,
-          "dropSet": [
-            {
-              "reps": "8–10",
-              "ratio": 0.75
-            },
-            {
-              "reps": "8–10",
-              "ratio": 0.55
-            }
-          ]
+          "coachOrder": 2
         },
         {
           "name": "Écartés poulie vis-à-vis",
@@ -398,17 +388,7 @@
             }
           ],
           "rest": 60,
-          "coachOrder": 3,
-          "dropSet": [
-            {
-              "reps": "8–10",
-              "ratio": 0.75
-            },
-            {
-              "reps": "8–10",
-              "ratio": 0.55
-            }
-          ]
+          "coachOrder": 3
         },
         {
           "name": "Élévations latérales",
@@ -427,17 +407,7 @@
             }
           ],
           "rest": 60,
-          "coachOrder": 4,
-          "dropSet": [
-            {
-              "reps": "8–10",
-              "ratio": 0.75
-            },
-            {
-              "reps": "8–10",
-              "ratio": 0.55
-            }
-          ]
+          "coachOrder": 4
         },
         {
           "name": "Curl incliné haltères",
@@ -457,17 +427,7 @@
             }
           ],
           "rest": 75,
-          "note": "Tu as déjà effectué ce curl. Les 10/12/12 kg sont provisoires tant que la charge exacte n’a pas été retrouvée ; MyTraining recherchera automatiquement les séries enregistrées dans l’historique local ou synchronisé. Banc à 45°, coudes fixes, 1–2 répétitions en réserve.",
-          "dropSet": [
-            {
-              "reps": "8–10",
-              "ratio": 0.75
-            },
-            {
-              "reps": "8–10",
-              "ratio": 0.55
-            }
-          ]
+          "note": "Tu as déjà effectué ce curl. Les 10/12/12 kg sont provisoires tant que la charge exacte n’a pas été retrouvée ; MyTraining recherchera automatiquement les séries enregistrées dans l’historique local ou synchronisé. Banc à 45°, coudes fixes, 1–2 répétitions en réserve."
         },
         {
           "name": "Extension triceps corde",
@@ -486,17 +446,7 @@
             }
           ],
           "rest": 60,
-          "coachOrder": 6,
-          "dropSet": [
-            {
-              "reps": "8–10",
-              "ratio": 0.75
-            },
-            {
-              "reps": "8–10",
-              "ratio": 0.55
-            }
-          ]
+          "coachOrder": 6
         },
         {
           "name": "Crunch poulie",

@@ -39,7 +39,7 @@
     if(!ref)return false; // Si l'historique privé n'est pas chargé, garder les repères existants.
     const mainCount=exercise.sets.length;
     const active=state.activeWorkout?.id==='S3'
-      ?state.activeWorkout.exercises.find(e=>e.name===EXERCISE):null;
+      ?state.activeWorkout.exercises.find(e=>e.name===EXERCISE&&e.mtMethod!=='37'):null;
     let changed=false,activeChanged=false;
     for(let i=0;i<Math.min(mainCount,ref.rows.length);i++){
       const row=ref.rows[i],target=exercise.sets[i];

@@ -300,7 +300,7 @@ function recalculateProgressionFromWorkout(w){
 
   w.exercises.forEach(e=>{
     if(isCardioName(e.name))return;
-    const done=e.sets.filter(s=>!s.dropSet && s.done && num(s.weight)>0 && num(s.reps)>0);
+    const done=e.sets.filter(s=>!s.dropSet && !s.threeSeven && s.done && num(s.weight)>0 && num(s.reps)>0);
     if(!done.length)return;
 
     const maxWeight=Math.max(...done.map(s=>num(s.weight)));
@@ -566,7 +566,8 @@ function renderWorkout(){
       });
     }
     save();renderWorkout();
-    if(s.done&&e.rest&&shouldStartRestAfter(ei)&&!e.sets[+row.dataset.s+1]?.dropSet)startTimer(e.rest);
+    if(s.done&&s.threeSeven&&e.sets.slice(+row.dataset.s+1).some(x=>x.threeSeven))startTimer(15);
+    else if(s.done&&e.rest&&shouldStartRestAfter(ei)&&!e.sets[+row.dataset.s+1]?.dropSet)startTimer(e.rest);
   });
   document.querySelectorAll('[data-cardio]').forEach(inp=>inp.onchange=(ev)=>{
     const box=ev.target.closest('.cardio-grid'),e=state.activeWorkout.exercises[+box.dataset.e];
@@ -623,7 +624,7 @@ document.getElementById('finishWorkoutBtn').onclick=()=>{
     }
     e.sets.filter(s=>s.done&&(num(s.reps)>0||num(s.durationSeconds)>0)).forEach((s,i)=>state.history.unshift({
       title,start_time:start.toISOString(),end_time:end.toISOString(),description:'My Training',
-      exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:num(s.durationSeconds)>0?'timed':(s.dropSet?'drop':'normal'),
+      exercise_title:e.name,superset_id:e.superset||'',exercise_notes:e.note,set_index:i,set_type:num(s.durationSeconds)>0?'timed':(s.threeSeven?'3-7':s.dropSet?'drop':'normal'),
       weight_kg:num(s.durationSeconds)>0?0:num(s.weight),reps:num(s.durationSeconds)>0?0:num(s.reps),distance_km:'',duration_seconds:num(s.durationSeconds)>0?Math.round(num(s.durationSeconds)):'',speed_kmh:'',incline_percent:'',
       rpe:'',rir:String(s.rir??''),exercise_order:exerciseIndex+1
     }));
